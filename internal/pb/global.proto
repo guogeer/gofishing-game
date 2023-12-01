@@ -1,0 +1,184 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = ".;pb";
+
+import "internal/pb/login.proto";
+import "internal/pb/hall.proto";
+import "internal/pb/common.proto";
+import "internal/pb/stat.proto";
+
+message UserInfo {
+  int32 UId = 1;
+  string Name = 2;
+  string Address = 3;
+  string Account = 4;
+  string Password = 5;
+  string Plate = 6;
+  string OpenId = 7;
+  string ChanId = 9;
+  string Nickname = 10;
+  int32 Sex = 11;
+  int32 VIP = 12;
+  string Icon = 13;
+  string Imsi = 14;
+  string Imei = 15;
+  string Mac = 16;
+  string Phone = 17;
+  string OS = 18;
+  string NetMode = 19;
+  string Version = 20;
+  string PhoneBrand = 21;
+  string NewPassword = 22;
+  string Method = 23;
+  string IDFA = 24; // IOS设备标识
+  int32 SubId = 25;
+  string IP = 26;
+  int32 IPLimit = 27;
+  int32 IPLimitPerDay = 28;
+  string Token = 30;
+  int32 Level = 31;
+  string CreateTime = 34;
+  string ServerName = 35;
+  string Email = 36;
+	string PlateIcon = 37;
+}
+
+message TableConfig {
+  string name = 1;
+  string content = 2;
+  int32 version = 3;
+}
+
+message ScriptFile {
+  string name = 1;
+  string body = 2;
+}
+
+message Request {
+  int32 UId = 1;
+  int32 roomId = 2;
+  string name = 3;
+  string data = 4;
+  int32 id = 5;
+  int32 result = 7;
+  int32 type = 8;
+  int32 subId = 9;
+  int32 num = 10;
+  string Date = 11;
+  string OpenId = 12;
+}
+
+message Response {
+  int32 code = 1;
+  string msg = 2;
+  int64 id = 3;
+  string data = 4;
+  int32 UId = 5;
+}
+
+message EnterGameReq {
+  int32 UId = 1;
+  int32 SubId = 2;
+}
+
+message Notify {
+  int32 Mails = 1;
+  int32 LongTimeCards = 2; // 长线收集卡片
+}
+
+message EnterGameResp {
+  UserInfo userInfo = 1;
+  UserBin bin = 11;
+  LoginParams LoginParams = 17;
+  int32 NewMailNum = 18;
+	int64 SubscriptionExpireTs = 19; // 订阅过期时间
+	string GoogleAdName = 20;
+}
+
+message AuthReq {
+  int32 UId = 1;
+  string IP = 2;
+}
+
+message AuthResp {
+  string Token = 1;
+  int32 Reason = 2;
+  string ClientVersion = 5; // 版本
+  string LoginTime = 6;     // 登陆时间
+  repeated string LoginPlates = 7;
+  string ServerName = 8;
+}
+
+message GlobalBin {
+	int64 LastDayUpdateTs = 1; // 每日数据上次更新时间
+  repeated Item Items = 2; // 物品
+  int32 Level = 3;         // 等级
+}
+
+// 离线物品待合并
+message OfflineBin {
+  // int32 OfflineItemPos = 1; // 离线物品最大位移
+  repeated Item Items = 2;
+}
+
+message UserBin {
+  HallBin Hall = 1;       //大厅数据
+  GlobalBin Global = 2;   //全局数据
+  OfflineBin Offline = 3; //离线数据，待合并数据
+  RoomBin Room = 5;       //房间数据
+  StatBin Stat = 6;       // 统计数据
+}
+
+message RoomBin {
+}
+
+message SaveBinReq {
+  int32 UId = 1;
+  UserBin Bin = 2;
+}
+
+message SubGame {
+  string gameName = 1;
+  string roomName = 2;
+  int32 num = 3;
+  int32 Id = 4;
+  string ServerName = 5;
+}
+
+message VisitReq {
+  int32 UId = 1;
+  int32 SubId = 2;
+  string ServerName = 3;
+}
+
+message ItemParams {
+  int32 CardNum = 1;
+  int32 Mode = 2;
+  int32 SubId = 3;
+  int32 OtherId = 4;
+  int32 ShopId = 5;
+  int32 Round = 6;
+}
+
+message ItemReq {
+  int32 UId = 1;
+  string Way = 5;
+  string Uuid = 6;
+  int32 OtherId = 8;
+  int32 SubId = 9;
+  repeated Item Items = 10;
+  ItemParams Params = 11;
+  int64 Deadline = 12;
+}
+
+message DictValue {
+  string Key = 1;
+  string Value = 2;
+}
+
+message SignIn {
+  int32 DrawState = 7;
+  int64 DrawTs = 8;
+}

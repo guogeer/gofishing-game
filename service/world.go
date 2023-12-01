@@ -1,0 +1,211 @@
+package service
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"gofishing-game/internal/gameutil"
+	"gofishing-game/internal/pb"
+	"gofishing-game/internal/rpc"
+
+	"github.com/guogeer/quasar/cmd"
+	"github.com/guogeer/quasar/config"
+	"github.com/guogeer/quasar/log"
+	"github.com/guogeer/quasar/script"
+	"github.com/guogeer/quasar/util"
+)
+
+// 客户端显示在线
+type ClientOnline struct {
+	Online     int
+	ServerName string
+}
+
+func createPlayer() *Player {
+	for len(playerObjectPool) < 1 {
+		p := GetWorld().NewPlayer()
+		playerObjectPool = append(playerObjectPool, p)
+
+		for _, key := range actionKeys {
+			h := actionConstructors[key]
+			p.enterActions[key] = h(p)
+		}
+	}
+
+	n := len(playerObjectPool)
+	comer := playerObjectPool[n-1]
+	playerObjectPool = playerObjectPool[:n-1]
+	return comer
+}
+
+type World interface {
+	NewPlayer() *Player
+	GetName() string
+}
+
+var (
+	playerObjectPool []*Player          // 玩家对象缓存
+	gGatewayPlayers  map[string]*Player // 关联网络连接
+	gAllPlayers      map[int]*Player    // 所有玩家
+
+	defaultWorld World
+)
+
+func GetWorld() World {
+	return defaultWorld
+}
+
+func init() {
+	gAllPlayers = make(map[int]*Player)
+	gGatewayPlayers = make(map[string]*Player)
+
+	startTime, _ := config.ParseTime("2018-01-31 00:00:00")
+	util.NewPeriodTimer(tick10s, startTime, 10*time.Second)
+	util.NewPeriodTimer(tick1d, startTime, 24*time.Hour)
+}
+
+func CreateWorld(w World) {
+	defaultWorld = w
+	gServiceDict.load()
+}
+
+func tick10s() {
+	gServiceDict.save()
+}
+
+func Broadcast2Game(messageId string, data any) {
+	for _, player := range gAllPlayers {
+		player.WriteJSON(messageId, data)
+	}
+}
+
+func Broadcast2Gateway(messageId string, i any) {
+	pkg := &cmd.Package{Id: messageId, Body: i}
+	data, err := cmd.EncodePackage(pkg)
+	if err != nil {
+		return
+	}
+	cmd.Route("router", "C2S_Broadcast", data)
+}
+
+func GetAllPlayers() []*Player {
+	players := make([]*Player, 0, len(gAllPlayers))
+	for _, player := range gAllPlayers {
+		players = append(players, player)
+	}
+	return players
+}
+
+func GetPlayer(id int) *Player {
+	if p, ok := gAllPlayers[id]; ok {
+		return p
+	}
+	return nil
+}
+
+func GetGatewayPlayer(ssid string) *Player {
+	p, ok := gGatewayPlayers[ssid]
+	// 玩家不存在
+	if !ok {
+		return nil
+	}
+	// 玩家在进入游戏或离开游戏过程中，屏蔽其他消息请求
+	if p.isBusy {
+		return nil
+	}
+	return p
+}
+
+func GetName() string {
+	return GetWorld().GetName()
+}
+
+func WriteMessage(ss *cmd.Session, serverName, id string, i any) {
+	if ss == nil {
+		return
+	}
+	if serverName != "" {
+		id = fmt.Sprintf("%s.%s", serverName, id)
+	}
+	if m, ok := i.(map[any]any); ok {
+		i = (script.GenericMap)(m)
+	}
+
+	pkg := &cmd.Package{Id: id, Body: i}
+	buf, err := cmd.EncodePackage(pkg)
+
+	if err != nil {
+		log.Errorf("route message %s %v %v", id, i, err)
+		return
+	}
+	ss.WriteJSON("FUNC_Route", buf)
+}
+
+func AddItems(uid int, itemLog *gameutil.ItemLog) {
+	// log.Debugf("ply %v AddItems way %s", uid, itemLog.Way)
+	if p := GetPlayer(uid); p != nil && !p.IsBusy() {
+		p.itemObj.AddByLog(itemLog)
+	} else if !itemLog.IsTemp {
+		// 玩家不在线
+		bin := &pb.UserBin{Offline: &pb.OfflineBin{}}
+		for _, item := range itemLog.Items {
+			bin.Offline.Items = append(bin.Offline.Items, &pb.Item{Id: int32(item.Id), Num: item.Num})
+		}
+		AddSomeItemLog(uid, itemLog)
+		go func() {
+			rpc.CacheClient().SaveBin(context.Background(), &pb.SaveBinReq{UId: int32(uid), Bin: bin})
+		}()
+	}
+}
+
+func AddSomeItemLog(uid int, itemLog *gameutil.ItemLog) {
+	if itemLog.IsTemp || itemLog.Kind == "sum" || len(itemLog.Items) == 0 {
+		return
+	}
+
+	pbItems := make([]*pb.Item, 0, 4)
+	itemLog.Items = gameutil.MergeItems(itemLog.Items)
+	for _, item := range itemLog.Items {
+		pbItem := &pb.Item{}
+		util.DeepCopy(pbItem, item)
+		pbItems = append(pbItems, pbItem)
+	}
+
+	if p := GetPlayer(uid); p != nil {
+		itemLog.SubId = p.enterReq.SubId
+		if p.IsRobot {
+			itemLog.Way = itemLog.Kind + ".robot_" + itemLog.Way
+		}
+		for _, pbItem := range pbItems {
+			pbItem.Balance = p.ItemObj().NumItem(int(pbItem.Id))
+		}
+	}
+
+	itemLog.Way = itemLog.Kind + "." + itemLog.Way
+	// 玩家日志按时序更新
+	req := &pb.ItemReq{
+		UId:      int32(uid),
+		Items:    pbItems,
+		Uuid:     string(itemLog.Uuid),
+		Way:      itemLog.Way,
+		Params:   &pb.ItemParams{},
+		Deadline: time.Now().Unix(),
+	}
+	util.DeepCopy(req.Params, itemLog)
+	go func() {
+		rpc.CacheClient().AddSomeItemLog(context.Background(), req)
+	}()
+}
+
+func tick1d() {
+	for _, player := range gAllPlayers {
+		player.dataObj.updateNewDay()
+	}
+}
+
+type GameOnlineSegment struct {
+	Id          int
+	PlayerTotal int
+	PlayerCure  []int
+}

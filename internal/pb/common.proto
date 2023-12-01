@@ -1,0 +1,64 @@
+// 大厅
+
+syntax = "proto3";
+
+package pb;
+
+option go_package=".;pb";
+
+message CD {
+	int64 ExpireMs = 1; // 过期时间，单位ms
+	int64 PeriodMs = 2; // 周期单位ms
+}
+
+message SimpleUserInfo {
+	int32 UId = 1;
+	string Nickname = 2;
+	string Icon = 3;
+	int32 VIP = 4;
+	int32 Sex = 5;
+	int32 Level = 6;
+	int32 BuildLevel = 7;
+}
+
+message Item {
+	int32 Id = 1;
+	int64 Num = 2;
+	int64 Balance = 3;
+	int64 ExpireTs = 4;
+	int32 UpdateTs = 5;
+}
+
+message Bundle {
+	string Version = 1;
+	string BundleName = 2;
+	string Url = 3;
+}
+
+
+message LastVersion {
+	repeated WaitUpdateVersion WaitUpdateVersion = 1;
+}
+
+message WaitUpdateVersion {
+	string Type = 1;
+	int32 HotUpdate = 2;
+	string Reward = 3;
+	string Version = 4;
+	string ChanId = 5;
+	string ChangeLog = 6;
+	string Url = 7;
+	string Config = 8;
+	string Whitelist = 9;
+	string JsonValue = 10;
+	string AllowIps = 11;
+	string TablesUrl = 12;
+	repeated Bundle Bundles = 13;
+}
+
+message Task {
+	int32 Id = 1;
+	int64 Num = 2; // 当前进度
+	int64 Total = 3; // 总进度
+	int32 Status = 4;
+}
