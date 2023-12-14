@@ -11,7 +11,7 @@ import (
 )
 
 // 每日定时拆分item_log
-func SplitItemLog() {
+func splitItemLog() {
 	db := dbo.Get()
 	table := "item_log"
 	lastTable := table + "_" + time.Now().Add(-23*time.Hour).Format("20060102")
@@ -25,7 +25,7 @@ func SplitItemLog() {
 }
 
 func tick1d() {
-	SplitItemLog()
+	splitItemLog()
 }
 
 func Tick() {
