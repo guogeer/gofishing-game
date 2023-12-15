@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"gofishing-game/internal"
-	"gofishing-game/internal/gameutil"
+	"gofishing-game/internal/gameutils"
 	"gofishing-game/service"
 
 	"github.com/guogeer/quasar/cmd"
@@ -27,7 +27,7 @@ const (
 
 func GetShowTime(deadline time.Time) int {
 	d := time.Until(deadline)
-	sec := int(d.Seconds() - gameutil.MaxDelayDuration.Seconds())
+	sec := int(d.Seconds() - gameutils.MaxDelayDuration.Seconds())
 	if sec < 0 {
 		sec = 0
 	}

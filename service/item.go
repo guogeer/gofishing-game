@@ -7,7 +7,7 @@ import (
 
 	"github.com/guogeer/quasar/script"
 
-	"gofishing-game/internal/gameutil"
+	"gofishing-game/internal/gameutils"
 
 	"github.com/guogeer/quasar/util"
 
@@ -60,9 +60,9 @@ func (obj *ItemObj) update() {
 	p.dataObj.items = p.dataObj.items[:cur]
 }
 
-func (obj *ItemObj) GetItems() []*gameutil.Item {
+func (obj *ItemObj) GetItems() []*gameutils.Item {
 	p := obj.player
-	items := make([]*gameutil.Item, 0, 4)
+	items := make([]*gameutils.Item, 0, 4)
 	for _, item := range p.dataObj.items {
 		if item.Num > 0 {
 			items = append(items, item)
@@ -76,7 +76,7 @@ func (obj *ItemObj) IsEnough(id int, num int64) bool {
 }
 
 func (obj *ItemObj) Add(id int, num int64, way string) {
-	obj.AddSome([]*gameutil.Item{{Id: id, Num: num}}, way)
+	obj.AddSome([]*gameutils.Item{{Id: id, Num: num}}, way)
 }
 
 func (obj *ItemObj) NumItem(id int) (sum int64) {
@@ -89,12 +89,12 @@ func (obj *ItemObj) NumItem(id int) (sum int64) {
 	return
 }
 
-func (obj *ItemObj) AddSome(items []*gameutil.Item, way string) {
+func (obj *ItemObj) AddSome(items []*gameutils.Item, way string) {
 	kindAndWay := strings.Split(way, ".")
 	if len(kindAndWay) == 1 {
 		kindAndWay = []string{"", kindAndWay[0]}
 	}
-	obj.AddByLog(&gameutil.ItemLog{
+	obj.AddByLog(&gameutils.ItemLog{
 		Items: items,
 		Way:   kindAndWay[1],
 		Uuid:  util.GUID(),
@@ -102,7 +102,7 @@ func (obj *ItemObj) AddSome(items []*gameutil.Item, way string) {
 	})
 }
 
-func (obj *ItemObj) AddByLog(itemLog *gameutil.ItemLog) {
+func (obj *ItemObj) AddByLog(itemLog *gameutils.ItemLog) {
 	p := obj.player
 	if itemLog.Uuid == "" {
 		itemLog.Uuid = util.GUID()
@@ -111,7 +111,7 @@ func (obj *ItemObj) AddByLog(itemLog *gameutil.ItemLog) {
 		itemLog.Kind = "sys"
 	}
 
-	itemLog.Items = gameutil.MergeItems(itemLog.Items)
+	itemLog.Items = gameutils.MergeItems(itemLog.Items)
 	script.Call("item.lua", "fix_add_items", p, itemLog)
 	//需要区分离线数据
 	for _, item := range itemLog.Items {
@@ -133,7 +133,7 @@ func (obj *ItemObj) AddByLog(itemLog *gameutil.ItemLog) {
 			}
 		}
 	}
-	itemLog.Items = gameutil.MergeItems(itemLog.Items)
+	itemLog.Items = gameutils.MergeItems(itemLog.Items)
 	//log.Debugf("ply %v add items %v", p.Id, itemLog.Items)
 
 	p.GameAction.OnAddItems(itemLog)
@@ -143,7 +143,7 @@ func (obj *ItemObj) AddByLog(itemLog *gameutil.ItemLog) {
 	}
 }
 
-func (obj *ItemObj) GetItem(id int) *gameutil.Item {
+func (obj *ItemObj) GetItem(id int) *gameutils.Item {
 	p := obj.player
 	for _, item := range p.dataObj.items {
 		if item.Id == id {

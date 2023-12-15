@@ -1,10 +1,7 @@
-package gameutil
+package gameutils
 
 import (
 	"encoding/json"
-	"regexp"
-	"strconv"
-	"strings"
 )
 
 const (
@@ -66,28 +63,17 @@ func FormatItems(items []*Item) string {
 	return string(buf)
 }
 
-var numsRe = regexp.MustCompile(`[0-9]+`)
-
-// 格式1：[[1000,1],[1001,2]]
-// 格式2：1000*1,1001*2。旧版本兼容的格式，不建议使用
+// 格式：[[1000,1],[1001,2]]
 func ParseItems(s string) []*Item {
 	if s == "0" || s == "" {
 		return nil
 	}
-	items := make([]*Item, 0, 4)
-	if strings.Contains(s, "[") {
-		var a [][2]int64
-		json.Unmarshal([]byte(s), &a)
-		for _, a2 := range a {
-			items = append(items, &Item{Id: int(a2[0]), Num: a2[1]})
-		}
-	} else {
-		s2 := numsRe.FindAllString(s, -1)
-		for i := 0; 2*i+1 < len(s2); i++ {
-			itemId, _ := strconv.ParseInt(s2[2*i], 10, 64)
-			itemNum, _ := strconv.ParseInt(s2[2*i+1], 10, 64)
-			items = append(items, &Item{Id: int(itemId), Num: itemNum})
-		}
+
+	var items []*Item
+	var a [][2]int64
+	json.Unmarshal([]byte(s), &a)
+	for _, v := range a {
+		items = append(items, &Item{Id: int(v[0]), Num: v[1]})
 	}
 	return items
 }
@@ -129,12 +115,9 @@ type ItemLog struct {
 	Uuid    string  `json:",omitempty"`
 	Items   []*Item `json:",omitempty" client:"Items"`
 
-	CardNum     int    `json:",omitempty"`
-	Mode        int    `json:",omitempty"`
 	SubId       int    `json:",omitempty"`
 	OtherId     int    `json:",omitempty"`
 	IsTestPay   bool   `json:",omitempty"`
-	BoxLv       int    `json:",omitempty"` // BINGO宝箱等级
 	Round       int    `json:",omitempty"` // 限时活动阶段
 	IsFix       bool   `json:",omitempty"` // 修正数值，跳过增加物品
 	OrderId     string `json:",omitempty"` // 付费订单ID

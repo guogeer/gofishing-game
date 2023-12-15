@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"gofishing-game/internal/errcode"
-	"gofishing-game/internal/gameutil"
+	"gofishing-game/internal/gameutils"
 	"gofishing-game/internal/pb"
 	"gofishing-game/internal/rpc"
 
@@ -42,7 +42,7 @@ type dataObj struct {
 	loadSavers []loadSaver
 	period     time.Duration
 	saveTimer  *util.Timer
-	items      []*gameutil.Item
+	items      []*gameutils.Item
 	// offlinePos int32
 	offline *pb.OfflineBin
 
@@ -114,13 +114,13 @@ func (obj *dataObj) Push(h loadSaver) {
 func (obj *dataObj) Load(data any) {
 	p := obj.player
 	bin := data.(*pb.UserBin)
-	gameutil.InitNilFields(bin.Global)
+	gameutils.InitNilFields(bin.Global)
 
-	obj.items = make([]*gameutil.Item, 0, 8)
+	obj.items = make([]*gameutils.Item, 0, 8)
 	p.Level = int(bin.Global.Level)
 	// p.BuildLevel = int(bin.Global.BuildLevel)
 	for _, item := range bin.Global.Items {
-		newItem := &gameutil.Item{}
+		newItem := &gameutils.Item{}
 		util.DeepCopy(newItem, item)
 		obj.addItem(newItem)
 	}
@@ -129,14 +129,14 @@ func (obj *dataObj) Load(data any) {
 	// obj.offlinePos = bin.Global.CurItemMaxPos
 	obj.offline = &pb.OfflineBin{}
 	for _, item := range bin.Offline.Items {
-		obj.addItem(&gameutil.Item{Id: int(item.Id), Num: item.Num})
+		obj.addItem(&gameutils.Item{Id: int(item.Id), Num: item.Num})
 		obj.offline.Items = append(obj.offline.Items, &pb.Item{Id: item.Id, Num: -item.Num})
 	}
 	// obj.offlinePos = bin.OfflineBin.OfflineItemPos
 	obj.lastDayUpdateTs = bin.Global.LastDayUpdateTs
 }
 
-func (obj *dataObj) addItem(newItem *gameutil.Item) {
+func (obj *dataObj) addItem(newItem *gameutils.Item) {
 	if isItemValid(newItem.Id) {
 		obj.items = append(obj.items, newItem)
 	}

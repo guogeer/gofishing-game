@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"gofishing-game/internal/gameutil"
+	"gofishing-game/internal/gameutils"
 	"gofishing-game/internal/pb"
 	"gofishing-game/internal/rpc"
 
@@ -142,7 +142,7 @@ func WriteMessage(ss *cmd.Session, serverName, id string, i any) {
 	ss.WriteJSON("FUNC_Route", buf)
 }
 
-func AddItems(uid int, itemLog *gameutil.ItemLog) {
+func AddItems(uid int, itemLog *gameutils.ItemLog) {
 	// log.Debugf("ply %v AddItems way %s", uid, itemLog.Way)
 	if p := GetPlayer(uid); p != nil && !p.IsBusy() {
 		p.itemObj.AddByLog(itemLog)
@@ -159,13 +159,13 @@ func AddItems(uid int, itemLog *gameutil.ItemLog) {
 	}
 }
 
-func AddSomeItemLog(uid int, itemLog *gameutil.ItemLog) {
+func AddSomeItemLog(uid int, itemLog *gameutils.ItemLog) {
 	if itemLog.IsTemp || itemLog.Kind == "sum" || len(itemLog.Items) == 0 {
 		return
 	}
 
 	pbItems := make([]*pb.Item, 0, 4)
-	itemLog.Items = gameutil.MergeItems(itemLog.Items)
+	itemLog.Items = gameutils.MergeItems(itemLog.Items)
 	for _, item := range itemLog.Items {
 		pbItem := &pb.Item{}
 		util.DeepCopy(pbItem, item)

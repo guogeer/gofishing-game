@@ -1,5 +1,7 @@
 package cache
 
+// GM管理后台
+
 import (
 	"context"
 

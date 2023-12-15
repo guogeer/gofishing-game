@@ -2,12 +2,10 @@ package hall
 
 import (
 	"gofishing-game/internal/errcode"
-	"gofishing-game/internal/gameutil"
+	"gofishing-game/internal/gameutils"
 	"gofishing-game/internal/pb"
 	"gofishing-game/service"
 )
-
-type Item = gameutil.Item
 
 type hallPlayer struct {
 	*service.Player
@@ -42,7 +40,7 @@ func (ply *hallPlayer) OnClose() {
 
 func (ply *hallPlayer) Load(pdata any) {
 	bin := pdata.(*pb.UserBin)
-	gameutil.InitNilFields(bin.Hall)
+	gameutils.InitNilFields(bin.Hall)
 	ply.loginClientVersion = bin.Hall.LoginClientVersion
 
 	ply.mailObj.Load(pdata)
@@ -54,10 +52,6 @@ func (ply *hallPlayer) Save(pdata any) {
 		LoginClientVersion: ply.loginClientVersion,
 	}
 	ply.mailObj.Save(pdata)
-}
-
-func (ply *hallPlayer) OnAddItems(itemLog *gameutil.ItemLog) {
-	ply.Player.OnAddItems(itemLog)
 }
 
 func (ply *hallPlayer) checkClientVersion() {

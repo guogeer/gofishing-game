@@ -1,4 +1,4 @@
-package gameutil
+package gameutils
 
 import (
 	"encoding/json"

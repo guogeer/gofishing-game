@@ -30,16 +30,11 @@ func (cc *Cache) queryUserInfo(ctx context.Context, uid int32) (*pb.UserInfo, er
 
 	db.QueryRow("select account_info,create_time from user_info where uid=?", uid).Scan(dbo.JSON(userInfo), &userInfo.CreateTime)
 	db.QueryRow("select open_id from user_plate where uid=?", uid).Scan(&userInfo.OpenId)
-	// 兼容旧版本
-	if userInfo.SubId == 101 {
-		userInfo.SubId = 0
-	}
 	return userInfo, nil
 }
 
 func (cc *Cache) EnterGame(ctx context.Context, req *pb.Request) (*pb.EnterGameResp, error) {
 	db := dbo.Get()
-	mdb := mpool.Get()
 	uid := req.UId
 	resp := &pb.EnterGameResp{
 		LoginParams: &pb.LoginParams{},
@@ -50,7 +45,6 @@ func (cc *Cache) EnterGame(ctx context.Context, req *pb.Request) (*pb.EnterGameR
 		return nil, err
 	}
 
-	//log.Debugf("%v EnterGame", uid)
 	bin, err := cc.LoadBin(ctx, &pb.Request{UId: int32(uid)})
 	if err != nil {
 		log.Errorf("load player %d bin %v", uid, err)
@@ -58,16 +52,9 @@ func (cc *Cache) EnterGame(ctx context.Context, req *pb.Request) (*pb.EnterGameR
 	resp.Bin = bin
 	resp.UserInfo = info
 
-	// 邮件
-	db.QueryRow("select count(*) from `mail` where recv_uid=? and `status`=0", uid).Scan(&resp.NewMailNum)
-	// 登陆参数
-	db.QueryRow("select account_info from user_info where uid=?", uid).Scan(dbo.JSON(resp.LoginParams))
-	// 订阅
-	db.QueryRow("select expire_millis from charge_subscription where uid=?", uid).Scan(&resp.SubscriptionExpireTs)
-
-	googleAdName := "undefined"
-	mdb.QueryRow("select google_ad_name from plate_adjust where uid=?", uid).Scan(&googleAdName)
-	resp.GoogleAdName = googleAdName
+	db.QueryRow("select count(*) from `mail` where recv_uid=? and `status`=0", uid).Scan(&resp.NewMailNum)         // 邮件
+	db.QueryRow("select account_info from user_info where uid=?", uid).Scan(dbo.JSON(resp.LoginParams))            // 登陆参数
+	db.QueryRow("select expire_millis from charge_subscription where uid=?", uid).Scan(&resp.SubscriptionExpireTs) // 订阅
 	return resp, nil
 }
 
@@ -399,12 +386,6 @@ func (cc *Cache) AddSomeItem(ctx context.Context, req *pb.ItemReq) (*pb.Response
 			Offline: &pb.OfflineBin{Items: req.Items},
 		},
 	})
-}
-
-type buildingSocialLike struct {
-	Infos    []*pb.SimpleUserInfo // 访问点赞的用户
-	List     []int                // 玩家名单
-	RobotNum int
 }
 
 func (cc *Cache) BindAccount(ctx context.Context, req *pb.BindAccountReq) (*pb.BindAccountResp, error) {

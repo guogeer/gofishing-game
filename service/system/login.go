@@ -3,7 +3,7 @@
 package system
 
 import (
-	"gofishing-game/internal/gameutil"
+	"gofishing-game/internal/gameutils"
 	"gofishing-game/internal/pb"
 	"gofishing-game/service"
 )
@@ -24,7 +24,7 @@ func (obj *loginObj) Load(data any) {
 	if obj.params == nil {
 		obj.params = &pb.LoginParams{}
 	}
-	gameutil.InitNilFields(obj.params)
+	gameutils.InitNilFields(obj.params)
 }
 
 func (obj *loginObj) Save(data any) {

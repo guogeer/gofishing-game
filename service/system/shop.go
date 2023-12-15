@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"gofishing-game/internal"
-	"gofishing-game/internal/gameutil"
+	"gofishing-game/internal/gameutils"
 	"gofishing-game/service"
 
 	"github.com/guogeer/quasar/cmd"
@@ -15,35 +15,13 @@ import (
 )
 
 const (
-	actionKeyShop                 = "shop"
-	shopGroupHalfPaySpecial       = "HalfPaySpecial"
-	shopGroupCoinBankruptcy       = "CoinBankruptcy"
-	shopGroupSPBankruptcy         = "SPBankruptcy"
-	shopGroupDaubAlertsBankruptcy = "DaubAlertsBankruptcy"
-	shopGroupFirstPay             = "FirstPay"
-	shopGroupPiggyBank            = "PiggyBank"
-	shopGroupSubscription         = "Subscribe"
+	actionKeyShop         = "shop"
+	shopGroupFirstPay     = "FirstPay"
+	shopGroupSubscription = "Subscribe"
 )
 
-// 日常礼包
-type dailySale struct {
-	index      int   // 顺序
-	ExpireTs   int64 // 过期时间
-	ShopId     int   // 当前礼包
-	IsDrawFree bool  // 免费礼包已领取
-	IsBuyHalf  bool  // 半价礼包可购买
-	refreshTs  int64 // 下次刷新时间
-}
-
-type firstPayPackage struct {
-	ExpireTs int64
-	ShopId   int
-}
-
 type shopObj struct {
-	player          *service.Player
-	firstPayPackage firstPayPackage // 首充礼包
-
+	player               *service.Player
 	subscriptionExpireTs int64 // 订阅结束时间
 	subscriptionLastTs   int64 // 订阅上次发放奖励时间
 }
@@ -84,7 +62,7 @@ func (obj *shopObj) BeforeEnter() {
 	}
 }
 
-func (obj *shopObj) OnAddItems(itemLog *gameutil.ItemLog) {
+func (obj *shopObj) OnAddItems(itemLog *gameutils.ItemLog) {
 	p := obj.player
 	// now := time.Now()
 	if itemLog.Way != "pay" {
@@ -154,10 +132,10 @@ func (obj *shopObj) checkPurchaseSubscriptionReward() bool {
 	}
 	firstReward, dayReward := obj.getSubscriptionReward()
 	if obj.subscriptionLastTs == 0 {
-		obj.player.ItemObj().AddSome(gameutil.ParseItems(firstReward), "subscription_first")
+		obj.player.ItemObj().AddSome(gameutils.ParseItems(firstReward), "subscription_first")
 	}
 	obj.subscriptionLastTs = now.Unix()
-	obj.player.ItemObj().AddSome(gameutil.ParseItems(dayReward), "subscription_day")
+	obj.player.ItemObj().AddSome(gameutils.ParseItems(dayReward), "subscription_day")
 	return true
 }
 
@@ -193,9 +171,9 @@ func funcPay(ctx *cmd.Context, data any) {
 	if false && price <= 0 {
 		return
 	}
-	items := gameutil.ParseItems(reward)
+	items := gameutils.ParseItems(reward)
 	//log.Debugf("ply %v buy items %v", uid, reward)
-	service.AddItems(uid, &gameutil.ItemLog{
+	service.AddItems(uid, &gameutils.ItemLog{
 		Kind:       "sys",
 		Way:        "pay",
 		ShopId:     shopId,

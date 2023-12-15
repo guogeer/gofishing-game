@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"gofishing-game/internal/errcode"
-	"gofishing-game/internal/gameutil"
+	"gofishing-game/internal/gameutils"
 
 	"github.com/guogeer/quasar/cmd"
 	"github.com/guogeer/quasar/config"
@@ -124,7 +124,7 @@ func scriptGetPlayer(L *lua.LState) int {
 
 func scriptParseItems(L *lua.LState) int {
 	reward := L.ToString(1)
-	items := gameutil.ParseItems(reward)
+	items := gameutils.ParseItems(reward)
 	L.Push(luahelper.New(L, items))
 	return 1
 }

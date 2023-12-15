@@ -2,7 +2,7 @@ package system
 
 import (
 	"gofishing-game/internal/errcode"
-	"gofishing-game/internal/gameutil"
+	"gofishing-game/internal/gameutils"
 	"gofishing-game/service"
 	"time"
 
@@ -74,7 +74,7 @@ func (obj *dailySignInObj) Draw() errcode.Error {
 	obj.drawTime = now
 
 	reward, _ := config.String("signin", config.RowId(state.DayIndex), "Reward")
-	obj.player.ItemObj().AddSome(gameutil.ParseItems(reward), "sign_in")
+	obj.player.ItemObj().AddSome(gameutils.ParseItems(reward), "sign_in")
 	return errcode.Ok
 }
 

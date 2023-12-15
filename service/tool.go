@@ -10,7 +10,7 @@ import (
 
 	"gofishing-game/internal"
 	"gofishing-game/internal/env"
-	"gofishing-game/internal/gameutil"
+	"gofishing-game/internal/gameutils"
 
 	"github.com/guogeer/quasar/cmd"
 	"github.com/guogeer/quasar/config"
@@ -112,7 +112,7 @@ func (tool *testTool) Test_Z增加各种数值(ctx *cmd.Context, params string) 
 	}
 
 	buf, _ := json.Marshal(items)
-	ply.ItemObj().AddSome(gameutil.ParseItems(string(buf)), util.GUID())
+	ply.ItemObj().AddSome(gameutils.ParseItems(string(buf)), util.GUID())
 }
 
 func (tool *testTool) Test_S升级到X(ctx *cmd.Context, params string) {

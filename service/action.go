@@ -3,7 +3,7 @@ package service
 import (
 	"strings"
 
-	"gofishing-game/internal/gameutil"
+	"gofishing-game/internal/gameutils"
 )
 
 type ActionConstructor func(player *Player) EnterAction
@@ -34,7 +34,7 @@ type actionLevelUp interface {
 }
 
 type actionAddItems interface {
-	OnAddItems(*gameutil.ItemLog)
+	OnAddItems(*gameutils.ItemLog)
 }
 
 type actionClose interface {

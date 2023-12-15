@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"gofishing-game/internal"
-	"gofishing-game/internal/gameutil"
+	"gofishing-game/internal/gameutils"
 	"gofishing-game/internal/pb"
 	"gofishing-game/service"
 
@@ -53,7 +53,7 @@ func (obj *statObj) Load(data any) {
 	if bin.Stat != nil {
 		obj.data = bin.Stat
 	}
-	gameutil.InitNilFields(obj.data)
+	gameutils.InitNilFields(obj.data)
 	obj.lastServer = obj.data.LastServer
 }
 
@@ -88,7 +88,7 @@ func (obj *statObj) getItemStat(itemId int) *pb.ItemStat {
 	return itemStat
 }
 
-func (obj *statObj) OnAddItems(itemLog *gameutil.ItemLog) {
+func (obj *statObj) OnAddItems(itemLog *gameutils.ItemLog) {
 	for _, item := range itemLog.Items {
 		itemStat := obj.getItemStat(item.Id)
 		if item.Num < 0 {

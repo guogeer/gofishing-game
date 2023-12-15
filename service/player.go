@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"gofishing-game/internal/errcode"
-	"gofishing-game/internal/gameutil"
+	"gofishing-game/internal/gameutils"
 	"gofishing-game/internal/pb"
 	"gofishing-game/internal/rpc"
 
@@ -48,7 +48,7 @@ type GameAction interface {
 	BeforeLeave() // 离开游戏前
 
 	OnClose()
-	OnAddItems(*gameutil.ItemLog)
+	OnAddItems(*gameutils.ItemLog)
 	//OnPurchaseSubscription()
 }
 
@@ -116,7 +116,7 @@ func (player *Player) ItemObj() *ItemObj {
 
 func (player *Player) Enter() errcode.Error {
 	data := player.enterReq.Data
-	gameutil.InitNilFields(data)
+	gameutils.InitNilFields(data)
 
 	util.DeepCopy(&player.UserInfo, data.UserInfo)
 	player.Phone = data.UserInfo.Phone
@@ -356,7 +356,7 @@ func (player *Player) updateLevel(reason string) {
 		config.Scan("level", rowId, "Level,Exp", &id, &needExp)
 		totalNeedExp += needExp
 
-		num := player.ItemObj().NumItem(gameutil.ItemIdExp)
+		num := player.ItemObj().NumItem(gameutils.ItemIdExp)
 		if num >= int64(totalNeedExp) {
 			player.Level = id
 			player.CurExp = int(num) - totalNeedExp
@@ -369,15 +369,15 @@ func (player *Player) updateLevel(reason string) {
 			"CurExp": player.CurExp,
 		})
 		// 跨越等级的修复
-		items := make([]*gameutil.Item, 0, 8)
+		items := make([]*gameutils.Item, 0, 8)
 		for i := level + 1; i <= player.Level; i++ {
 			reward, _ := config.String("level", i, "Reward")
-			items = append(items, gameutil.ParseItems(reward)...)
+			items = append(items, gameutils.ParseItems(reward)...)
 		}
 
 		// player.ItemObj().AddSome(items, util.GUID(), "level_up")
 		// player.shopObj.OnLevelUp()
-		player.SetTempTable("LevelReward", gameutil.FormatItems(items))
+		player.SetTempTable("LevelReward", gameutils.FormatItems(items))
 		for _, action := range player.enterActions {
 			if h, ok := action.(actionLevelUp); ok {
 				h.OnLevelUp(reason)
@@ -386,7 +386,7 @@ func (player *Player) updateLevel(reason string) {
 	}
 }
 
-func (player *Player) OnAddItems(itemLog *gameutil.ItemLog) {
+func (player *Player) OnAddItems(itemLog *gameutils.ItemLog) {
 	for _, action := range player.enterActions {
 		if h, ok := action.(actionAddItems); ok {
 			h.OnAddItems(itemLog)

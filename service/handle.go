@@ -1,7 +1,7 @@
 package service
 
 import (
-	"gofishing-game/internal/gameutil"
+	"gofishing-game/internal/gameutils"
 
 	"github.com/guogeer/quasar/cmd"
 	"github.com/guogeer/quasar/log"
@@ -25,7 +25,7 @@ type serviceArgs struct {
 	ItemNum int64
 
 	Name      string
-	Items     []*gameutil.Item
+	Items     []*gameutils.Item
 	IsWatchAd bool
 }
 
@@ -89,7 +89,7 @@ func funcEffectTableOk(ctx *cmd.Context, data any) {
 func funcAddItems(ctx *cmd.Context, data any) {
 	args := data.(*serviceArgs)
 
-	AddItems(args.UId, &gameutil.ItemLog{
+	AddItems(args.UId, &gameutils.ItemLog{
 		Kind:  "sys",
 		Items: args.Items,
 		Way:   args.Way,

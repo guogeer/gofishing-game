@@ -6,7 +6,7 @@ import (
 
 	"gofishing-game/internal"
 	"gofishing-game/internal/errcode"
-	"gofishing-game/internal/gameutil"
+	"gofishing-game/internal/gameutils"
 	"gofishing-game/internal/pb"
 	"gofishing-game/internal/rpc"
 	"gofishing-game/service"
@@ -212,7 +212,7 @@ func (obj *mailObj) Draw(id int64) {
 			// OK
 			mail := &Mail{}
 			util.DeepCopy(mail, pbMail)
-			p.ItemObj().AddSome(gameutil.ParseItems(mail.Reward), "mail_draw")
+			p.ItemObj().AddSome(gameutils.ParseItems(mail.Reward), "mail_draw")
 			p.mailObj.OnRecv(-1)
 		})
 	}()
