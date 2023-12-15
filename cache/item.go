@@ -1,10 +1,12 @@
 package cache
 
 import (
+	"context"
 	"time"
 
 	"gofishing-game/internal"
 	"gofishing-game/internal/dbo"
+	"gofishing-game/internal/pb"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
@@ -38,4 +40,28 @@ func Tick() {
 		dayTimer.Reset(24 * time.Hour)
 		tick1d()
 	}
+}
+
+// 批量增加物品日志
+func (cc *Cache) AddSomeItemLog(ctx context.Context, req *pb.ItemReq) (*pb.Response, error) {
+	uid := req.UId
+	way := req.Way
+	uuid := req.Uuid
+	db := dbo.Get()
+	for _, item := range req.Items {
+		db.Exec("insert item_log(uid,way,guid,item_id,item_num,balance,params) values(?,?,?,?,?,?,?)",
+			uid, way, uuid, item.Id, item.Num, item.Balance, dbo.JSON(req.Params))
+	}
+	return &pb.Response{}, nil
+}
+
+// 批量增加物品
+func (cc *Cache) AddSomeItem(ctx context.Context, req *pb.ItemReq) (*pb.Response, error) {
+	uid := req.UId
+	return cc.SaveBin(ctx, &pb.SaveBinReq{
+		UId: uid,
+		Bin: &pb.UserBin{
+			Offline: &pb.OfflineBin{Items: req.Items},
+		},
+	})
 }

@@ -21,18 +21,6 @@ type Cache struct {
 	pb.UnimplementedCacheServer
 }
 
-func (cc *Cache) queryUserInfo(ctx context.Context, uid int32) (*pb.UserInfo, error) {
-	db := dbo.Get()
-	userInfo := &pb.UserInfo{
-		UId:   uid,
-		Token: GenToken(int(uid)),
-	}
-
-	db.QueryRow("select account_info,create_time from user_info where uid=?", uid).Scan(dbo.JSON(userInfo), &userInfo.CreateTime)
-	db.QueryRow("select open_id from user_plate where uid=?", uid).Scan(&userInfo.OpenId)
-	return userInfo, nil
-}
-
 func (cc *Cache) EnterGame(ctx context.Context, req *pb.Request) (*pb.EnterGameResp, error) {
 	db := dbo.Get()
 	uid := req.UId
@@ -77,43 +65,11 @@ func (cc *Cache) Enter(ctx context.Context, req *pb.AccountInfo) (*pb.Response, 
 	return &pb.Response{}, nil
 }
 
-func (cc *Cache) GetSimpleUserInfo(ctx context.Context, req *pb.Request) (*pb.SimpleUserInfo, error) {
-	db := dbo.Get()
-	simpleInfo := &pb.SimpleUserInfo{UId: req.UId}
-	if req.OpenId != "" {
-		db.QueryRow("select uid from user_plate where open_id=?", req.OpenId).Scan(&simpleInfo.UId)
-	}
-	userInfo, _ := cc.queryUserInfo(ctx, simpleInfo.UId)
-	util.DeepCopy(simpleInfo, userInfo)
-
-	globalBin := &pb.GlobalBin{}
-	db.QueryRow("select bin from user_bin where uid=? and `class`=?", simpleInfo.UId, "global").Scan(dbo.PB(globalBin))
-	simpleInfo.Level = globalBin.Level
-	return simpleInfo, nil
-}
-
-func (cc *Cache) GetUserInfo(ctx context.Context, req *pb.Request) (*pb.UserInfo, error) {
-	uid := req.UId
-	return cc.queryUserInfo(ctx, uid)
-}
-
-func (cc *Cache) SetUserInfo(ctx context.Context, req *pb.EditableUserInfo) (*pb.Response, error) {
-	db := dbo.Get()
-	db.Exec(`update user_info set account_info=json_set(account_info,
-		'$.Sex',?,
-		'$.Nickname',?,
-		'$.Icon',?,
-		'$.Email',?
-		) where uid=?`,
-		req.Sex, req.Nickname, req.Icon, req.Email, req.UId)
-	return &pb.Response{}, nil
-}
-
 func (cc *Cache) Auth(ctx context.Context, req *pb.AuthReq) (*pb.AuthResp, error) {
 	db := dbo.Get()
 	mdb := mpool.Get()
 	uid := req.UId
-	token := GenToken(int(uid))
+	token := generateToken(int(uid))
 	resp := &pb.AuthResp{Token: token}
 
 	if uid > 0 {
@@ -362,30 +318,6 @@ func (cc *Cache) ClearAccount(ctx context.Context, req *pb.AccountInfo) (*pb.Res
 	// db.Exec("update user_info set account_info='{}' where uid=?", req.UId)
 	db.Exec("delete from user_plate where uid=?", req.UId)
 	return &pb.Response{}, nil
-}
-
-// 批量增加物品日志
-func (cc *Cache) AddSomeItemLog(ctx context.Context, req *pb.ItemReq) (*pb.Response, error) {
-	uid := req.UId
-	way := req.Way
-	uuid := req.Uuid
-	db := dbo.Get()
-	for _, item := range req.Items {
-		db.Exec("insert item_log(uid,way,guid,item_id,item_num,balance,params) values(?,?,?,?,?,?,?)",
-			uid, way, uuid, item.Id, item.Num, item.Balance, dbo.JSON(req.Params))
-	}
-	return &pb.Response{}, nil
-}
-
-// 批量增加物品
-func (cc *Cache) AddSomeItem(ctx context.Context, req *pb.ItemReq) (*pb.Response, error) {
-	uid := req.UId
-	return cc.SaveBin(ctx, &pb.SaveBinReq{
-		UId: uid,
-		Bin: &pb.UserBin{
-			Offline: &pb.OfflineBin{Items: req.Items},
-		},
-	})
 }
 
 func (cc *Cache) BindAccount(ctx context.Context, req *pb.BindAccountReq) (*pb.BindAccountResp, error) {
