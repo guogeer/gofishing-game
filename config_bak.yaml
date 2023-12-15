@@ -1,0 +1,30 @@
+environment: release
+sign: 9e737f29f5751baa51060ce226c3fc97
+productKey: TODO
+enableDebug: true
+dataSource:
+  user: root
+  password: password
+  address: "localhost:3306"
+  name: mahjong
+  maxIdleConns: 10
+  maxOpenConns: 20
+manageDataSource:
+  user: root
+  password: password
+  address: "localhost:3306"
+  name: manage
+  maxIdleConns: 10
+  maxOpenConns: 20
+slaveDataSource:
+  user: root
+  password: password
+  address: "localhost:3306"
+  name: mahjong
+  maxIdleConns: 10
+  maxOpenConns: 20
+serverList:
+  - mame: router
+    address: "localhost:9010"
+tableFiles: testdata/tables
+scriptFiles: testdata/scripts

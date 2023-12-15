@@ -2,12 +2,15 @@ package cache
 
 import (
 	"context"
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"reflect"
 	"regexp"
 	"time"
 
 	"gofishing-game/internal/dbo"
+	"gofishing-game/internal/env"
 	"gofishing-game/internal/pb"
 
 	"github.com/guogeer/quasar/log"
@@ -19,6 +22,15 @@ var matchIPs = regexp.MustCompile(`[0-9.]+`)
 
 type Cache struct {
 	pb.UnimplementedCacheServer
+}
+
+var tokenKey = "lolbye2023" + env.Config().Sign
+
+func generateToken(uid int) string {
+	sign := fmt.Sprintf("%s_%d", tokenKey, uid)
+	sum := md5.Sum([]byte(sign))
+	hexSum := hex.EncodeToString(sum[:])
+	return hexSum
 }
 
 func (cc *Cache) EnterGame(ctx context.Context, req *pb.Request) (*pb.EnterGameResp, error) {

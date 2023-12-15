@@ -4,15 +4,13 @@
 # grpc
 internal/pb/*.pb.go
 
-main/log/
-main/*_server
-main/nohup.out
-main/tables.zip
-main/*_robot
-main/*.exe
-main/*test*
-main/config.xml
-main/*.log
+log/
+nohup.out
+tables.zip
+*_server
+*_robot
+*.exe
+config.xml
 
 *.swp
 

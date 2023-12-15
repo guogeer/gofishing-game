@@ -107,7 +107,7 @@ func (cc *Cache) QueryDictValue(ctx context.Context, req *pb.DictValue) (*pb.Dic
 }
 
 // 更新字典
-func (cc *Cache) AddDictValue(ctx context.Context, req *pb.DictValue) (*pb.DictValue, error) {
+func (cc *Cache) UpdateDictValue(ctx context.Context, req *pb.DictValue) (*pb.DictValue, error) {
 	db := mpool.Get()
 	resp := &pb.DictValue{Key: req.Key}
 	db.Exec("insert ignore into dict(`key`,`value`) values(?,?)", req.Key, req.Value)

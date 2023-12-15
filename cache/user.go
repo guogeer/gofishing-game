@@ -2,25 +2,12 @@ package cache
 
 import (
 	"context"
-	"crypto/md5"
-	"encoding/hex"
-	"fmt"
 
 	"gofishing-game/internal/dbo"
-	"gofishing-game/internal/env"
 	"gofishing-game/internal/pb"
 
 	"github.com/guogeer/quasar/util"
 )
-
-var tokenKey = "lolbye2023" + env.Config().Sign
-
-func generateToken(uid int) string {
-	sign := fmt.Sprintf("%s_%d", tokenKey, uid)
-	sum := md5.Sum([]byte(sign))
-	hexSum := hex.EncodeToString(sum[:])
-	return hexSum
-}
 
 func (cc *Cache) queryUserInfo(ctx context.Context, uid int32) (*pb.UserInfo, error) {
 	db := dbo.Get()

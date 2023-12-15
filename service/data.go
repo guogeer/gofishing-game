@@ -218,6 +218,6 @@ func (dict *serviceDict) Add(key string, value any) {
 	dict.values[key] = value
 }
 
-func AddDictValue(key string, value any) {
+func UpdateDictValue(key string, value any) {
 	gServiceDict.Add(key, value)
 }

@@ -42,7 +42,7 @@ service Cache {
 
 	// 字典
 	rpc QueryDictValue(DictValue) returns (DictValue) {}
-	rpc AddDictValue(DictValue) returns (DictValue) {}
+	rpc UpdateDictValue(DictValue) returns (DictValue) {}
 
 	// 邮件
 	rpc GetMailList(MailReq) returns (MailResp) {}
