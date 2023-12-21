@@ -1,12 +1,11 @@
 package roomutil
 
 import (
+	"slices"
 	"strconv"
 	"strings"
 	"time"
 
-	"gofishing-game/internal"
-	"gofishing-game/internal/gameutils"
 	"gofishing-game/service"
 
 	"github.com/guogeer/quasar/cmd"
@@ -20,19 +19,9 @@ var gSubGames map[int]*subGame // 所有的场次
 const NoSeat = -1
 
 const (
-	RoomStatusFree = iota
-	_
+	_                 = iota
 	RoomStatusPlaying // 游戏中
 )
-
-func GetShowTime(deadline time.Time) int {
-	d := time.Until(deadline)
-	sec := int(d.Seconds() - gameutils.MaxDelayDuration.Seconds())
-	if sec < 0 {
-		sec = 0
-	}
-	return sec
-}
 
 type subGame struct {
 	Id         int
@@ -75,7 +64,6 @@ func updateOnline() {
 		onlines = append(onlines, one)
 	}
 	cmd.Forward("hall", "FUNC_UpdateOnline", cmd.M{"Games": onlines})
-	// log.Infof("update user online: %d", len(gAllPlayers))
 }
 
 type greatWorld interface {
@@ -100,7 +88,7 @@ func LoadGames(w RoomWorld) {
 
 		var name string
 		for _, sname := range servers {
-			if internal.IndexArrayFunc(tags, func(i int) bool { return tags[i] == sname }) >= 0 {
+			if slices.Index(tags, sname) >= 0 {
 				name = sname
 				break
 			}

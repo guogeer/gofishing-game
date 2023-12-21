@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"math/rand"
 	"net"
 	"os"
 	"os/signal"
@@ -74,7 +73,7 @@ func Start() {
 	})
 
 	log.Infof("game %s start ok...", GetName())
-	rand.Seed(time.Now().Unix())
+
 	for {
 		select {
 		default:

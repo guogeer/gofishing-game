@@ -31,7 +31,7 @@ func NewRoom(subId int, CustomRoom CustomRoom) *Room {
 	return &Room{
 		SubId:       subId,
 		allPlayers:  make(map[int]*service.Player),
-		Status:      RoomStatusFree,
+		Status:      0,
 		customRoom:  CustomRoom,
 		restartTime: -1,
 		cardSet:     cardutil.NewCardSet(),
@@ -44,11 +44,6 @@ func (room *Room) GetAllPlayers() []*service.Player {
 		players = append(players, player)
 	}
 	return players
-}
-
-// 房间倒计时
-func (room *Room) GetShowTime(deadline time.Time) int {
-	return GetShowTime(deadline)
 }
 
 func (room *Room) CardSet() *cardutil.CardSet {
@@ -95,6 +90,6 @@ func (room *Room) SetRestartTime(d time.Duration) {
 }
 
 func (room *Room) GameOver() {
-	room.Status = RoomStatusFree
+	room.Status = 0
 	room.CardSet().Shuffle()
 }

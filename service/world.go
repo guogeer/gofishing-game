@@ -16,6 +16,14 @@ import (
 	"github.com/guogeer/quasar/util"
 )
 
+var (
+	playerObjectPool []*Player          // 玩家对象缓存
+	gGatewayPlayers  map[string]*Player // 关联网络连接
+	gAllPlayers      map[int]*Player    // 所有玩家
+
+	defaultWorld World
+)
+
 // 客户端显示在线
 type ClientOnline struct {
 	Online     int
@@ -43,14 +51,6 @@ type World interface {
 	NewPlayer() *Player
 	GetName() string
 }
-
-var (
-	playerObjectPool []*Player          // 玩家对象缓存
-	gGatewayPlayers  map[string]*Player // 关联网络连接
-	gAllPlayers      map[int]*Player    // 所有玩家
-
-	defaultWorld World
-)
 
 func GetWorld() World {
 	return defaultWorld
