@@ -1,4 +1,4 @@
-package roomutil
+package roomutils
 
 // 2018-01-10
 // 房间内玩家
@@ -74,6 +74,10 @@ func (obj *RoomObj) OnLeave() {
 	delete(room.allPlayers, obj.player.Id)
 	room.Broadcast("Leave", errcode.Ok, obj.player.Id)
 	obj.room = nil
+}
+
+func (obj *RoomObj) Room() *Room {
+	return obj.room
 }
 
 func (obj *RoomObj) CustomRoom() CustomRoom {

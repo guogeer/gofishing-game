@@ -9,54 +9,23 @@ import "internal/pb/hall.proto";
 import "internal/pb/common.proto";
 import "internal/pb/stat.proto";
 
-message UserInfo {
-  int32 UId = 1;
-  string Name = 2;
-  string Address = 3;
-  string Account = 4;
-  string Password = 5;
-  string Plate = 6;
-  string OpenId = 7;
-  string ChanId = 9;
-  string Nickname = 10;
-  int32 Sex = 11;
-  int32 VIP = 12;
-  string Icon = 13;
-  string Imsi = 14;
-  string Imei = 15;
-  string Mac = 16;
-  string Phone = 17;
-  string OS = 18;
-  string NetMode = 19;
-  string Version = 20;
-  string PhoneBrand = 21;
-  string NewPassword = 22;
-  string Method = 23;
-  string IDFA = 24; // IOS设备标识
-  int32 SubId = 25;
-  string IP = 26;
-  int32 IPLimit = 27;
-  int32 IPLimitPerDay = 28;
-  string Token = 30;
-  int32 Level = 31;
-  string CreateTime = 34;
-  string ServerName = 35;
-  string Email = 36;
-	string PlateIcon = 37;
+
+
+message userInfo {
 }
 
-message TableConfig {
+message tableConfig {
   string name = 1;
   string content = 2;
   int32 version = 3;
 }
 
-message ScriptFile {
+message scriptFile {
   string name = 1;
   string body = 2;
 }
 
-message Request {
+message request {
   int32 UId = 1;
   int32 roomId = 2;
   string name = 3;
@@ -75,17 +44,16 @@ message Response {
   string msg = 2;
   int64 id = 3;
   string data = 4;
-  int32 UId = 5;
+  int32 uid = 5;
 }
 
 message EnterGameReq {
-  int32 UId = 1;
-  int32 SubId = 2;
+  int32 uid = 1;
+  int32 subId = 2;
 }
 
 message Notify {
-  int32 Mails = 1;
-  int32 LongTimeCards = 2; // 长线收集卡片
+  int32 mails = 1;
 }
 
 message EnterGameResp {
@@ -120,15 +88,15 @@ message GlobalBin {
 // 离线物品待合并
 message OfflineBin {
   // int32 OfflineItemPos = 1; // 离线物品最大位移
-  repeated Item Items = 2;
+  repeated item Items = 2;
 }
 
 message UserBin {
-  HallBin Hall = 1;       //大厅数据
-  GlobalBin Global = 2;   //全局数据
-  OfflineBin Offline = 3; //离线数据，待合并数据
-  RoomBin Room = 5;       //房间数据
-  StatBin Stat = 6;       // 统计数据
+  hallBin Hall = 1;       //大厅数据
+  globalBin Global = 2;   //全局数据
+  offlineBin Offline = 3; //离线数据，待合并数据
+  roomBin Room = 5;       //房间数据
+  statBin Stat = 6;       // 统计数据
 }
 
 message RoomBin {

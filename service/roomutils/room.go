@@ -1,4 +1,4 @@
-package roomutil
+package roomutils
 
 import (
 	"slices"

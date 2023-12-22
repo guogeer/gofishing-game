@@ -1,4 +1,4 @@
-package roomutil
+package roomutils
 
 // 2018-01-10
 // 房间
@@ -20,11 +20,12 @@ type CustomRoom interface {
 
 type Room struct {
 	SubId       int
-	allPlayers  map[int]*service.Player
 	Status      int
 	customRoom  CustomRoom
 	restartTime time.Duration
 	cardSet     *cardutil.CardSet // 牌堆
+
+	allPlayers map[int]*service.Player
 }
 
 func NewRoom(subId int, CustomRoom CustomRoom) *Room {

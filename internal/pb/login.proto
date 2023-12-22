@@ -6,29 +6,31 @@ package pb;
 
 option go_package=".;pb";
 
-// 账号信息
 message AccountInfo {
-	int32 UId = 1;
-	string Plate = 2;
-	string OpenId = 3;
-	string Method = 4;
-	string NewPassword = 5;
-	string ChanId = 9;
-	string Nickname = 10;
-	int32 Sex = 11;
-	string Icon = 13;
-	string Imsi = 14;
-	string Imei = 15;
-	string Mac = 16;
-	string Phone = 17;
-	string OS = 18;
-	string NetMode = 19;
-	string Version = 20;
-	string PhoneBrand = 21;
-	string IDFA = 24; // IOS设备标识
-	int32 SubId = 25;
-	string IP = 26;
-	string PlateIcon = 30;
+  int32 uid = 1;
+  string address = 3;
+  string account = 4;
+  string password = 5;
+  string plate = 6;
+  string openId = 7;
+  string chanId = 9;
+  string nickname = 10;
+  int32 sex = 11;
+  int32 vip = 12;
+  string icon = 13;
+  string imsi = 14;
+  string imei = 15;
+  string mac = 16;
+  string phone = 17;
+  string osVersion = 18;
+  string netMode = 19;
+  string version = 20;
+  string phoneBrand = 21;
+  string iosIDFA = 24; // IOS设备标识
+  int32 subId = 25;
+  string ip = 26;
+  string email = 36;
+  string plateIcon = 37;
 }
 
 message CreateAccountReq {
@@ -42,18 +44,17 @@ message CreateAccountResp {
 }
 
 message LoginParams {
-	string DistinctId = 1;
-	double TimeZone = 2;
+	string distinctId = 1;
+	double timeZone = 2;
 }
 
 message LoginParamsReq {
-	int32 UId = 1;
-	LoginParams Params = 2;
+	int32 uid = 1;
+	LoginParams params = 2;
 }
 
 message BindAccountReq {
-	string ReserveOpenId = 1;
-	string AddPlate = 2;
-	string AddOpenId = 3;
-	bool IsReward = 4;
+	string reserveOpenId = 1;
+	string addPlate = 2;
+	string addOpenId = 3;
 }
