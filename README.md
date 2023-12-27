@@ -18,3 +18,14 @@
 	2.1、protobuf消息名
 3、下划线
 	3.1、SQL表名、字段、索引等
+
+### 部署
+
+1、初始化grpc脚本
+```sh
+go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28
+go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
+export PATH="$PATH:$(go env GOPATH)/bin"
+sudo apt install protobuf-compiler
+protoc --proto_path=./ --go-grpc_out=./ --go-grpc_opt=paths=source_relative --go_out=./ --go_opt=paths=source_relative internal/pb/*.proto
+```
