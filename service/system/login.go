@@ -20,7 +20,7 @@ func (obj *loginObj) BeforeEnter() {
 }
 
 func (obj *loginObj) Load(data any) {
-	obj.params = obj.player.EnterReq().Data.LoginParams
+	obj.params = obj.player.EnterReq().LoginParams
 	if obj.params == nil {
 		obj.params = &pb.LoginParams{}
 	}

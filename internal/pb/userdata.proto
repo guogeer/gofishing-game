@@ -1,0 +1,82 @@
+
+
+syntax = "proto3";
+
+package pb;
+
+option go_package = ".;pb";
+
+message CD {
+	int64 expireMs = 1; // 过期时间，单位ms
+	int64 periodMs = 2; // 周期单位ms
+}
+
+message SimpleUserInfo {
+	int32 uid = 1;
+	string nickname = 2;
+	string icon = 3;
+	int32 vip = 4;
+	int32 sex = 5;
+	int32 level = 6;
+}
+
+message UserInfo {
+    int32 uid = 1;
+    string token = 2;
+    string serverName = 3;
+    string createTime = 4;
+    string chanId = 5;
+    string openId = 6;
+	int32 subId = 7;
+}
+
+
+message Item {
+	int32 id = 1;
+	int64 num = 2;
+	int64 balance = 3;
+	int64 expireTs = 4;
+	int32 updateTs = 5;
+}
+
+message Task {
+	int32 id = 1;
+	int64 num = 2; // 当前进度
+	int64 total = 3; // 总进度
+	int32 status = 4;
+}
+
+message GlobalBin {
+	int64 lastDayUpdateTs = 1; // 每日数据上次更新时间
+	repeated Item items = 2; // 物品
+	int32 level = 3;         // 等级
+	SignIn signIn = 4; // 签到数据
+	repeated Task tasks = 5;
+}
+
+// 离线物品待合并
+message OfflineBin {
+  repeated Item items = 2;
+}
+
+message UserBin {
+  HallBin hall = 1;       // 大厅数据
+  GlobalBin global = 2;   // 全局数据
+  OfflineBin offline = 3; // 离线数据，待合并数据
+  RoomBin room = 4;       // 房间数据
+}
+
+message RoomBin {
+}
+
+// 大厅的数据
+message HallBin {
+  string loginClientVersion = 4; // 上次登陆的版本
+  int64 lastMassMail = 10; // 上次群发邮件的ID
+}
+
+// 签到
+message SignIn {
+  int32 drawState = 7;
+  int64 drawTs = 8;
+}

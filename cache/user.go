@@ -9,24 +9,21 @@ import (
 	"github.com/guogeer/quasar/util"
 )
 
-func (cc *Cache) queryUserInfo(ctx context.Context, uid int32) (*pb.UserInfo, error) {
+func (cc *Cache) QueryUserInfo(ctx context.Context, req *pb.QueryUserInfoReq) (*pb.QueryUserInfoResp, error) {
 	db := dbo.Get()
+
+	uid := req.Uid
 	userInfo := &pb.UserInfo{
-		UId:   uid,
+		Uid:   uid,
 		Token: generateToken(int(uid)),
 	}
 
 	db.QueryRow("select account_info,create_time from user_info where uid=?", uid).Scan(dbo.JSON(userInfo), &userInfo.CreateTime)
 	db.QueryRow("select open_id from user_plate where uid=?", uid).Scan(&userInfo.OpenId)
-	return userInfo, nil
+	return &pb.QueryUserInfoResp{Info: userInfo}, nil
 }
 
-func (cc *Cache) GetUserInfo(ctx context.Context, req *pb.Request) (*pb.UserInfo, error) {
-	uid := req.UId
-	return cc.queryUserInfo(ctx, uid)
-}
-
-func (cc *Cache) SetUserInfo(ctx context.Context, req *pb.EditableUserInfo) (*pb.Response, error) {
+func (cc *Cache) SetUserInfo(ctx context.Context, req *pb.SetUserInfoReq) (*pb.EmptyResp, error) {
 	db := dbo.Get()
 	db.Exec(`update user_info set account_info=json_set(account_info,
 		'$.Sex',?,
@@ -34,21 +31,21 @@ func (cc *Cache) SetUserInfo(ctx context.Context, req *pb.EditableUserInfo) (*pb
 		'$.Icon',?,
 		'$.Email',?
 		) where uid=?`,
-		req.Sex, req.Nickname, req.Icon, req.Email, req.UId)
-	return &pb.Response{}, nil
+		req.Sex, req.Nickname, req.Icon, req.Email, req.Uid)
+	return &pb.EmptyResp{}, nil
 }
 
-func (cc *Cache) GetSimpleUserInfo(ctx context.Context, req *pb.Request) (*pb.SimpleUserInfo, error) {
+func (cc *Cache) QuerySimpleUserInfo(ctx context.Context, req *pb.QuerySimpleUserInfoReq) (*pb.QuerySimpleUserInfoResp, error) {
 	db := dbo.Get()
-	simpleInfo := &pb.SimpleUserInfo{UId: req.UId}
+	simpleInfo := &pb.SimpleUserInfo{Uid: req.Uid}
 	if req.OpenId != "" {
-		db.QueryRow("select uid from user_plate where open_id=?", req.OpenId).Scan(&simpleInfo.UId)
+		db.QueryRow("select uid from user_plate where open_id=?", req.OpenId).Scan(&simpleInfo.Uid)
 	}
-	userInfo, _ := cc.queryUserInfo(ctx, simpleInfo.UId)
+	userInfo, _ := cc.QueryUserInfo(ctx, &pb.QueryUserInfoReq{Uid: simpleInfo.Uid})
 	util.DeepCopy(simpleInfo, userInfo)
 
 	globalBin := &pb.GlobalBin{}
-	db.QueryRow("select bin from user_bin where uid=? and `class`=?", simpleInfo.UId, "global").Scan(dbo.PB(globalBin))
+	db.QueryRow("select bin from user_bin where uid=? and `class`=?", simpleInfo.Uid, "global").Scan(dbo.PB(globalBin))
 	simpleInfo.Level = globalBin.Level
-	return simpleInfo, nil
+	return &pb.QuerySimpleUserInfoResp{Info: simpleInfo}, nil
 }

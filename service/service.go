@@ -29,7 +29,7 @@ func saveAllPlayers() {
 	for _, player := range gAllPlayers {
 		bin := &pb.UserBin{}
 		player.dataObj.saveAll(bin)
-		rpc.CacheClient().SaveBin(context.Background(), &pb.SaveBinReq{UId: int32(player.Id), Bin: bin})
+		rpc.CacheClient().SaveBin(context.Background(), &pb.SaveBinReq{Uid: int32(player.Id), Bin: bin})
 		log.Infof("player %d force save data", player.Id)
 	}
 	log.Infof("server %s quit and save data cost %v", GetName(), time.Since(startTime))

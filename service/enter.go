@@ -51,8 +51,9 @@ func init() {
 }
 
 type enterRequest struct {
-	Auth *pb.AuthResp
-	Data *pb.EnterGameResp `json:"-"`
+	Auth        *pb.AuthResp
+	Data        *pb.EnterGameResp `json:"-"`
+	LoginParams *pb.LoginParams   `json:"-"`
 
 	UId         int
 	SubId       int // 房间有场次概念
@@ -183,8 +184,9 @@ func (eq *enterQueue) LoadAndEnter(uid int) {
 	ip, subId, token := args.clientIP, args.SubId, args.Token
 
 	go func() {
-		var userData *pb.EnterGameResp
-		auth, err := rpc.CacheClient().Auth(context.Background(), &pb.AuthReq{UId: int32(uid), IP: ip})
+		var enterGameResp *pb.EnterGameResp
+		var loginParamsResp *pb.QueryLoginParamsResp
+		auth, err := rpc.CacheClient().Auth(context.Background(), &pb.AuthReq{Uid: int32(uid), Ip: ip})
 		if err != nil {
 			return
 		}
@@ -195,15 +197,17 @@ func (eq *enterQueue) LoadAndEnter(uid int) {
 				cmd.Request(auth.ServerName, "FUNC_Leave", cmd.M{"UId": uid})
 			}
 
-			rpc.CacheClient().Visit(context.Background(), &pb.VisitReq{UId: int32(uid), SubId: int32(subId), ServerName: GetName()})
+			rpc.CacheClient().Visit(context.Background(), &pb.VisitReq{Uid: int32(uid), SubId: int32(subId), ServerName: GetName()})
 			// token相同，并且玩家不在游戏中
 			if token == auth.Token {
-				userData, _ = rpc.CacheClient().EnterGame(context.Background(), &pb.Request{UId: int32(uid)})
+				enterGameResp, _ = rpc.CacheClient().EnterGame(context.Background(), &pb.EnterGameReq{Uid: int32(uid)})
+				loginParamsResp, _ = rpc.CacheClient().QueryLoginParams(context.TODO(), &pb.QueryLoginParamsReq{Uid: int32(uid)})
 			}
 		}
 		rpc.OnResponse(func() {
 			if args, ok := eq.m[uid]; ok {
-				args.Data = userData
+				args.Data = enterGameResp
+				args.LoginParams = loginParamsResp.Params
 				args.Auth = auth
 				eq.Pop(args)
 			}
@@ -249,7 +253,7 @@ func (eq *enterQueue) Pop(req *enterRequest) {
 		delete(gGatewayPlayers, ss.Id)
 		go func() {
 			if e != errEnterOtherGame {
-				rpc.CacheClient().Visit(context.Background(), &pb.VisitReq{UId: int32(uid)})
+				rpc.CacheClient().Visit(context.Background(), &pb.VisitReq{Uid: int32(uid)})
 			}
 			WriteMessage(ss, req.ServerName, "Enter", cmd.M{"Key": e, "Msg": e.Message(), "SubId": mySubId})
 		}()

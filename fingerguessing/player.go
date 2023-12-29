@@ -32,7 +32,7 @@ func (obj *fingerGuessingPlayer) BeforeEnter() {
 }
 
 func (obj *fingerGuessingPlayer) Load(data interface{}) {
-	bin := data.(*bin.UserBin)
+	// bin := data.(*bin.UserBin)
 	// obj.winPlay = bin.
 }
 

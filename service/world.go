@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"gofishing-game/internal"
 	"gofishing-game/internal/gameutils"
 	"gofishing-game/internal/pb"
 	"gofishing-game/internal/rpc"
@@ -154,7 +155,7 @@ func AddItems(uid int, itemLog *gameutils.ItemLog) {
 		}
 		AddSomeItemLog(uid, itemLog)
 		go func() {
-			rpc.CacheClient().SaveBin(context.Background(), &pb.SaveBinReq{UId: int32(uid), Bin: bin})
+			rpc.CacheClient().SaveBin(context.Background(), &pb.SaveBinReq{Uid: int32(uid), Bin: bin})
 		}()
 	}
 }
@@ -184,15 +185,13 @@ func AddSomeItemLog(uid int, itemLog *gameutils.ItemLog) {
 
 	itemLog.Way = itemLog.Kind + "." + itemLog.Way
 	// 玩家日志按时序更新
-	req := &pb.ItemReq{
-		UId:      int32(uid),
-		Items:    pbItems,
-		Uuid:     string(itemLog.Uuid),
-		Way:      itemLog.Way,
-		Params:   &pb.ItemParams{},
-		Deadline: time.Now().Unix(),
+	req := &pb.AddSomeItemLogReq{
+		Uid:        int32(uid),
+		Items:      pbItems,
+		Uuid:       string(itemLog.Uuid),
+		Way:        itemLog.Way,
+		CreateTime: time.Now().Format(internal.LongDateFmt),
 	}
-	util.DeepCopy(req.Params, itemLog)
 	go func() {
 		rpc.CacheClient().AddSomeItemLog(context.Background(), req)
 	}()

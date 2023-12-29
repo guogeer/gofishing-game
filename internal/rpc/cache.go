@@ -91,7 +91,7 @@ func CacheClient() pb.CacheClient {
 */
 
 func loadRemoteTables() {
-	stream, err := CacheClient().LoadAllTable(context.Background(), &pb.Request{})
+	stream, err := CacheClient().LoadAllTable(context.Background(), &pb.EmptyReq{})
 	if err != nil {
 		log.Fatalf("load all table config %v", err)
 	}
@@ -119,14 +119,14 @@ type tableArgs struct {
 func funcEffectConfigTable(ctx *cmd.Context, data any) {
 	args := data.(*tableArgs)
 	for _, name := range args.Tables {
-		table, err := CacheClient().LoadTable(context.Background(), &pb.Request{Name: name})
+		resp, err := CacheClient().LoadTable(context.Background(), &pb.LoadTableReq{Name: name})
 		if err != nil {
 			log.Errorf("load table %s error: %v", name, err)
 			return
 		}
 
 		log.Info("effect config table", name)
-		log.Info(table.Content)
-		config.LoadTable(name, []byte(table.Content))
+		log.Info(resp.File.Content)
+		config.LoadTable(name, []byte(resp.File.Content))
 	}
 }

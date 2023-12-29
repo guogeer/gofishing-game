@@ -39,7 +39,6 @@ func init() {
 	// internal call
 	cmd.Bind(FUNC_UpdateOnline, (*updateOnlineArgs)(nil))
 	cmd.Bind(FUNC_SyncOnline, (*Args)(nil))
-	cmd.Bind(FUNC_UpdateClientVersion, (*Args)(nil))
 	cmd.Bind(S2C_GetBestGateway, (*Args)(nil)) // 网关同步
 	cmd.BindWithName("FUNC_DeleteAccount", syncDeleteAccount, (*Args)(nil))
 	cmd.BindWithName("FUNC_UpdateMaintain", funcUpdateMaintain, (*Args)(nil))
@@ -70,16 +69,12 @@ func S2C_GetBestGateway(ctx *cmd.Context, data any) {
 	w.currentBestGateway = args.Address
 }
 
-func FUNC_UpdateClientVersion(ctx *cmd.Context, data any) {
-	GetWorld().updateClientVersion()
-}
-
 // 同步删除账号
 func syncDeleteAccount(ctx *cmd.Context, data any) {
 	args := data.(*Args)
 	log.Debug("gm delete account", args.UId)
-	rpc.CacheClient().ClearAccount(context.Background(), &pb.AccountInfo{
-		UId: int32(args.UId),
+	rpc.CacheClient().ClearAccount(context.Background(), &pb.ClearAccountReq{
+		Uid: int32(args.UId),
 	})
 	ctx.Out.WriteJSON("FUNC_DeleteAccount", errcode.Ok)
 }

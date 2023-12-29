@@ -22,11 +22,35 @@ type Mail struct {
 }
 
 // 邮件
-func (cc *Cache) GetMailList(ctx context.Context, req *pb.MailReq) (*pb.MailResp, error) {
+func (cc *Cache) QuerySomeMail(ctx context.Context, req *pb.QuerySomeMailReq) (*pb.QuerySomeMailResp, error) {
 	db := dbo.Get()
 
-	mails := make([]*pb.Mail, 0, 4)
-	rs, _ := db.Query("select id,`type`,recv_uid,`data`,`status`,send_time from mail where `type`=? and recv_uid=? and `status`=0 order by id desc limit ?", req.Type, req.RecvId, req.Num)
+	var mails []*pb.Mail
+	var params []any
+	where := " where 1=1"
+	if req.Id > 0 {
+		where += " and `id`=?"
+		params = append(params, req.Id)
+	}
+	if req.Type > 0 {
+		where += " and `type`=?"
+		params = append(params, req.Type)
+	}
+	if req.RecvId > 0 {
+		where += " and `recv_id`=?"
+		params = append(params, req.RecvId)
+	}
+	if req.Status > 0 {
+		where += " and `status`=?"
+		params = append(params, req.Status)
+	}
+	where += " order by id desc"
+	if req.Num > 0 {
+		where += " limit ?"
+		params = append(params, req.Num)
+	}
+
+	rs, _ := db.Query("select id,`type`,recv_uid,`data`,`status`,send_time from mail"+where, params)
 	for rs != nil && rs.Next() {
 		mail := &pb.Mail{}
 		simpleMail := &Mail{}
@@ -34,10 +58,10 @@ func (cc *Cache) GetMailList(ctx context.Context, req *pb.MailReq) (*pb.MailResp
 		util.DeepCopy(mail, simpleMail)
 		mails = append(mails, mail)
 	}
-	return &pb.MailResp{List: mails}, nil
+	return &pb.QuerySomeMailResp{Mails: mails}, nil
 }
 
-func (cc *Cache) SendMail(ctx context.Context, req *pb.MailReq) (*pb.MailResp, error) {
+func (cc *Cache) SendMail(ctx context.Context, req *pb.SendMailReq) (*pb.SendMailResp, error) {
 	db := dbo.Get()
 
 	mail := req.Mail
@@ -52,17 +76,20 @@ func (cc *Cache) SendMail(ctx context.Context, req *pb.MailReq) (*pb.MailResp, e
 	if rs != nil {
 		insertId, _ = rs.LastInsertId()
 	}
-	return &pb.MailResp{Id: insertId}, nil
+	return &pb.SendMailResp{Id: insertId}, nil
 }
 
-func (cc *Cache) OperateMail(ctx context.Context, req *pb.MailReq) (*pb.MailResp, error) {
+func (cc *Cache) OperateMail(ctx context.Context, req *pb.OperateMailReq) (*pb.OperateMailResp, error) {
 	db := dbo.Get()
 
 	// 邮件状态只能递增
-	mail := &pb.Mail{}
-	simpleMail := &Mail{}
-	db.Exec("update mail set `status`=? where id=? and `status`=0 and recv_uid=?", req.Status, req.Id, req.RecvId)
-	db.QueryRow("select id,`type`,recv_uid,`data`,`status`,send_time from mail where id=?", req.Id).Scan(&mail.Id, &mail.Type, &mail.RecvId, dbo.JSON(simpleMail), &mail.Status, &mail.SendTime)
-	util.DeepCopy(mail, simpleMail)
-	return &pb.MailResp{Mail: mail}, nil
+	result, err := db.Exec("update mail set `status`=? where id=? and `status`=?", req.NewStatus, req.Id, req.CurStatus)
+	if err != nil {
+		return nil, err
+	}
+	num, err := result.RowsAffected()
+	if err != nil {
+		return nil, err
+	}
+	return &pb.OperateMailResp{EffectRows: int32(num)}, nil
 }

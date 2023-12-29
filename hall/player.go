@@ -24,7 +24,6 @@ func (ply *hallPlayer) TryLeave() errcode.Error {
 
 func (ply *hallPlayer) BeforeEnter() {
 	ply.mailObj.BeforeEnter()
-	ply.checkClientVersion()
 }
 
 func (ply *hallPlayer) AfterEnter() {
@@ -52,31 +51,4 @@ func (ply *hallPlayer) Save(pdata any) {
 		LoginClientVersion: ply.loginClientVersion,
 	}
 	ply.mailObj.Save(pdata)
-}
-
-func (ply *hallPlayer) checkClientVersion() {
-	w := GetWorld()
-	clientVersion := ply.EnterReq().Auth.ClientVersion
-
-	if ply.loginClientVersion == "" {
-		ply.loginClientVersion = clientVersion
-	}
-
-	if ply.loginClientVersion == clientVersion {
-		return
-	}
-
-	version := ply.loginClientVersion
-	upgradeClientVersion := w.getClientVersion(version)
-	if upgradeClientVersion == nil {
-		return
-	}
-
-	if len(upgradeClientVersion.Reward) > 0 {
-		ply.SetClientValue("UpdateClientReward", map[string]any{
-			"ChangeLog": upgradeClientVersion.ChangeLog,
-			"Reward":    upgradeClientVersion.Reward,
-			"Version":   upgradeClientVersion.Version,
-		})
-	}
 }

@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"gofishing-game/internal"
 	"gofishing-game/internal/gameutils"
 	"gofishing-game/service"
 
@@ -74,32 +73,11 @@ func (obj *shopObj) OnAddItems(itemLog *gameutils.ItemLog) {
 	config.Scan("Shop", itemLog.ShopId, "Group,ShopsPrice", &group, &price)
 	itemLog.ClientWay = strings.Join([]string{"pay", group}, "_")
 
-	now := time.Now()
-	statData := GetStatObj(p).Data()
-	statData.PayNum += price
-	statData.LastPayTime = now.Format(internal.LongDateFmt)
-
-	dayStat := GetStatObj(p).GetDayStat()
-	dayStat.PayNum += price
-	if itemLog.IsFirstPay {
-		firstPay = price
-		statData.FirstPayNum = price
-		dayStat.FirstPayNum = price
-	}
-
-	if !itemLog.IsTestPay {
-		dayStat.RealPayNum += price
-		if itemLog.IsFirstPay {
-			dayStat.RealFirstPayNum += price
-		}
-	}
-
 	data := cmd.M{
 		"ShopId":   itemLog.ShopId,
 		"OrderId":  itemLog.OrderId,
 		"PaySDK":   itemLog.PaySDK,
 		"FirstPay": firstPay,
-		"TotalPay": statData.PayNum,
 	}
 
 	p.WriteJSON("PayOk", data)

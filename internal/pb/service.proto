@@ -1,0 +1,234 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package=".;pb";
+
+import "internal/pb/login.proto";
+import "internal/pb/userdata.proto";
+
+service Cache {
+	rpc EnterGame(EnterGameReq) returns (EnterGameResp) {}
+	rpc CreateAccount(CreateAccountReq) returns (CreateAccountResp) {}
+	rpc UpdateLoginParams(UpdateLoginParamsReq) returns (EmptyResp) {}
+	rpc QueryLoginParams(QueryLoginParamsReq) returns (QueryLoginParamsResp) {}
+	rpc BindPlate(BindPlateReq) returns (EmptyResp) {}
+	rpc QueryUserInfo(QueryUserInfoReq) returns (QueryUserInfoResp) {}
+	rpc QuerySimpleUserInfo(QuerySimpleUserInfoReq) returns (QuerySimpleUserInfoResp) {}
+	rpc Auth(AuthReq) returns (AuthResp) {}
+	rpc LoadBin(LoadBinReq) returns (LoadBinResp) {}
+	rpc SaveBin(SaveBinReq) returns (EmptyResp) {}
+	rpc Visit(VisitReq) returns (EmptyResp) {}
+
+	// log
+	rpc AddLoginLog(AddLoginLogReq) returns (EmptyResp) {}
+	rpc AddLeaveLog(AddLeaveLogReq) returns (EmptyResp) {}
+
+	// 配置
+	rpc LoadTable(LoadTableReq) returns (LoadTableResp) {}
+	rpc LoadAllTable(EmptyReq) returns (stream TableConfig) {}
+	rpc LoadScript(LoadScriptReq) returns (LoadScriptResp) {}
+	rpc LoadAllScript(EmptyReq) returns (stream ScriptFile) {}
+
+	// 清理账号
+	rpc ClearAccount(ClearAccountReq) returns (EmptyResp) {}
+	rpc BindAccount(BindAccountReq) returns (BindAccountResp) {}
+
+	// 批量增加物品日志
+	rpc AddSomeItemLog(AddSomeItemLogReq) returns (EmptyResp){}
+	rpc AddSomeItem(AddSomeItemReq) returns (EmptyResp){}
+
+	// 字典
+	rpc QueryDict(QueryDictReq) returns (QueryDictResp) {}
+	rpc UpdateDict(UpdateDictReq) returns (EmptyResp) {}
+
+	// 邮件
+	rpc QuerySomeMail(QuerySomeMailReq) returns (QuerySomeMailResp) {}
+	rpc OperateMail(OperateMailReq) returns (OperateMailResp) {}
+	rpc SendMail(SendMailReq) returns (SendMailResp) {}
+}
+
+message Mail {
+  int64 id = 1;
+  int32 type = 2;
+  int32 sendId = 3;
+  int32 recvId = 4;
+  string title = 5;
+  string body = 6;
+  string reward = 7;
+  int32 status = 8;
+  string sendTime = 9;
+  repeated string effectTime = 10;
+  repeated string regTime = 11;
+  repeated string loginTime = 12;
+  string clientVersion = 13;
+}
+
+message SendMailReq {
+  Mail mail = 1;
+}
+
+message SendMailResp {
+  int64 id = 1;
+}
+
+message QuerySomeMailReq {
+	int64 id = 1;
+	int32 type = 2;
+	int32 recvId = 3;
+	int32 num = 4;
+	int32 status = 5;
+}
+
+message QuerySomeMailResp {
+  repeated Mail mails = 1;
+}
+
+message OperateMailReq {
+  int64 id = 1;
+  int32 curStatus = 2;
+  int32 newStatus = 3;
+}
+
+message OperateMailResp {
+  int32 effectRows = 1;
+}
+
+message QuerySimpleUserInfoReq {
+	int32 uid = 1;
+	string openId = 2;
+}
+
+message QuerySimpleUserInfoResp {
+	SimpleUserInfo info = 1;
+}
+
+message Maintain {
+	string startTime = 1;
+	string endTime = 2;
+	string content = 3;
+	string allowList = 4;
+}
+
+message TableConfig {
+  string name = 1;
+  string content = 2;
+  int32 version = 3;
+}
+
+message ScriptFile {
+  string name = 1;
+  string body = 2;
+}
+
+message EmptyReq {
+}
+
+message EmptyResp {
+}
+
+message EnterGameReq {
+  int32 uid = 1;
+  int32 subId = 2;
+}
+
+message Notify {
+  int32 mails = 1;
+}
+
+message EnterGameResp {
+  UserInfo userInfo = 1;
+  UserBin bin = 2;
+  int32 newMailNum = 3;
+	int64 subscriptionExpireTs = 4; // 订阅过期时间
+}
+
+message SaveBinReq {
+  int32 uid = 1;
+  UserBin bin = 2;
+}
+
+message SubGame {
+  string gameName = 1;
+  string roomName = 2;
+  int32 num = 3;
+  int32 id = 4;
+  string serverName = 5;
+}
+
+message VisitReq {
+  int32 uid = 1;
+  int32 subId = 2;
+  string serverName = 3;
+}
+
+message LoadBinReq {
+  int32 uid = 1;
+}
+
+message LoadBinResp {
+  UserBin bin = 1;
+}
+
+message LoadTableReq {
+  string name = 1;
+}
+
+message LoadTableResp {
+  TableConfig file = 1;
+}
+
+message LoadScriptReq {
+  string name = 1;
+}
+
+message LoadScriptResp {
+  ScriptFile file = 1;
+}
+
+message QueryUserInfoReq {
+  int32 uid = 1;
+  string openId = 2;
+}
+
+message QueryUserInfoResp {
+  UserInfo info = 1;
+}
+
+
+message AddSomeItemReq {
+  int32 uid = 1;
+  repeated Item items = 10;
+}
+
+message AddSomeItemLogReq {
+  int32 uid = 1;
+  string way = 5;
+  string uuid = 6;
+  int32 otherId = 8;
+  int32 subId = 9;
+  repeated Item items = 10;
+  string createTime = 12;
+  bytes extra = 13;
+}
+
+message QueryDictReq {
+  string key = 1;
+}
+
+message QueryDictResp {
+  bytes value = 1;
+}
+
+message UpdateDictReq {
+  string key = 1;
+  bytes value = 2;
+}
+
+message SetUserInfoReq {
+	int32 uid = 1;
+	string nickname = 2;
+	int32 sex = 3;
+	string email = 4;
+	string icon = 5;
+}

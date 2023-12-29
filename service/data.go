@@ -85,7 +85,7 @@ func (obj *dataObj) onTime() {
 
 	bin = proto.Clone(bin).(*pb.UserBin)
 	go func() {
-		req := &pb.SaveBinReq{UId: int32(uid), Bin: bin}
+		req := &pb.SaveBinReq{Uid: int32(uid), Bin: bin}
 		rpc.CacheClient().SaveBin(context.Background(), req)
 	}()
 }
@@ -182,28 +182,28 @@ var gServiceDict serviceDict
 func (dict *serviceDict) load() {
 	dict.isLoad = true
 	for key, value := range dict.values {
-		dictValue, err := rpc.CacheClient().QueryDictValue(context.Background(), &pb.DictValue{Key: key})
+		Dict, err := rpc.CacheClient().QueryDict(context.Background(), &pb.QueryDictReq{Key: key})
 		if err != nil {
 			log.Fatalf("load service dict %s error: %v", key, err)
 		}
-		if len(dictValue.Value) == 0 {
+		if len(Dict.Value) == 0 {
 			continue
 		}
-		if err := json.Unmarshal([]byte(dictValue.Value), value); err != nil {
+		if err := json.Unmarshal([]byte(Dict.Value), value); err != nil {
 			log.Fatalf("parse service dict %s error: %v", key, err)
 		}
 	}
 }
 
 func (dict *serviceDict) save() {
-	var values []*pb.DictValue
+	var reqs []*pb.UpdateDictReq
 	for key, value := range dict.values {
 		buf, _ := json.Marshal(value)
-		values = append(values, &pb.DictValue{Key: key, Value: string(buf)})
+		reqs = append(reqs, &pb.UpdateDictReq{Key: key, Value: buf})
 	}
 	go func() {
-		for _, value := range values {
-			rpc.CacheClient().AddDictValue(context.Background(), value)
+		for _, req := range reqs {
+			rpc.CacheClient().UpdateDict(context.Background(), req)
 		}
 	}()
 }
@@ -218,6 +218,6 @@ func (dict *serviceDict) Add(key string, value any) {
 	dict.values[key] = value
 }
 
-func UpdateDictValue(key string, value any) {
+func UpdateDict(key string, value any) {
 	gServiceDict.Add(key, value)
 }

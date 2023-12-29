@@ -26,17 +26,17 @@ func init() {
 }
 
 // 加载配置表
-func (cc *Cache) LoadTable(ctx context.Context, req *pb.Request) (*pb.TableConfig, error) {
+func (cc *Cache) LoadTable(ctx context.Context, req *pb.LoadTableReq) (*pb.LoadTableResp, error) {
 	name := req.Name
 	db := mpool.Get()
 
 	data := &pb.TableConfig{Name: name}
 	err := db.QueryRow("select version,content from gm_table where name=?", name).Scan(&data.Version, &data.Content)
-	return data, err
+	return &pb.LoadTableResp{File: data}, err
 }
 
 // 加载全部配置表
-func (cc *Cache) LoadAllTable(req *pb.Request, stream pb.Cache_LoadAllTableServer) error {
+func (cc *Cache) LoadAllTable(req *pb.EmptyReq, stream pb.Cache_LoadAllTableServer) error {
 	db := mpool.Get()
 
 	rs, err := db.Query("select version,name,content from gm_table")
@@ -56,17 +56,17 @@ func (cc *Cache) LoadAllTable(req *pb.Request, stream pb.Cache_LoadAllTableServe
 }
 
 // 加载脚本
-func (cc *Cache) LoadScript(ctx context.Context, req *pb.Request) (*pb.ScriptFile, error) {
+func (cc *Cache) LoadScript(ctx context.Context, req *pb.LoadScriptReq) (*pb.LoadScriptResp, error) {
 	name := req.Name
 	db := mpool.Get()
 
-	data := &pb.ScriptFile{Name: name}
-	err := db.QueryRow("select body from gm_script where name=?", name).Scan(&data.Body)
-	return data, err
+	file := &pb.ScriptFile{Name: name}
+	err := db.QueryRow("select body from gm_script where name=?", name).Scan(&file.Body)
+	return &pb.LoadScriptResp{File: file}, err
 }
 
 // 加载全部配置表
-func (cc *Cache) LoadAllScript(req *pb.Request, stream pb.Cache_LoadAllScriptServer) error {
+func (cc *Cache) LoadAllScript(req *pb.EmptyReq, stream pb.Cache_LoadAllScriptServer) error {
 	db := mpool.Get()
 
 	rs, err := db.Query("select name,body from gm_script")
@@ -85,32 +85,18 @@ func (cc *Cache) LoadAllScript(req *pb.Request, stream pb.Cache_LoadAllScriptSer
 	return nil
 }
 
-// 获取所有的配置信息
-func (cc *Cache) GetAllClientVersion(ctx context.Context, req *pb.ClientVersion) (*pb.LastVersion, error) {
-	db := mpool.Get()
-	rows, _ := db.Query("select chan_id,version,json_value from gm_client_version")
-	var versions []*pb.WaitUpdateVersion
-	for rows != nil && rows.Next() {
-		v := &pb.WaitUpdateVersion{}
-		rows.Scan(&v.ChanId, &v.Version, dbo.JSON(v))
-		versions = append(versions, v)
-	}
-	return &pb.LastVersion{WaitUpdateVersion: versions}, nil
-}
-
 // 查询字典
-func (cc *Cache) QueryDictValue(ctx context.Context, req *pb.DictValue) (*pb.DictValue, error) {
+func (cc *Cache) QueryDict(ctx context.Context, req *pb.QueryDictReq) (*pb.QueryDictResp, error) {
 	db := mpool.Get()
-	resp := &pb.DictValue{Key: req.Key}
+	resp := &pb.QueryDictResp{}
 	db.QueryRow("select `value` from dict where `key`=?", req.Key).Scan(&resp.Value)
 	return resp, nil
 }
 
 // 更新字典
-func (cc *Cache) UpdateDictValue(ctx context.Context, req *pb.DictValue) (*pb.DictValue, error) {
+func (cc *Cache) UpdateDict(ctx context.Context, req *pb.UpdateDictReq) (*pb.EmptyResp, error) {
 	db := mpool.Get()
-	resp := &pb.DictValue{Key: req.Key}
 	db.Exec("insert ignore into dict(`key`,`value`) values(?,?)", req.Key, req.Value)
 	db.Exec("update dict set `value`=? where `key`=?", req.Value, req.Key)
-	return resp, nil
+	return &pb.EmptyResp{}, nil
 }

@@ -34,13 +34,13 @@ message AccountInfo {
 }
 
 message CreateAccountReq {
-	AccountInfo AccountInfo = 1;
+	AccountInfo info = 1;
 }
 
 message CreateAccountResp {
-	int32 UId = 1;
-	int32 NewId = 2;
-	string ChanId = 3;
+	int32 uid = 1;
+	int32 newUserId = 2;
+	string chanId = 3;
 }
 
 message LoginParams {
@@ -57,4 +57,67 @@ message BindAccountReq {
 	string reserveOpenId = 1;
 	string addPlate = 2;
 	string addOpenId = 3;
+}
+
+message BindAccountResp {
+  int32 uid = 1;
+	string reserveOpenId = 2;
+	repeated string plates = 3;
+}
+
+
+message BindPlateReq {
+  int32 uid = 1;
+  string plate = 2;
+}
+
+message BindPlateResp {
+  repeated string plates = 1;
+}
+
+message AddLoginLogReq {
+  int32 uid = 1;
+  string loginTime = 2;
+  string ip = 3;
+	string mac = 4;
+	string imei = 5;
+	string imsi = 6;
+	string chanId = 7;
+  string clientVersion = 8;
+}
+
+message AddLeaveLogReq {
+  int32 uid = 1;
+  string leaveTime = 2;
+}
+
+message ClearAccountReq {
+  int32 uid = 1;
+}
+
+message QueryLoginParamsReq {
+  int32 uid = 1;
+}
+
+message QueryLoginParamsResp {
+  LoginParams params = 1;
+}
+
+message UpdateLoginParamsReq {
+    int32 uid = 1;
+  LoginParams params = 2;
+}
+
+message AuthReq {
+  int32 uid = 1;
+  string ip = 2;
+}
+
+message AuthResp {
+  string token = 1;
+  int32 reason = 2;
+  string clientVersion = 5; // 版本
+  string loginTime = 6;     // 登陆时间
+  repeated string loginPlates = 7;
+  string serverName = 8;
 }

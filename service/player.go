@@ -119,7 +119,6 @@ func (player *Player) Enter() errcode.Error {
 	gameutils.InitNilFields(data)
 
 	util.DeepCopy(&player.UserInfo, data.UserInfo)
-	player.Phone = data.UserInfo.Phone
 	player.CreateTime = data.UserInfo.CreateTime
 
 	player.isBusy = true
@@ -314,8 +313,8 @@ func (player *Player) leaveOk() {
 
 	bin = proto.Clone(bin).(*pb.UserBin)
 	go func() {
-		rpc.CacheClient().SaveBin(context.Background(), &pb.SaveBinReq{UId: int32(uid), Bin: bin})
-		rpc.CacheClient().Visit(context.Background(), &pb.VisitReq{UId: int32(uid)})
+		rpc.CacheClient().SaveBin(context.Background(), &pb.SaveBinReq{Uid: int32(uid), Bin: bin})
+		rpc.CacheClient().Visit(context.Background(), &pb.VisitReq{Uid: int32(uid)})
 		rpc.OnResponse(func() {
 			player.isBusy = false
 			player.onLeave()

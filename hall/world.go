@@ -37,10 +37,9 @@ type buildRankItem struct {
 type hallWorld struct {
 	currentBestGateway string
 
-	onlines        map[int]service.ClientOnline
-	clientVersions []*pb.WaitUpdateVersion
-	buildRank      []buildRankItem
-	massMails      []*Mail // 系统群发的邮件
+	onlines   map[int]service.ClientOnline
+	buildRank []buildRankItem
+	massMails []*Mail // 系统群发的邮件
 
 	maintain struct {
 		StartTime, EndTime time.Time
@@ -65,17 +64,16 @@ func init() {
 	//util.NewPeriodTimer(hall.tick1m, startTime, 1*time.Minute)
 	//util.NewPeriodTimer(hall.tick1d, startTime, 24*time.Hour)
 
-	w.updateClientVersion()
 	w.updateBuildRank()
 	w.updateMaintain()
 
 	// 加载群发邮件
-	resp, _ := rpc.CacheClient().GetMailList(context.Background(),
-		&pb.MailReq{Type: MailTypeMass, Num: 999})
+	resp, _ := rpc.CacheClient().QuerySomeMail(context.Background(),
+		&pb.QuerySomeMailReq{Type: MailTypeMass, Num: 999})
 	if resp == nil {
 		log.Fatal("load mass mail fail")
 	}
-	for _, pbMail := range resp.List {
+	for _, pbMail := range resp.Mails {
 		mail := &Mail{}
 		util.DeepCopy(mail, pbMail)
 	}
@@ -121,31 +119,11 @@ func (w *hallWorld) GetBestGateway() string {
 	return w.currentBestGateway
 }
 
-func (w *hallWorld) updateClientVersion() {
-	go func() {
-		last, _ := rpc.CacheClient().GetAllClientVersion(context.Background(), &pb.ClientVersion{})
-		rpc.OnResponse(func() {
-			log.Debug("update client version success ", len(w.clientVersions))
-			w.clientVersions = last.WaitUpdateVersion
-		})
-	}()
-}
-
-func (w *hallWorld) getClientVersion(version string) *pb.WaitUpdateVersion {
-	for _, v := range w.clientVersions {
-		if v.Version == version {
-			return v
-		}
-	}
-
-	return nil
-}
-
 func (w *hallWorld) updateBuildRank() {
 	go func() {
-		dict, _ := rpc.CacheClient().QueryDictValue(context.Background(), &pb.DictValue{Key: "build_rank"})
+		dict, _ := rpc.CacheClient().QueryDict(context.Background(), &pb.QueryDictReq{Key: "build_rank"})
 		rpc.OnResponse(func() {
-			json.Unmarshal([]byte(dict.Value), &w.buildRank)
+			json.Unmarshal(dict.Value, &w.buildRank)
 		})
 	}()
 }
@@ -169,7 +147,7 @@ func (w *hallWorld) notifyMaintain() {
 
 func (w *hallWorld) updateMaintain() {
 	go func() {
-		dict, err := rpc.CacheClient().QueryDictValue(context.Background(), &pb.DictValue{Key: "maintain"})
+		dict, err := rpc.CacheClient().QueryDict(context.Background(), &pb.QueryDictReq{Key: "maintain"})
 		if err != nil {
 			return
 		}

@@ -18,8 +18,9 @@ import (
 )
 
 const (
-	MailTypeSystem = iota // 系统邮件
-	MailTypeMass          // 群发邮件
+	_              = iota
+	MailTypeSystem // 系统邮件
+	MailTypeMass   // 群发邮件
 )
 
 const (
@@ -27,27 +28,28 @@ const (
 )
 
 const (
-	MailStatusNew    = iota // 新邮件
-	MailStatusLook          // 已查看
-	MailStatusDraw          // 已领取
-	MailStatusDelete        // 已删除
-	MailStatusClean         // 已清理
+	_                = iota
+	MailStatusNew    // 新邮件
+	MailStatusLook   // 已查看
+	MailStatusDraw   // 已领取
+	MailStatusDelete // 已删除
+	MailStatusClean  // 已清理
 )
 
 type Mail struct {
-	Id            int64
-	Type          int
-	SendId        int
-	RecvId        int
-	Title         string
-	Body          string
-	Reward        string
-	Status        int
-	SendTime      string
-	ClientVersion string   // 指定版本
-	EffectTime    []string `json:"-"` // 有效时间
-	LoginTime     []string // 上次登陆时间
-	RegTime       []string `json:"-"` // 用户注册时间
+	Id            int64    `json:"id"`
+	Type          int      `json:"type"`
+	SendId        int      `json:"sendId"`
+	RecvId        int      `json:"recvId"`
+	Title         string   `json:"title"`
+	Body          string   `json:"body"`
+	Reward        string   `json:"reward"`
+	Status        int      `json:"status"`
+	SendTime      string   `json:"sendTime"`
+	ClientVersion string   `json:"clientVersion"` // 指定版本
+	EffectTime    []string `json:"-"`             // 有效时间
+	LoginTime     []string `json:"loginTime"`     // 上次登陆时间
+	RegTime       []string `json:"-"`             // 用户注册时间
 }
 
 type mailObj struct {
@@ -129,19 +131,20 @@ func (obj *mailObj) Look() {
 			SyncSendMail(mail)
 		}
 
-		resp, err := rpc.CacheClient().GetMailList(context.Background(),
-			&pb.MailReq{RecvId: int32(uid), Type: MailTypeSystem, Num: maxMailNum})
+		resp, err := rpc.CacheClient().QuerySomeMail(context.Background(),
+			&pb.QuerySomeMailReq{RecvId: int32(uid), Type: MailTypeSystem, Num: maxMailNum})
 		if err != nil {
 			log.Errorf("look mail %v", err)
 		}
 
 		// 无奖励的邮件查看标记为已查看
 		var emptyMailId int
-		if resp != nil && len(resp.List) > 0 && resp.List[0].Reward == "" {
-			emptyMailId = int(resp.List[0].Id)
+		if resp != nil && len(resp.Mails) > 0 && resp.Mails[0].Reward == "" {
+			emptyMailId = int(resp.Mails[0].Id)
 		}
 		if emptyMailId > 0 {
-			syncOperateMail(uid, resp.List[0].Id, MailStatusLook)
+			rpc.CacheClient().OperateMail(context.Background(),
+				&pb.OperateMailReq{Id: resp.Mails[0].Id, CurStatus: MailStatusNew, NewStatus: MailStatusLook})
 		}
 
 		rpc.OnResponse(func() {
@@ -150,7 +153,7 @@ func (obj *mailObj) Look() {
 				return
 			}
 			mails := make([]*Mail, 0, 8)
-			for _, pbMail := range resp.List {
+			for _, pbMail := range resp.Mails {
 				mail := &Mail{}
 				util.DeepCopy(mail, pbMail)
 				mails = append(mails, mail)
@@ -172,7 +175,6 @@ func (obj *mailObj) Load(pdata any) {
 	if data := obj.player.EnterReq().Data; data != nil {
 		obj.newMailNum = int(data.NewMailNum)
 	}
-	obj.lastEnterTime = bin.Stat.LastEnterTime
 }
 
 func (obj *mailObj) Save(pdata any) {
@@ -194,7 +196,29 @@ func (obj *mailObj) OnRecv(n int) {
 func (obj *mailObj) Draw(id int64) {
 	uid := obj.player.Id
 	go func() {
-		pbMail := syncOperateMail(uid, id, MailStatusDraw)
+		mailResp, err := rpc.CacheClient().QuerySomeMail(context.TODO(), &pb.QuerySomeMailReq{Id: id})
+		if err != nil {
+			return
+		}
+		if len(mailResp.Mails) == 0 {
+			return
+		}
+		pbMail := mailResp.Mails[0]
+		if pbMail.RecvId != int32(uid) {
+			return
+		}
+		if pbMail.Status >= MailStatusDraw {
+			return
+		}
+
+		operateResp, err := rpc.CacheClient().OperateMail(context.Background(),
+			&pb.OperateMailReq{Id: id, CurStatus: pbMail.Status, NewStatus: MailStatusDraw})
+		if err != nil {
+			return
+		}
+		if operateResp.EffectRows != 1 {
+			return
+		}
 		rpc.OnResponse(func() {
 			p := GetPlayer(uid)
 			if p == nil {
@@ -218,23 +242,11 @@ func (obj *mailObj) Draw(id int64) {
 	}()
 }
 
-func syncOperateMail(uid int, mailId int64, status int) *pb.Mail {
-	resp, err := rpc.CacheClient().OperateMail(context.Background(),
-		&pb.MailReq{RecvId: int32(uid), Id: mailId, Status: int32(status)})
-	if err != nil {
-		log.Errorf("player %d operate mail %d %d error %v", uid, mailId, status, err)
-	}
-	if resp != nil {
-		return resp.Mail
-	}
-	return nil
-}
-
 func SyncSendMail(mail *Mail) int64 {
 	pbMail := &pb.Mail{}
 	util.DeepCopy(pbMail, mail)
 	resp, err := rpc.CacheClient().SendMail(context.Background(),
-		&pb.MailReq{Mail: pbMail})
+		&pb.SendMailReq{Mail: pbMail})
 	if err != nil {
 		log.Errorf("send mail error %v %v", mail, err)
 	}

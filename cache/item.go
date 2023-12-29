@@ -25,23 +25,23 @@ func splitItemLog() {
 }
 
 // 批量增加物品日志
-func (cc *Cache) AddSomeItemLog(ctx context.Context, req *pb.ItemReq) (*pb.Response, error) {
-	uid := req.UId
+func (cc *Cache) AddSomeItemLog(ctx context.Context, req *pb.AddSomeItemLogReq) (*pb.EmptyResp, error) {
+	uid := req.Uid
 	way := req.Way
 	uuid := req.Uuid
 	db := dbo.Get()
 	for _, item := range req.Items {
-		db.Exec("insert item_log(uid,way,guid,item_id,item_num,balance,params) values(?,?,?,?,?,?,?)",
-			uid, way, uuid, item.Id, item.Num, item.Balance, dbo.JSON(req.Params))
+		db.Exec("insert item_log(uid,way,guid,item_id,item_num,balance,extra) values(?,?,?,?,?,?,?)",
+			uid, way, uuid, item.Id, item.Num, item.Balance, dbo.JSON(req.Extra))
 	}
-	return &pb.Response{}, nil
+	return &pb.EmptyResp{}, nil
 }
 
 // 批量增加物品
-func (cc *Cache) AddSomeItem(ctx context.Context, req *pb.ItemReq) (*pb.Response, error) {
-	uid := req.UId
+func (cc *Cache) AddSomeItem(ctx context.Context, req *pb.AddSomeItemReq) (*pb.EmptyResp, error) {
+	uid := req.Uid
 	return cc.SaveBin(ctx, &pb.SaveBinReq{
-		UId: uid,
+		Uid: uid,
 		Bin: &pb.UserBin{
 			Offline: &pb.OfflineBin{Items: req.Items},
 		},

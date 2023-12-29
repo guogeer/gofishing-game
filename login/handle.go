@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"gofishing-game/internal/env"
 	"gofishing-game/internal/errcode"
@@ -94,7 +95,7 @@ func readRequest(name string, r *http.Request, args any) error {
 }
 
 func Auth(req *pb.AccountInfo) (string, errcode.Error) {
-	resp, err := rpc.CacheClient().Auth(context.Background(), &pb.AuthReq{UId: req.UId})
+	resp, err := rpc.CacheClient().Auth(context.Background(), &pb.AuthReq{Uid: req.Uid})
 	if err != nil {
 		return "", errcode.Retry
 	}
@@ -129,7 +130,7 @@ type Session struct {
 
 // 创建账号，若账号存在，返回token
 // 2020-07-02 有头像的用户，需要定期更新平台信息
-func CreateAccount(req *Request) (ss Session, e errcode.Error) {
+func CreateAccount(method string, req *Request) (ss Session, e errcode.Error) {
 	gw, err := GetBestGateway()
 	if err != nil {
 		e = errNoGateway
@@ -139,7 +140,7 @@ func CreateAccount(req *Request) (ss Session, e errcode.Error) {
 		e = errInvalidAddr
 		return
 	}
-	host := req.IP
+	host := req.Ip
 	if strings.Contains(host, ":") {
 		host, _, _ = net.SplitHostPort(host)
 	}
@@ -166,7 +167,7 @@ func CreateAccount(req *Request) (ss Session, e errcode.Error) {
 		req.Nickname = GetRandName(int(req.Sex))
 	}
 
-	req.IP = host
+	req.Ip = host
 	// FB头像存在过期的问题，直接拉取头像放到本地
 	// https://platform-lookaside.fbsbx.com/platform/profilepic/?asid=767409261099757&gaming_photo_type=unified_picture&ext=1662966674&hash=AeQi0wChjaF5NuLrIqo
 	if u, err := url.Parse(req.Icon); err == nil {
@@ -180,18 +181,18 @@ func CreateAccount(req *Request) (ss Session, e errcode.Error) {
 	}
 
 	resp, err := rpc.CacheClient().CreateAccount(context.Background(), &pb.CreateAccountReq{
-		AccountInfo: &req.AccountInfo,
+		Info: &req.AccountInfo,
 	})
 	if err != nil {
 		e = errcode.Retry
 		return
 	}
-	uid, newid := int(resp.UId), int(resp.NewId)
+	uid, newid := int(resp.Uid), int(resp.NewUserId)
 	//log.Debugf("uid %v CreateAccount newId %v", uid, newid)
 	if uid <= 0 {
 		e = errAuthFailed
 	}
-	if uid == -1 && req.Method == "register" {
+	if uid == -1 && method == "register" {
 		e = errAccountExisted
 	}
 	if uid == -2 {
@@ -201,7 +202,7 @@ func CreateAccount(req *Request) (ss Session, e errcode.Error) {
 		return
 	}
 
-	req.UId = int32(uid)
+	req.Uid = int32(uid)
 	token, e := Auth(&req.AccountInfo)
 	if e != errcode.Ok {
 		return
@@ -221,14 +222,10 @@ func CreateAccount(req *Request) (ss Session, e errcode.Error) {
 		return
 	}
 
-	rpc.CacheClient().UpdateLoginParams(context.Background(), &pb.LoginParamsReq{UId: int32(uid), Params: &req.LoginParams})
+	rpc.CacheClient().UpdateLoginParams(context.Background(), &pb.UpdateLoginParamsReq{Uid: int32(uid), Params: &req.LoginParams})
 	// 新注册账号
 	if newid > 0 {
-		r := &pb.ItemReq{
-			UId:  int32(uid),
-			Uuid: util.GUID(),
-			Way:  "sys.new_user",
-		}
+		var items []*pb.Item
 		for _, rowId := range config.Rows("item") {
 			var id, num int
 			config.Scan("item", rowId, "ShopID,RegNum", &id, &num)
@@ -238,14 +235,19 @@ func CreateAccount(req *Request) (ss Session, e errcode.Error) {
 					Num:     int64(num),
 					Balance: int64(num),
 				}
-				r.Items = append(r.Items, pbItem)
+				items = append(items, pbItem)
 			}
 		}
 		//log.Debugf("%v CreateAccount %v", newid, s)
-		rpc.CacheClient().AddSomeItem(context.Background(), r)
-		rpc.CacheClient().AddSomeItemLog(context.Background(), r)
+		rpc.CacheClient().AddSomeItem(context.Background(), &pb.AddSomeItemReq{Uid: int32(uid), Items: items})
+		rpc.CacheClient().AddSomeItemLog(context.Background(), &pb.AddSomeItemLogReq{
+			Uid:   int32(uid),
+			Uuid:  util.GUID(),
+			Way:   "sys.new_user",
+			Items: items,
+		})
 	}
-	rpc.CacheClient().Enter(context.Background(), &req.AccountInfo)
+	rpc.CacheClient().AddLoginLog(context.Background(), &pb.AddLoginLogReq{Uid: int32(uid), LoginTime: time.Now().Format("2006-01-02 15:04:05")})
 	return
 }
 
@@ -264,12 +266,11 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	e := errcode.Ok
-	defer func() { writeJSON(w, &loginResponse{Error: e, Session: ss, IP: req.IP}) }()
+	defer func() { writeJSON(w, &loginResponse{Error: e, Session: ss, IP: req.Ip}) }()
 
-	req.Method = "login"
-	req.IP = r.RemoteAddr
+	req.Ip = r.RemoteAddr
 	//log.Debugf("Login CreateAccount %v", r.RemoteAddr)
-	if ss, e = CreateAccount(&req); e != errcode.Ok {
+	if ss, e = CreateAccount("login", &req); e != errcode.Ok {
 		return
 	}
 }
@@ -282,7 +283,7 @@ func ClearAccount(w http.ResponseWriter, r *http.Request) {
 	}
 	ecode := errcode.Ok
 	accountInfo := &req.AccountInfo
-	rpc.CacheClient().ClearAccount(context.Background(), accountInfo)
+	rpc.CacheClient().ClearAccount(context.Background(), &pb.ClearAccountReq{Uid: accountInfo.Uid})
 	writeJSON(w, ecode)
 }
 
@@ -339,11 +340,11 @@ func QueryAccount(w http.ResponseWriter, r *http.Request) {
 		log.Debugf("QueryAccount => empty GuestOpenId:%s or PlateOpenId:%s", req.GuestOpenId, req.PlateOpenId)
 		return
 	}
-	guestUser, _ := rpc.CacheClient().GetSimpleUserInfo(context.Background(), &pb.Request{OpenId: req.GuestOpenId})
-	plateUser, _ := rpc.CacheClient().GetSimpleUserInfo(context.Background(), &pb.Request{OpenId: req.PlateOpenId})
-	resp.GuestUser.UId = int(guestUser.UId)
-	resp.GuestUser.Level = int(guestUser.Level)
-	resp.PlateUser.UId = int(plateUser.UId)
-	resp.PlateUser.Level = int(plateUser.Level)
+	guestUser, _ := rpc.CacheClient().QuerySimpleUserInfo(context.Background(), &pb.QuerySimpleUserInfoReq{OpenId: req.GuestOpenId})
+	plateUser, _ := rpc.CacheClient().QuerySimpleUserInfo(context.Background(), &pb.QuerySimpleUserInfoReq{OpenId: req.PlateOpenId})
+	resp.GuestUser.UId = int(guestUser.Info.Uid)
+	resp.GuestUser.Level = int(guestUser.Info.Level)
+	resp.PlateUser.UId = int(plateUser.Info.Uid)
+	resp.PlateUser.Level = int(plateUser.Info.Level)
 	writeJSON(w, resp)
 }
