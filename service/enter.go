@@ -3,9 +3,7 @@ package service
 import (
 	"container/list"
 	"context"
-	"fmt"
 	"net"
-	"strconv"
 	"time"
 
 	"gofishing-game/internal/errcode"
@@ -22,28 +20,12 @@ var (
 	errEnterOtherGame = errcode.New("enter_other_game", "重复登录")
 )
 
-type genericMap map[string]any
-
-func (m genericMap) Set(key string, value any) {
-	m[key] = value
+type enterArgs struct {
+	Uid         int    `json:"uid,omitempty"`
+	Token       string `json:"token,omitempty"`
+	LeaveServer string `json:"leaveServer,omitempty"`
+	SubId       int    `json:"subId,omitempty"`
 }
-
-func (m genericMap) Int(key string) int {
-	if v, ok := m[key]; ok {
-		f, _ := strconv.ParseFloat(fmt.Sprintf("%v", v), 64)
-		return int(f)
-	}
-	return 0
-}
-
-func (m genericMap) String(key string) string {
-	if v, ok := m[key]; ok {
-		return fmt.Sprintf("%v", v)
-	}
-	return ""
-}
-
-type enterArgs genericMap
 
 func init() {
 	cmd.BindWithName("FUNC_Leave", funcAutoLeave, (*enterArgs)(nil))
@@ -61,7 +43,6 @@ type enterRequest struct {
 	LeaveServer string // 离开旧场景进入新的场景
 	ServerName  string
 
-	params     map[string]any
 	e          *list.Element
 	session    *cmd.Session
 	expireTime time.Time // 过期时间
@@ -69,10 +50,6 @@ type enterRequest struct {
 	clientIP   string
 	startTime  time.Time
 	isOnline   bool
-}
-
-func (args *enterRequest) Params() genericMap {
-	return args.params
 }
 
 func (args *enterRequest) IsFirst() bool {
@@ -83,7 +60,7 @@ func (args *enterRequest) IsFirst() bool {
 type enterQueue struct {
 	m      map[int]*enterRequest
 	waitq  list.List // 正在处理的登陆队列
-	isQuit bool      // 游戏正在退出
+	isQuit bool      // 正在退出游戏
 }
 
 var gEnterQueue = newEnterQueue()
@@ -101,8 +78,8 @@ func (eq *enterQueue) Check(uid int) {
 	}
 }
 
-// 移除登陆队列中超时的请求
-func (eq *enterQueue) update() {
+// 清理登陆队列中超时的请求
+func (eq *enterQueue) clean() {
 	now := time.Now()
 	for i := 0; i < 8; i++ {
 		e := eq.waitq.Front()
@@ -145,12 +122,12 @@ func (eq *enterQueue) PushBack(args *enterRequest) errcode.Error {
 			return errEnterOtherGame
 		}
 		// CLIENT 屏蔽相同链接的多个登陆请求
-		if ss1 := old.enterReq.session; ss1 != nil {
-			if ss1.Id == ss.Id {
+		if oldss := old.enterReq.session; oldss != nil {
+			if oldss.Id == ss.Id {
 				return errNoResponse
 			}
 			old.WriteJSON("Enter", errcode.New("enter_already", "账号已登录"))
-			delete(gGatewayPlayers, ss1.Id)
+			delete(gGatewayPlayers, oldss.Id)
 		}
 		if old.enterReq.Token != args.Token {
 			return errcode.New("invalid_token", "会话无效")
@@ -162,7 +139,7 @@ func (eq *enterQueue) PushBack(args *enterRequest) errcode.Error {
 	}
 
 	// 清理登陆队列中过期的请求
-	eq.update()
+	eq.clean()
 	if last, ok := eq.m[uid]; ok && last.Token == args.Token {
 		eq.Remove(uid)
 	}
@@ -301,22 +278,20 @@ func funcEnter(ctx *cmd.Context, data any) {
 	args := data.(*enterArgs)
 	clientIP, _, _ := net.SplitHostPort(ctx.ClientAddr)
 
-	m := (genericMap)(*args)
 	enterReq := &enterRequest{
-		UId:         m.Int("UId"),
-		SubId:       m.Int("SubId"),
-		Token:       m.String("Token"),
-		LeaveServer: m.String("LeaveServer"),
+		UId:         args.Uid,
+		SubId:       args.SubId,
+		Token:       args.Token,
+		LeaveServer: args.LeaveServer,
 		ServerName:  ctx.ServerName,
 
-		params:     *args,
 		clientIP:   clientIP,
 		session:    &cmd.Session{Id: ctx.Ssid, Out: ctx.Out},
 		expireTime: time.Now().Add(30 * time.Second),
 		startTime:  time.Now(),
 	}
 
-	if enterReq.Params().String("Token") == "" {
+	if args.Token == "" {
 		return
 	}
 	// 忽略同一个链接登陆不同的账号
@@ -334,7 +309,7 @@ func funcEnter(ctx *cmd.Context, data any) {
 
 func funcAutoLeave(ctx *cmd.Context, data any) {
 	args := data.(*enterArgs)
-	uid := ((genericMap)(*args)).Int("UId")
+	uid := args.Uid
 	ply := GetPlayer(uid)
 	// log.Debugf("player %d auto leave", uid)
 

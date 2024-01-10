@@ -74,8 +74,8 @@ func (cc *Cache) AddLoginLog(ctx context.Context, req *pb.AddLoginLogReq) (*pb.E
 	now := time.Now()
 	today := now.Format("2006-01-02")
 	tomorrow := now.Add(24 * time.Hour).Format("2006-01-02")
-	db.Exec("update online_log set ip=?,mac=?,imei=?,imsi=?,enter_chan_id=?,client_version=?,enter_time=now() where uid=? and enter_time between ? and ?", ip, mac, imei, imsi, chanId, ver, uid, today, tomorrow)
-	db.Exec("insert into online_log(uid,ip,mac,imei,imsi,enter_chan_id,client_version,enter_time) select ?,?,?,?,?,?,?,now() from dual where not exists (select 1 from online_log where uid=? and enter_time between ? and ?)", uid, ip, mac, imei, imsi, chanId, ver, uid, today, tomorrow)
+	db.Exec("update online_log set ip=?,mac=?,imei=?,imsi=?,enter_chan_id=?,client_version=?,login_time=now() where uid=? and login_time between ? and ?", ip, mac, imei, imsi, chanId, ver, uid, today, tomorrow)
+	db.Exec("insert into online_log(uid,ip,mac,imei,imsi,enter_chan_id,client_version,login_time) select ?,?,?,?,?,?,?,now() from dual where not exists (select 1 from online_log where uid=? and login_time between ? and ?)", uid, ip, mac, imei, imsi, chanId, ver, uid, today, tomorrow)
 	return &pb.EmptyResp{}, nil
 }
 

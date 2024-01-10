@@ -25,12 +25,7 @@ func (cc *Cache) QueryUserInfo(ctx context.Context, req *pb.QueryUserInfoReq) (*
 
 func (cc *Cache) SetUserInfo(ctx context.Context, req *pb.SetUserInfoReq) (*pb.EmptyResp, error) {
 	db := dbo.Get()
-	db.Exec(`update user_info set account_info=json_set(account_info,
-		'$.Sex',?,
-		'$.Nickname',?,
-		'$.Icon',?,
-		'$.Email',?
-		) where uid=?`,
+	db.Exec(`update user_info set sex=?,nickname=?,icon=?,email=? where uid=?`,
 		req.Sex, req.Nickname, req.Icon, req.Email, req.Uid)
 	return &pb.EmptyResp{}, nil
 }

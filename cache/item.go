@@ -31,7 +31,7 @@ func (cc *Cache) AddSomeItemLog(ctx context.Context, req *pb.AddSomeItemLogReq) 
 	uuid := req.Uuid
 	db := dbo.Get()
 	for _, item := range req.Items {
-		db.Exec("insert item_log(uid,way,guid,item_id,item_num,balance,extra) values(?,?,?,?,?,?,?)",
+		db.Exec("insert item_log(uid,way,guid,item_id,num,balance,extra) values(?,?,?,?,?,?,?)",
 			uid, way, uuid, item.Id, item.Num, item.Balance, dbo.JSON(req.Extra))
 	}
 	return &pb.EmptyResp{}, nil
