@@ -1,4 +1,4 @@
-package hall
+package internal
 
 import (
 	"context"
@@ -290,8 +290,8 @@ type mailArgs struct {
 }
 
 func init() {
-	cmd.BindWithName("LookMails", funcLookMails, (*mailArgs)(nil))
-	cmd.BindWithName("DrawMail", funcDrawMail, (*mailArgs)(nil))
+	cmd.Bind("LookMails", funcLookMails, (*mailArgs)(nil))
+	cmd.Bind("DrawMail", funcDrawMail, (*mailArgs)(nil))
 }
 
 func funcLookMails(ctx *cmd.Context, in any) {

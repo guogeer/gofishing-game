@@ -1,4 +1,4 @@
-package hall
+package internal
 
 import (
 	"context"
@@ -37,12 +37,12 @@ type updateOnlineArgs struct {
 
 func init() {
 	// internal call
-	cmd.Bind(FUNC_UpdateOnline, (*updateOnlineArgs)(nil))
-	cmd.Bind(FUNC_SyncOnline, (*Args)(nil))
-	cmd.Bind(S2C_GetBestGateway, (*Args)(nil)) // 网关同步
-	cmd.BindWithName("FUNC_DeleteAccount", syncDeleteAccount, (*Args)(nil))
-	cmd.BindWithName("FUNC_UpdateMaintain", funcUpdateMaintain, (*Args)(nil))
-	cmd.BindWithName("FUNC_UpdateFakeOnline", funcUpdateFakeOnline, (*Args)(nil))
+	cmd.BindFunc(FUNC_UpdateOnline, (*updateOnlineArgs)(nil))
+	cmd.BindFunc(FUNC_SyncOnline, (*Args)(nil))
+	cmd.BindFunc(S2C_GetBestGateway, (*Args)(nil)) // 网关同步
+	cmd.Bind("FUNC_DeleteAccount", syncDeleteAccount, (*Args)(nil))
+	cmd.Bind("FUNC_UpdateMaintain", funcUpdateMaintain, (*Args)(nil))
+	cmd.Bind("FUNC_UpdateFakeOnline", funcUpdateFakeOnline, (*Args)(nil))
 }
 
 // 更新在线人数

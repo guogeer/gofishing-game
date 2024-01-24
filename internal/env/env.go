@@ -1,6 +1,8 @@
 package env
 
 import (
+	"fmt"
+
 	"github.com/guogeer/quasar/config"
 )
 
@@ -21,14 +23,13 @@ type Env struct {
 	SlaveDataSource  DataSource `yaml:"slaveDataSource"`
 	ProductName      string     `yaml:"productName"`
 	Sign             string     `yaml:"sign"`
-
-	config.Env
 }
 
 var defaultConfig Env
 
 func init() {
 	config.LoadFile(config.Config().Path(), &defaultConfig)
+	fmt.Println(config.Config().Path(), defaultConfig)
 }
 
 func Config() *Env {

@@ -176,7 +176,7 @@ func scriptBind(L *lua.LState) int {
 		FileName: fileName,
 		FuncName: funcName,
 	})
-	cmd.BindWithName(funcName, handleScriptBind, (*luaArgs)(nil))
+	cmd.Bind(funcName, handleScriptBind, (*luaArgs)(nil))
 	return 0
 }
 
@@ -222,7 +222,7 @@ func loadAllScripts() {
 }
 
 func init() {
-	cmd.BindWithName("FUNC_EffectScript", funcEffectLocalScript, (*scriptArgs)(nil))
-	cmd.BindWithName("FUNC_EffectLocalScript", funcEffectLocalScript, (*scriptArgs)(nil))
+	cmd.Bind("FUNC_EffectScript", funcEffectLocalScript, (*scriptArgs)(nil))
+	cmd.Bind("FUNC_EffectLocalScript", funcEffectLocalScript, (*scriptArgs)(nil))
 	script.PreloadModule("game", externScript)
 }

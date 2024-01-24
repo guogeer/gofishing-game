@@ -1,15 +1,12 @@
-//go:build ignore
-// +build ignore
-
 package main
 
 import (
 	"flag"
 	"fmt"
-	"net/http"
 
-	_ "gofishing-game/login"
+	_ "gofishing-game/login/internal"
 
+	"github.com/guogeer/quasar/api"
 	"github.com/guogeer/quasar/cmd"
 	"github.com/guogeer/quasar/log"
 )
@@ -24,5 +21,6 @@ func main() {
 	cmd.RegisterService(&cmd.ServiceConfig{
 		Name: "login", Addr: addr,
 	})
-	http.ListenAndServe(addr, nil)
+	log.Debugf("register service login addr %s", addr)
+	api.Run(addr)
 }

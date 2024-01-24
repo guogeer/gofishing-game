@@ -5,33 +5,20 @@ import (
 	"io"
 	"time"
 
-	"gofishing-game/internal/env"
 	"gofishing-game/internal/pb"
 
 	"github.com/guogeer/quasar/cmd"
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 var defaultCacheClient pb.CacheClient
 
-type authWithPerRPCCredentials map[string]string
-
-func (auth authWithPerRPCCredentials) GetRequestMetadata(context.Context, ...string) (map[string]string, error) {
-	return auth, nil
-}
-
-func (auth authWithPerRPCCredentials) RequireTransportSecurity() bool {
-	return false
-}
-
 func init() {
-	auth := authWithPerRPCCredentials(map[string]string{
-		"Sign": env.Config().Sign,
-	})
 	opts := []grpc.DialOption{
-		grpc.WithPerRPCCredentials(auth),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	}
 
 	addr, err := cmd.RequestServerAddr("cache")
@@ -48,6 +35,7 @@ func init() {
 		}
 		time.Sleep(5 * time.Second)
 	}
+	log.Debugf("connect rpc server successfully.")
 	// 优先加载本地配置
 	config.LoadLocalTables("tables")
 	// 如果DB存在相同的配置表，将覆盖替换本地的拷贝

@@ -6,7 +6,7 @@ package roomutils
 import (
 	"time"
 
-	"gofishing-game/internal/cardutil"
+	"gofishing-game/internal/cardutils"
 	"gofishing-game/service"
 
 	"github.com/guogeer/quasar/config"
@@ -23,7 +23,7 @@ type Room struct {
 	Status      int
 	customRoom  CustomRoom
 	restartTime time.Duration
-	cardSet     *cardutil.CardSet // 牌堆
+	cardSet     *cardutils.CardSet // 牌堆
 
 	allPlayers map[int]*service.Player
 }
@@ -35,7 +35,7 @@ func NewRoom(subId int, CustomRoom CustomRoom) *Room {
 		Status:      0,
 		customRoom:  CustomRoom,
 		restartTime: -1,
-		cardSet:     cardutil.NewCardSet(),
+		cardSet:     cardutils.NewCardSet(),
 	}
 }
 
@@ -47,7 +47,7 @@ func (room *Room) GetAllPlayers() []*service.Player {
 	return players
 }
 
-func (room *Room) CardSet() *cardutil.CardSet {
+func (room *Room) CardSet() *cardutils.CardSet {
 	return room.cardSet
 }
 

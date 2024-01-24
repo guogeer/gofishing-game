@@ -6,7 +6,7 @@ dataSource:
   user: root
   password: password
   address: "localhost:3306"
-  name: mahjong
+  name: game
   maxIdleConns: 10
   maxOpenConns: 20
 manageDataSource:
@@ -20,7 +20,7 @@ slaveDataSource:
   user: root
   password: password
   address: "localhost:3306"
-  name: mahjong
+  name: game
   maxIdleConns: 10
   maxOpenConns: 20
 serverList:

@@ -1,4 +1,4 @@
-package hall
+package internal
 
 import (
 	"gofishing-game/internal/errcode"

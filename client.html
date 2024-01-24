@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>测试工具</title>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+		integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+	<script src="https://cdn.jsdelivr.net/npm/js-md5@0.8.3/src/md5.min.js"></script>
+</head>
+
+<body style="margin: 50px;">
+	<h3>仅内部测试</h3>
+	<div class="mb-3">
+		<label for="labelMsgId" class="form-label">协议ID</label>
+		<input type="text" class="form-control" id="inputMsgId">
+	</div>
+	<div class="mb-3">
+		<label for="labelMsgData" class="form-label">协议数据</label>
+		<textarea class="form-control" id="inputMsgData" rows="3"></textarea>
+	</div>
+	<div class="mb-3" style="text-align: right;">
+		<button type="button" class="btn btn-primary" id="buttonSendMsg" onclick="sendMsg()" disabled>发送</button>
+	</div>
+</body>
+
+</html>
+<script>
+	function parseQuery() {
+		const search = location.search.slice(1)
+		const pairs = search ? search.split('&') : []
+		const query = {}
+		for (let i = 0; i < pairs.length; ++i) {
+			const [key, value] = pairs[i].split('=')
+			query[key] = query[key] || decodeURIComponent(value)
+		}
+		return query
+	}
+	function encode(msg_id, msg_obj) {
+		console.log("send msg", msg_id, msg_obj);
+
+		const default_sign = '12345678'
+		const pkg = {
+			"id": msg_id,
+			"data": msg_obj,
+			"sign": default_sign
+		}
+
+		const raw_body = JSON.stringify(pkg)
+		const md5_sum = md5("9e737f29f5751baa51060ce226c3fc97" + raw_body)
+
+		let md5_part = ''
+		const md5_indexs = [0, 3, 4, 8, 10, 11, 13, 14]
+		md5_indexs.forEach(function (v) {
+			md5_part = md5_part + md5_sum[v]
+		})
+
+		const last_index = raw_body.lastIndexOf(default_sign)
+		const msg_body = raw_body.substring(0, last_index) + md5_part + raw_body.substring(last_index + md5_part.length)
+		return msg_body
+	}
+	const url_args = parseQuery()
+
+	let login_addr = url_args['addr'] || "localhost:9501"
+	let open_id = url_args['open_id'] || "test001"
+	console.log('login addr', login_addr, 'open id', open_id)
+
+	fetch('http://' + login_addr + "/login", {
+		method: 'POST',
+		headers: {
+			'Accept': 'application/json',
+			'Content-Type': 'application/json'
+		},
+		body: encode('login', { 'openId': open_id, 'plate': 'test' }),
+	}).then(res => res.json())
+		.then(res => console.log(res));
+
+
+	let ws_addr = "ws://" + login_addr + "/ws"
+	// Create WebSocket connection.
+	const ws_conn = new WebSocket(ws_addr);
+
+	// Connection opened
+	ws_conn.addEventListener("open", function (event) {
+		ws_conn.send(ws + "链接建立成功");
+		document.getElementById("buttonSendMsg").disabled = false
+	});
+
+	// Listen for messages
+	ws_conn.addEventListener("message", function (event) {
+		console.log("recv msg", event.data);
+	});
+
+	function sendMsg() {
+		const msg_id = document.getElementById("inputMsgId").value
+		const msg_data = document.getElementById("inputMsgData").value
+		try {
+			const msg_obj = JSON.parse(msg_data)
+		} catch (error) {
+			window.alert("invalid json data", error)
+		}
+		const msg_body = encode(msg_id, msg_obj)
+		ws_conn.send(msg_body)
+	};
+</script>

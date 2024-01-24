@@ -1,0 +1,323 @@
+package internal
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"io"
+	"net"
+	"net/http"
+	"net/url"
+	"strings"
+	"time"
+
+	"gofishing-game/internal/errcode"
+	"gofishing-game/internal/pb"
+	"gofishing-game/internal/rpc"
+
+	"github.com/guogeer/quasar/api"
+	"github.com/guogeer/quasar/cmd"
+	"github.com/guogeer/quasar/config"
+	"github.com/guogeer/quasar/log"
+	"github.com/guogeer/quasar/util"
+)
+
+var (
+	errNoGateway      = errcode.New("invalid_gateway", "no gateway service")
+	errInvalidAddr    = errcode.New("invalid_addr", "invalid gateway address")
+	errIPLimit        = errcode.New("ip_limit", "ip limit")
+	errAuthFailed     = errcode.New("auth_failed", "account or passowrd not match")
+	errAccountExisted = errcode.New("account_existed", "account existed")
+)
+
+var errHTTPRequest = errors.New("invalid request method")
+
+type loginArgs struct {
+	Address string `json:"address"`
+	ChanId  string `json:"chanId"`
+}
+
+func init() {
+	codec := &api.CmdMessageCodec{}
+	api.Handle("POST", "/api/v1/login", login, (*loginReq)(nil)).SetCodec(codec)
+	api.Handle("POST", "/api/v1/clearAccount", clearAccount, (*clearAccountReq)(nil)).SetCodec(codec)
+	api.Handle("POST", "/api/v1/bindAccount", bindAccount, (*bindAccountReq)(nil)).SetCodec(codec)
+	api.Handle("POST", "/api/v1/queryQccount", queryAccount, (*queryAccountReq)(nil)).SetCodec(codec)
+}
+
+func readRequest(name string, r *http.Request, args any) error {
+	log.Debugf("request method %s url %s", r.Method, r.URL)
+	if r.Method == "GET" {
+		return errHTTPRequest
+	}
+	message, err := io.ReadAll(r.Body)
+	if err != nil {
+		return err
+	}
+	r.Body.Close()
+	log.Debugf("request body %s", message)
+
+	pkg, err := cmd.Decode(message)
+	if err != nil {
+		return err
+	}
+	data := pkg.Data
+	if err = json.Unmarshal(data, args); err != nil {
+		return err
+	}
+	return nil
+}
+
+func Auth(req *pb.AccountInfo) (string, errcode.Error) {
+	resp, err := rpc.CacheClient().Auth(context.Background(), &pb.AuthReq{Uid: req.Uid})
+	if err != nil {
+		return "", errcode.Retry
+	}
+	e := errcode.Ok
+	if resp.Reason == -2 {
+		e = errIPLimit
+	}
+	return resp.Token, e
+}
+
+func GetBestGateway() (string, error) {
+	data, err := cmd.Request("router", "C2S_GetBestGateway", nil)
+	if err != nil {
+		return "", err
+	}
+
+	response := struct{ Addr string }{}
+	if err := json.Unmarshal(data, &response); err != nil {
+		return "", err
+	}
+	return response.Addr, nil
+}
+
+type loginSession struct {
+	UId   int    `json:"uid"`
+	NewId int    `json:"-"`
+	Addr  string `json:"addr"`
+	Token string `json:"token"`
+	Name  string `json:"name"`
+	IsReg bool   `json:"isReg"`
+}
+
+// 创建账号，若账号存在，返回token
+// 2020-07-02 有头像的用户，需要定期更新平台信息
+func CreateAccount(method string, account *pb.AccountInfo, params *pb.LoginParams) (ss *loginSession, e errcode.Error) {
+	gw, err := GetBestGateway()
+	if err != nil {
+		return nil, errNoGateway
+	}
+	if _, _, err := net.SplitHostPort(gw); err != nil {
+		return nil, errInvalidAddr
+	}
+	host := account.Ip
+	if strings.Contains(host, ":") {
+		host, _, _ = net.SplitHostPort(host)
+	}
+
+	_, e = Auth(&pb.AccountInfo{
+		Address: account.Address,
+	})
+	if e != errcode.Ok {
+		return nil, e
+	}
+	account.Sex = account.Sex % 2
+
+	if account.ChanId == "robot" {
+		host = ""
+	}
+	if account.Nickname == "" {
+		account.Nickname = GetRandName(int(account.Sex))
+	}
+
+	account.Ip = host
+	// FB头像存在过期的问题，直接拉取头像放到本地
+	// https://platform-lookaside.fbsbx.com/platform/profilepic/?asid=767409261099757&gaming_photo_type=unified_picture&ext=1662966674&hash=AeQi0wChjaF5NuLrIqo
+	if u, err := url.Parse(account.Icon); err == nil {
+		if u.Host == "platform-lookaside.fbsbx.com" {
+			account.Icon, _ = saveFacebookIcon(u.Query().Get("asid")+".jpg", account.Icon)
+			log.Debug("save facebook icon", account.Icon)
+		}
+	}
+	if account.Icon != "" && (account.Plate == "facebook" || account.Plate == "google") {
+		account.PlateIcon = account.Icon
+	}
+
+	resp, err := rpc.CacheClient().CreateAccount(context.Background(), &pb.CreateAccountReq{Info: account})
+	if err != nil {
+		e = errcode.Retry
+		return
+	}
+	uid, newid := int(resp.Uid), int(resp.NewUserId)
+	//log.Debugf("uid %v CreateAccount newId %v", uid, newid)
+	if uid <= 0 {
+		e = errAuthFailed
+	}
+	if uid == -1 && method == "register" {
+		e = errAccountExisted
+	}
+	if uid == -2 {
+		e = errIPLimit
+	}
+	if e != errcode.Ok {
+		return
+	}
+
+	account.Uid = int32(uid)
+	token, e := Auth(account)
+	if e != errcode.Ok {
+		return
+	}
+
+	// Ok
+	ss = &loginSession{
+		UId:   uid,
+		NewId: newid,
+		Token: token,
+		Addr:  gw,
+		Name:  account.Nickname,
+		IsReg: newid > 0,
+	}
+
+	if account.ChanId == "robot" {
+		return ss, nil
+	}
+
+	rpc.CacheClient().UpdateLoginParams(context.Background(), &pb.UpdateLoginParamsReq{Uid: int32(uid), Params: params})
+	// 新注册账号
+	if newid > 0 {
+		var items []*pb.Item
+		for _, rowId := range config.Rows("item") {
+			var id, num int
+			config.Scan("item", rowId, "ShopID,RegNum", &id, &num)
+			if num > 0 {
+				pbItem := &pb.Item{
+					Id:      int32(id),
+					Num:     int64(num),
+					Balance: int64(num),
+				}
+				items = append(items, pbItem)
+			}
+		}
+		//log.Debugf("%v CreateAccount %v", newid, s)
+		rpc.CacheClient().AddSomeItem(context.Background(), &pb.AddSomeItemReq{Uid: int32(uid), Items: items})
+		rpc.CacheClient().AddSomeItemLog(context.Background(), &pb.AddSomeItemLogReq{
+			Uid:   int32(uid),
+			Uuid:  util.GUID(),
+			Way:   "sys.new_user",
+			Items: items,
+		})
+	}
+	rpc.CacheClient().AddLoginLog(context.Background(), &pb.AddLoginLogReq{Uid: int32(uid), LoginTime: time.Now().Format("2006-01-02 15:04:05")})
+	return ss, nil
+}
+
+type loginReq struct {
+	Plate         string  `json:"plate"`
+	OpenId        string  `json:"openId"`
+	Sex           int     `json:"sex"`
+	Icon          string  `json:"icon"`
+	Nickname      string  `json:"nickname"`
+	TimeZone      float64 `json:"timeZone"`
+	LocalTime     string  `json:"localTime"`
+	Address       string  `json:"address"`
+	Account       string  `json:"account"`
+	Password      string  `json:"password"`
+	ChanId        string  `json:"chanId"`
+	Imsi          string  `json:"imsi"`
+	Imei          string  `json:"imei"`
+	Mac           string  `json:"mac"`
+	Phone         string  `json:"phone"`
+	OsVersion     string  `json:"osVersion"`
+	NetMode       string  `json:"netMode"`
+	ClientVersion string  `json:"clientVersion"`
+	PhoneBrand    string  `json:"phoneBrand"`
+	IosIDFA       string  `json:"iosIDFA"`
+	Email         string  `json:"email"`
+}
+
+func login(c *api.Context, data any) (any, error) {
+	args := data.(*loginReq)
+
+	loginParams := &pb.LoginParams{}
+	accountInfo := &pb.AccountInfo{Ip: c.Request.RemoteAddr}
+	util.DeepCopy(accountInfo, args)
+	util.DeepCopy(loginParams, args)
+	ss, e := CreateAccount("login", accountInfo, loginParams)
+	if !e.IsOk() {
+		return nil, errors.New(e.Message())
+	}
+	return struct {
+		*loginSession
+		IP string `json:"ip"`
+	}{loginSession: ss, IP: accountInfo.Ip}, nil
+}
+
+type clearAccountReq struct {
+	Uid int32 `json:"uid"`
+}
+
+func clearAccount(c *api.Context, data any) (any, error) {
+	args := data.(*clearAccountReq)
+	_, err := rpc.CacheClient().ClearAccount(context.Background(), &pb.ClearAccountReq{Uid: args.Uid})
+	return nil, err
+}
+
+type bindAccountReq struct {
+	ReserveOpenId string `json:"reserveOpenId"`
+	AddPlate      string `json:"addPlate"`
+	AddOpenId     string `json:"addOpenId"`
+	IsReward      bool   `json:"isReward"`
+}
+
+func bindAccount(c *api.Context, data any) (any, error) {
+	args := data.(*bindAccountReq)
+
+	// 切换账号账号登陆，游客绑定到Google/Facebook/Apple
+	if args.AddOpenId == "" || args.ReserveOpenId == "" {
+		log.Debugf("BindAccount => empty AddOpenId:%s or ReserveOpenId:%s", args.AddOpenId, args.ReserveOpenId)
+		return nil, errors.New("empty addOpenId or reserveOpenId")
+	}
+	_, err := rpc.CacheClient().BindAccount(context.Background(), &pb.BindAccountReq{
+		AddOpenId: args.AddOpenId,
+	})
+
+	return nil, err
+}
+
+type queryAccountReq struct {
+	GuestOpenId string
+	PlateOpenId string
+}
+
+type queryAccountResp struct {
+	GuestUser struct {
+		UId   int `json:"uid"`
+		Level int `json:"level"`
+	} `json:"guestUser"`
+
+	PlateUser struct {
+		UId   int `json:"uid"`
+		Level int `json:"level"`
+	} `json:"plateUser"`
+}
+
+func queryAccount(c *api.Context, data any) (any, error) {
+	args := data.(*queryAccountReq)
+
+	if args.GuestOpenId == "" || args.PlateOpenId == "" {
+		log.Debugf("QueryAccount => empty GuestOpenId:%s or PlateOpenId:%s", args.GuestOpenId, args.PlateOpenId)
+		return nil, errors.New("invalid guestOpenId or plateOpenId")
+	}
+	guestUser, _ := rpc.CacheClient().QuerySimpleUserInfo(context.Background(), &pb.QuerySimpleUserInfoReq{OpenId: args.GuestOpenId})
+	plateUser, _ := rpc.CacheClient().QuerySimpleUserInfo(context.Background(), &pb.QuerySimpleUserInfoReq{OpenId: args.PlateOpenId})
+
+	resp := queryAccountResp{}
+	resp.GuestUser.UId = int(guestUser.Info.Uid)
+	resp.GuestUser.Level = int(guestUser.Info.Level)
+	resp.PlateUser.UId = int(plateUser.Info.Uid)
+	resp.PlateUser.Level = int(plateUser.Info.Level)
+	return cmd.M{}, nil
+}

@@ -1,6 +1,3 @@
-//go:build ignore
-// +build ignore
-
 package main
 
 import (
@@ -8,7 +5,7 @@ import (
 	"fmt"
 	"net"
 
-	"gofishing-game/cache"
+	cache "gofishing-game/cache/internal"
 	"gofishing-game/internal/dbo"
 	"gofishing-game/internal/env"
 	"gofishing-game/internal/pb"
@@ -43,6 +40,7 @@ func main() {
 	}
 	log.Infof("start cache server and listen %s", addr)
 	cmd.RegisterService(&cmd.ServiceConfig{Name: "cache", Addr: addr})
+	log.Debug("register service ok")
 	//opts := []grpc.ServerOption{
 	//	grpc.UnaryInterceptor(ensureValidToken),
 	//}

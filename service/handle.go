@@ -32,11 +32,11 @@ type serviceArgs struct {
 func init() {
 	cmd.Hook(hook)
 
-	cmd.BindWithName("FUNC_EffectTableOk", funcEffectTableOk, (*serviceArgs)(nil))
-	cmd.BindWithName("FUNC_AddItems", funcAddItems, (*serviceArgs)(nil))
+	cmd.Bind("FUNC_EffectTableOk", funcEffectTableOk, (*serviceArgs)(nil))
+	cmd.Bind("FUNC_AddItems", funcAddItems, (*serviceArgs)(nil))
 
-	cmd.BindWithName("Leave", funcLeave, (*serviceArgs)(nil))
-	cmd.BindWithName("Close", funcClose, (*serviceArgs)(nil))
+	cmd.Bind("Leave", funcLeave, (*serviceArgs)(nil))
+	cmd.Bind("Close", funcClose, (*serviceArgs)(nil))
 }
 
 func GetPlayerByContext(ctx *cmd.Context) *Player {

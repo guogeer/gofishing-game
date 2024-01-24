@@ -1,4 +1,4 @@
-package hall
+package internal
 
 import (
 	"gofishing-game/internal/pb"
@@ -16,7 +16,7 @@ type gmArgs struct {
 }
 
 func init() {
-	cmd.BindWithName("FUNC_SendMail", funcSendMail, (*gmArgs)(nil))
+	cmd.Bind("sendMail", funcSendMail, (*gmArgs)(nil))
 }
 
 func funcSendMail(ctx *cmd.Context, data any) {

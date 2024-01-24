@@ -28,8 +28,8 @@ type enterArgs struct {
 }
 
 func init() {
-	cmd.BindWithName("FUNC_Leave", funcAutoLeave, (*enterArgs)(nil))
-	cmd.BindWithName("Enter", funcEnter, (*enterArgs)(nil))
+	cmd.Bind("FUNC_Leave", funcAutoLeave, (*enterArgs)(nil))
+	cmd.Bind("Enter", funcEnter, (*enterArgs)(nil))
 }
 
 type enterRequest struct {

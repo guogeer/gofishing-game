@@ -1,4 +1,4 @@
-package cardutil
+package cardutils
 
 import (
 	"math/rand"

@@ -1,5 +1,5 @@
 // 测试工具
-package hall
+package internal
 
 import (
 	"gofishing-game/service"

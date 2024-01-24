@@ -65,7 +65,7 @@ const enterActionFingerGuessingPlayer = "fingerGuessingPlayer"
 
 func init() {
 	service.AddAction(enterActionFingerGuessingPlayer, newFingerGuessingPlayer)
-	cmd.BindWithName("ChooseGesture", funcChooseGesture, (*fingerGuessingArgs)(nil))
+	cmd.Bind("chooseGesture", funcChooseGesture, (*fingerGuessingArgs)(nil))
 }
 
 var fingerGuessingGuestures = []string{"rock", "scissor", "paple"}

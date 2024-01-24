@@ -6,7 +6,7 @@
 	0xf0、0xf1 小鬼、大鬼
 */
 
-package cardutil
+package cardutils
 
 import (
 	"github.com/guogeer/quasar/randutil"

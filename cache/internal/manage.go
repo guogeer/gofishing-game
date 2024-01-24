@@ -1,4 +1,4 @@
-package cache
+package internal
 
 // GM管理后台
 

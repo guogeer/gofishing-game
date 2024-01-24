@@ -31,8 +31,8 @@ type toolArgs struct {
 }
 
 func init() {
-	cmd.BindWithName("GetTestTools", funcGetTestTools, (*toolArgs)(nil))
-	cmd.BindWithName("UseTestTool", funcUseTestTool, (*toolArgs)(nil))
+	cmd.Bind("GetTestTools", funcGetTestTools, (*toolArgs)(nil))
+	cmd.Bind("UseTestTool", funcUseTestTool, (*toolArgs)(nil))
 
 	AddTestTool(&testTool{})
 }

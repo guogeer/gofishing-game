@@ -17,7 +17,7 @@ CREATE TABLE user_info (
     mac varchar(24) not null,
     imei varchar(24) not null,
     imsi varchar(24) not null,
-    create_time TIMESTAMPS not null default current_timestamps
+    create_time TIMESTAMP not null default current_TIMESTAMP
 );
 
 DROP TABLE IF EXISTS item_log;
@@ -29,7 +29,7 @@ CREATE TABLE item_log (
 	balance INT NOT NULL,
     extra JSON NOT NULL,
 	uuid varchar(64) NOT NULL,
-    create_time TIMESTAMPS NOT NULL
+    create_time TIMESTAMP NOT NULL
 );
 
 DROP TABLE IF EXISTS online_log;
@@ -41,8 +41,8 @@ CREATE TABLE online_log (
 	imsi varchar(16) NOT NULL,
     chan_id varchar(32) NOT NULL,
 	client_version varchar(32) NOT NULL,
-    login_time TIMESTAMPS NOT NULL,
-	offline_time TIMESTAMPS,
+    login_time TIMESTAMP NOT NULL,
+	offline_time TIMESTAMP
 );
 
 DROP TABLE IF EXISTS user_plate;
@@ -51,7 +51,7 @@ CREATE TABLE user_plate (
 	`uid` INT NOT NULL,
     plate varchar(16) not null,
     open_id varchar(48) NOT NULL,
-	create_time TIMESTAMPS NOT NULL,
+	create_time TIMESTAMP NOT NULL,
     index idx_uid(`uid`),
     unique index idx_open_id(open_id)
 );
@@ -62,11 +62,9 @@ CREATE TABLE user_bin (
 	`uid` INT NOT NULL,
     `class` varchar(16) not null,
     bin blob not null,
-	create_time TIMESTAMPS NOT NULL,
+	create_time TIMESTAMP NOT NULL,
     unique index idx_uid_class(`uid`,`class`)
 );
-
-select id,`type`,recv_uid,`data`,`status`,send_time
 
 DROP TABLE IF EXISTS mail;
 CREATE TABLE mail (
@@ -76,7 +74,7 @@ CREATE TABLE mail (
     recv_uid int not null,
     `status` int not null,
     `data` text not null,
-	send_time TIMESTAMPS NOT NULL default current_timestamps,
+	send_time TIMESTAMP NOT NULL default current_TIMESTAMP,
     index idx_recv_uid(recv_uid)
 );
 
@@ -85,7 +83,7 @@ CREATE TABLE dict (
     id INT AUTO_INCREMENT PRIMARY KEY,
     `key` varchar(32) not null,
     `value` JSON not null,
-	update_time TIMESTAMPS NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     index idx_key(`key`)
 );
 
@@ -98,7 +96,7 @@ CREATE TABLE gm_table (
     `name` varchar(32) not null,
 	`version` int NOT NULL,
     content text not null,
-	update_time TIMESTAMPS NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     index idx_name(`name`)
 );
 
@@ -107,6 +105,6 @@ CREATE TABLE gm_script (
     id INT AUTO_INCREMENT PRIMARY KEY,
     `name` varchar(32) not null,
     body text not null,
-	update_time TIMESTAMPS NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	update_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     index idx_name(`name`)
 );

@@ -11,6 +11,7 @@ tables.zip
 *_robot
 *.exe
 config.xml
+config.yaml
 
 *.swp
-
+error.log

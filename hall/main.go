@@ -5,7 +5,7 @@ package main
 
 import (
 	// "fmt"
-	_ "gofishing-game/hall"
+	_ "gofishing-game/hall/internal"
 	"gofishing-game/service"
 )
 
