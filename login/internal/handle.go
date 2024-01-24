@@ -4,9 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"io"
 	"net"
-	"net/http"
 	"net/url"
 	"strings"
 	"time"
@@ -30,42 +28,12 @@ var (
 	errAccountExisted = errcode.New("account_existed", "account existed")
 )
 
-var errHTTPRequest = errors.New("invalid request method")
-
-type loginArgs struct {
-	Address string `json:"address"`
-	ChanId  string `json:"chanId"`
-}
-
 func init() {
 	codec := &api.CmdMessageCodec{}
-	api.Handle("POST", "/api/v1/login", login, (*loginReq)(nil)).SetCodec(codec)
-	api.Handle("POST", "/api/v1/clearAccount", clearAccount, (*clearAccountReq)(nil)).SetCodec(codec)
-	api.Handle("POST", "/api/v1/bindAccount", bindAccount, (*bindAccountReq)(nil)).SetCodec(codec)
-	api.Handle("POST", "/api/v1/queryQccount", queryAccount, (*queryAccountReq)(nil)).SetCodec(codec)
-}
-
-func readRequest(name string, r *http.Request, args any) error {
-	log.Debugf("request method %s url %s", r.Method, r.URL)
-	if r.Method == "GET" {
-		return errHTTPRequest
-	}
-	message, err := io.ReadAll(r.Body)
-	if err != nil {
-		return err
-	}
-	r.Body.Close()
-	log.Debugf("request body %s", message)
-
-	pkg, err := cmd.Decode(message)
-	if err != nil {
-		return err
-	}
-	data := pkg.Data
-	if err = json.Unmarshal(data, args); err != nil {
-		return err
-	}
-	return nil
+	api.Add("POST", "/api/v1/login", login, (*loginReq)(nil)).SetCodec(codec)
+	api.Add("POST", "/api/v1/clearAccount", clearAccount, (*clearAccountReq)(nil)).SetCodec(codec)
+	api.Add("POST", "/api/v1/bindAccount", bindAccount, (*bindAccountReq)(nil)).SetCodec(codec)
+	api.Add("POST", "/api/v1/queryQccount", queryAccount, (*queryAccountReq)(nil)).SetCodec(codec)
 }
 
 func Auth(req *pb.AccountInfo) (string, errcode.Error) {

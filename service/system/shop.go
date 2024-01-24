@@ -26,17 +26,17 @@ type shopObj struct {
 }
 
 type payArgs struct {
-	OrderId    string
-	UId        int
-	Price      float64
-	ItemId     int
-	ItemNum    int64
-	IsTest     bool
-	PaySDK     string
-	IsStop     bool
-	Group      string
-	ExpireTs   int64
-	IsFirstPay bool
+	OrderId    string  `json:"orderId,omitempty"`
+	UId        int     `json:"uId,omitempty"`
+	Price      float64 `json:"price,omitempty"`
+	ItemId     int     `json:"itemId,omitempty"`
+	ItemNum    int64   `json:"itemNum,omitempty"`
+	IsTest     bool    `json:"isTest,omitempty"`
+	PaySDK     string  `json:"paySDK,omitempty"`
+	IsStop     bool    `json:"isStop,omitempty"`
+	Group      string  `json:"group,omitempty"`
+	ExpireTs   int64   `json:"expireTs,omitempty"`
+	IsFirstPay bool    `json:"isFirstPay,omitempty"`
 }
 
 func init() {

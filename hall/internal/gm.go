@@ -1,18 +1,16 @@
 package internal
 
 import (
-	"gofishing-game/internal/pb"
-
 	"github.com/guogeer/quasar/cmd"
 	"github.com/guogeer/quasar/log"
 	"github.com/guogeer/quasar/util"
 )
 
 type gmArgs struct {
-	Content string
+	Content string `json:"content,omitempty"`
 
-	Users []int
-	Mail  *pb.Mail
+	Users []int `json:"users,omitempty"`
+	Mail  *Mail `json:"mail,omitempty"`
 }
 
 func init() {

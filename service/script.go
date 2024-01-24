@@ -201,7 +201,7 @@ func externScript(L *lua.LState) int {
 }
 
 type scriptArgs struct {
-	Name string
+	Name string `json:"name,omitempty"`
 }
 
 // 重新加载本地的脚本

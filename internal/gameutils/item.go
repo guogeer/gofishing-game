@@ -10,11 +10,11 @@ const (
 )
 
 type Item struct {
-	Id       int
-	Num      int64 `json:",omitempty"`
-	ExpireTs int64 `json:",omitempty"`
-	UpdateTs int64 `json:",omitempty"`
-	MaxValue int64 `json:",omitempty"`
+	Id       int   `json:"id,omitempty"`
+	Num      int64 `json:"num,omitempty"`
+	ExpireTs int64 `json:"expireTs,omitempty"`
+	UpdateTs int64 `json:"updateTs,omitempty"`
+	MaxValue int64 `json:"maxValue,omitempty"`
 
 	params map[string]any // 自定义参数
 }

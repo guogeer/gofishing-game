@@ -26,8 +26,8 @@ var (
 )
 
 type toolArgs struct {
-	Id     int
-	Params string
+	Id     int    `json:"id,omitempty"`
+	Params string `json:"params,omitempty"`
 }
 
 func init() {

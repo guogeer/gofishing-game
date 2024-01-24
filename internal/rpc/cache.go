@@ -49,7 +49,7 @@ func init() {
 		}
 	}
 
-	cmd.BindWithoutQueue("FUNC_EffectConfigTable", funcEffectConfigTable, (*tableArgs)(nil))
+	cmd.Bind("FUNC_EffectConfigTable", funcEffectConfigTable, (*tableArgs)(nil)).SetNoQueue()
 }
 
 func CacheClient() pb.CacheClient {
@@ -99,8 +99,8 @@ func loadRemoteTables() {
 }
 
 type tableArgs struct {
-	Name   string
-	Tables []string
+	Name   string   `json:"name,omitempty"`
+	Tables []string `json:"tables,omitempty"`
 }
 
 // 直接使用TCP协议发送，会有64K大小限制

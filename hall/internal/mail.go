@@ -286,7 +286,7 @@ func SendMail(newMail *Mail) {
 }
 
 type mailArgs struct {
-	Id int64
+	Id int64 `json:"id,omitempty"`
 }
 
 func init() {

@@ -14,14 +14,14 @@ import (
 	"github.com/guogeer/quasar/log"
 )
 
-type Args struct {
-	Id int
+type hallArgs struct {
+	Id int `json:"id,omitempty"`
 
-	Plate    string
-	UId      int
-	Address  string
-	Version  string
-	Segments []service.GameOnlineSegment
+	Plate    string                      `json:"plate,omitempty"`
+	UId      int                         `json:"uId,omitempty"`
+	Address  string                      `json:"address,omitempty"`
+	Version  string                      `json:"version,omitempty"`
+	Segments []service.GameOnlineSegment `json:"segments,omitempty"`
 }
 
 func GetPlayerByContext(ctx *cmd.Context) *hallPlayer {
@@ -32,17 +32,18 @@ func GetPlayerByContext(ctx *cmd.Context) *hallPlayer {
 }
 
 type updateOnlineArgs struct {
-	Games []service.ClientOnline
+	Games []service.ClientOnline `json:"games,omitempty"`
 }
 
 func init() {
 	// internal call
-	cmd.BindFunc(FUNC_UpdateOnline, (*updateOnlineArgs)(nil))
-	cmd.BindFunc(FUNC_SyncOnline, (*Args)(nil))
-	cmd.BindFunc(S2C_GetBestGateway, (*Args)(nil)) // 网关同步
-	cmd.Bind("FUNC_DeleteAccount", syncDeleteAccount, (*Args)(nil))
-	cmd.Bind("FUNC_UpdateMaintain", funcUpdateMaintain, (*Args)(nil))
-	cmd.Bind("FUNC_UpdateFakeOnline", funcUpdateFakeOnline, (*Args)(nil))
+	cmd.BindFunc(FUNC_UpdateOnline, (*updateOnlineArgs)(nil)).SetPrivate()
+	cmd.BindFunc(FUNC_SyncOnline, (*hallArgs)(nil)).SetPrivate()
+	cmd.BindFunc(S2C_GetBestGateway, (*hallArgs)(nil)).SetPrivate()
+
+	cmd.Bind("FUNC_DeleteAccount", syncDeleteAccount, (*hallArgs)(nil)).SetPrivate()
+	cmd.Bind("FUNC_UpdateMaintain", funcUpdateMaintain, (*hallArgs)(nil)).SetPrivate()
+	cmd.Bind("FUNC_UpdateFakeOnline", funcUpdateFakeOnline, (*hallArgs)(nil)).SetPrivate()
 }
 
 // 更新在线人数
@@ -64,14 +65,14 @@ func FUNC_SyncOnline(ctx *cmd.Context, data any) {
 }
 
 func S2C_GetBestGateway(ctx *cmd.Context, data any) {
-	args := data.(*Args)
+	args := data.(*hallArgs)
 	w := GetWorld()
 	w.currentBestGateway = args.Address
 }
 
 // 同步删除账号
 func syncDeleteAccount(ctx *cmd.Context, data any) {
-	args := data.(*Args)
+	args := data.(*hallArgs)
 	log.Debug("gm delete account", args.UId)
 	rpc.CacheClient().ClearAccount(context.Background(), &pb.ClearAccountReq{
 		Uid: int32(args.UId),
@@ -84,6 +85,6 @@ func funcUpdateMaintain(ctx *cmd.Context, data any) {
 }
 
 func funcUpdateFakeOnline(ctx *cmd.Context, data any) {
-	args := data.(*Args)
+	args := data.(*hallArgs)
 	GetWorld().segments = args.Segments
 }

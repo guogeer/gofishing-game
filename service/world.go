@@ -27,8 +27,8 @@ var (
 
 // 客户端显示在线
 type ClientOnline struct {
-	Online     int
-	ServerName string
+	Online     int    `json:"online,omitempty"`
+	ServerName string `json:"serverName,omitempty"`
 }
 
 func createPlayer() *Player {

@@ -8,25 +8,25 @@ import (
 )
 
 type serviceArgs struct {
-	Id      int
-	UId     int
-	Answer  int
-	OrderId string
-	Guid    string
-	Way     string
-	Msg     string
-	Type    int
-	Phone   string
-	SubId   int
-	RoomId  int
-	IP      string
-	Sample  string
-	ItemId  int
-	ItemNum int64
+	Id      int    `json:"id,omitempty"`
+	UId     int    `json:"uId,omitempty"`
+	Answer  int    `json:"answer,omitempty"`
+	OrderId string `json:"orderId,omitempty"`
+	Guid    string `json:"guid,omitempty"`
+	Way     string `json:"way,omitempty"`
+	Msg     string `json:"msg,omitempty"`
+	Type    int    `json:"type,omitempty"`
+	Phone   string `json:"phone,omitempty"`
+	SubId   int    `json:"subId,omitempty"`
+	RoomId  int    `json:"roomId,omitempty"`
+	IP      string `json:"ip,omitempty"`
+	Sample  string `json:"sample,omitempty"`
+	ItemId  int    `json:"itemId,omitempty"`
+	ItemNum int64  `json:"itemNum,omitempty"`
 
-	Name      string
-	Items     []*gameutils.Item
-	IsWatchAd bool
+	Name      string            `json:"name,omitempty"`
+	Items     []*gameutils.Item `json:"items,omitempty"`
+	IsWatchAd bool              `json:"isWatchAd,omitempty"`
 }
 
 func init() {
