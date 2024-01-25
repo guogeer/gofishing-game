@@ -18,7 +18,10 @@ func (cc *Cache) QueryUserInfo(ctx context.Context, req *pb.QueryUserInfoReq) (*
 		Token: generateToken(int(uid)),
 	}
 
-	db.QueryRow("select account_info,create_time from user_info where uid=?", uid).Scan(dbo.JSON(userInfo), &userInfo.CreateTime)
+	var gameLocation string
+	db.QueryRow("select chan_id,game_location,nickname,sex,icon,plate_icon,create_time from user_info where uid=?", uid).Scan(
+		&userInfo.ChanId, &gameLocation, &userInfo.Nickname, &userInfo.Sex, &userInfo.Icon, &userInfo.PlateIcon,
+		&userInfo.CreateTime)
 	db.QueryRow("select open_id from user_plate where uid=?", uid).Scan(&userInfo.OpenId)
 	return &pb.QueryUserInfoResp{Info: userInfo}, nil
 }

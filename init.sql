@@ -9,14 +9,15 @@ CREATE TABLE user_info (
     nickname VARCHAR(50) NOT NULL,
     sex int not null,
     icon varchar(255) not null,
-    server_name varchar(32) not null,
-    time_zone float not null,
+    time_zone float not null default 0,
     email varchar(64) not null,
     ip varchar(32) not null,
     client_version varchar(32) not null,
     mac varchar(24) not null,
     imei varchar(24) not null,
     imsi varchar(24) not null,
+    chan_id varchar(32) not null,
+    game_location varchar(32) not null default '',
     create_time TIMESTAMP not null default current_TIMESTAMP
 );
 

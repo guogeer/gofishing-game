@@ -170,11 +170,11 @@ func (eq *enterQueue) LoadAndEnter(uid int) {
 
 		if !args.isOnline {
 			// 不请求离开，玩家直接离开进入游戏
-			if args.LeaveServer != "" && auth.ServerName != "" {
-				cmd.Request(auth.ServerName, "FUNC_Leave", cmd.M{"UId": uid})
+			if args.LeaveServer != "" && auth.ServerId != "" {
+				cmd.Request(auth.ServerId, "FUNC_Leave", cmd.M{"UId": uid})
 			}
 
-			rpc.CacheClient().Visit(context.Background(), &pb.VisitReq{Uid: int32(uid), SubId: int32(subId), ServerName: GetName()})
+			rpc.CacheClient().Visit(context.Background(), &pb.VisitReq{Uid: int32(uid), SubId: int32(subId), ServerId: GetName()})
 			// token相同，并且玩家不在游戏中
 			if token == auth.Token {
 				enterGameResp, _ = rpc.CacheClient().EnterGame(context.Background(), &pb.EnterGameReq{Uid: int32(uid)})
@@ -200,17 +200,17 @@ func (eq *enterQueue) Pop(req *enterRequest) {
 	eq.Remove(uid)
 	// 更新网关地址
 	var matchServer string
-	if errcode.IsOk(e) {
+	if e == nil {
 		matchServer = GetName()
 	} else if e == errEnterOtherGame {
-		matchServer = req.Data.UserInfo.ServerName
+		matchServer = req.Data.UserInfo.ServerId
 	}
 	if matchServer != "" {
 		ss.WriteJSON("FUNC_SwitchServer", cmd.M{"MatchServer": matchServer, "ServerName": req.ServerName, "UId": uid})
 	}
 
 	// 首次成功进入或者重连
-	if errcode.IsOk(e) {
+	if e == nil {
 		p := gAllPlayers[uid]
 		p.IP = req.clientIP
 		p.enterReq.session = ss
@@ -232,7 +232,7 @@ func (eq *enterQueue) Pop(req *enterRequest) {
 			if e != errEnterOtherGame {
 				rpc.CacheClient().Visit(context.Background(), &pb.VisitReq{Uid: int32(uid)})
 			}
-			WriteMessage(ss, req.ServerName, "Enter", cmd.M{"Key": e, "Msg": e.Message(), "SubId": mySubId})
+			WriteMessage(ss, req.ServerName, "Enter", cmd.M{"Key": e, "Msg": e.Error(), "SubId": mySubId})
 		}()
 	}
 }
@@ -260,7 +260,7 @@ func (eq *enterQueue) TryEnter(args *enterRequest) errcode.Error {
 	}
 
 	mySubId := int(args.Data.UserInfo.SubId)
-	myServer := args.Data.UserInfo.ServerName
+	myServer := args.Data.UserInfo.ServerId
 	if myServer != "" && !(mySubId == subId && GetName() == myServer) {
 		args.oldSubId = mySubId
 		return errEnterOtherGame

@@ -35,8 +35,8 @@ go install github.com/guogeer/quasar/...
 cp ~/go/bin/gateway gateway_server
 cp ~/go/bin/router router_server
 # 若设置了$GOPATH
-cp $GOPATH/bin/gateway gateway_server
-cp $GOPATH/bin/router router_server
+# cp $GOPATH/bin/gateway gateway_server
+# cp $GOPATH/bin/router router_server
 # 初始化配置
 cp config_bak.yaml config.yaml #根据实际部署修改配置
 nohup ./router_server 1>/dev/null 2>>error.log &

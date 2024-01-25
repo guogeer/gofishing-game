@@ -159,7 +159,7 @@ message SubGame {
 message VisitReq {
   int32 uid = 1;
   int32 subId = 2;
-  string serverName = 3;
+  string serverId = 3;
 }
 
 message LoadBinReq {

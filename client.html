@@ -62,11 +62,13 @@
 	}
 	const url_args = parseQuery()
 
-	let login_addr = url_args['addr'] || "localhost:9501"
-	let open_id = url_args['open_id'] || "test001"
+	const login_addr = url_args['addr'] || "localhost:9501"
+	const open_id = url_args['open_id'] || "test001"
+	const ignore_msgs = ['heartbeat']
 	console.log('login addr', login_addr, 'open id', open_id)
 
-	fetch('http://' + login_addr + "/login", {
+	let active_conn = null;
+	fetch('http://' + login_addr + "/api/v1/login", {
 		method: 'POST',
 		headers: {
 			'Accept': 'application/json',
@@ -74,33 +76,55 @@
 		},
 		body: encode('login', { 'openId': open_id, 'plate': 'test' }),
 	}).then(res => res.json())
-		.then(res => console.log(res));
+		.then(res => {
+			const ws_addr = "ws://" + res.data.addr + "/ws"
+			console.log("webscoket addr", ws_addr)
+			conn = new WebSocket(ws_addr);
 
+			// Connection opened
+			conn.addEventListener("open", function (event) {
+				active_conn = conn
+				console.log(ws_addr + "链接建立成功");
+				document.getElementById("buttonSendMsg").disabled = false
+			});
 
-	let ws_addr = "ws://" + login_addr + "/ws"
-	// Create WebSocket connection.
-	const ws_conn = new WebSocket(ws_addr);
+			// Listen for messages
+			conn.addEventListener("message", function (event) {
+				try {
+					const obj = JSON.parse(event.data)
+					if (!(obj.data.id in ignore_msgs)) {
+						console.log("recv msg", obj)
+					}
+				} catch (error) {
+					console.error('recv invalid data', event.data)
+				}
+			});
 
-	// Connection opened
-	ws_conn.addEventListener("open", function (event) {
-		ws_conn.send(ws + "链接建立成功");
-		document.getElementById("buttonSendMsg").disabled = false
-	});
+			conn.addEventListener("error", function (event) {
+				active_conn = null
+				console.log("connect error");
+			});
 
-	// Listen for messages
-	ws_conn.addEventListener("message", function (event) {
-		console.log("recv msg", event.data);
-	});
+			document.getElementById("inputMsgId").value = "hall.Enter"
+			document.getElementById("inputMsgData").value = JSON.stringify({ 'uid': res.data.uid, 'token': res.data.token })
+		});
+
 
 	function sendMsg() {
+		if (!active_conn) return
+
 		const msg_id = document.getElementById("inputMsgId").value
 		const msg_data = document.getElementById("inputMsgData").value
 		try {
 			const msg_obj = JSON.parse(msg_data)
+			const msg_body = encode(msg_id, msg_obj)
+			active_conn.send(msg_body)
 		} catch (error) {
-			window.alert("invalid json data", error)
+			console.error("invalid json data", error)
 		}
-		const msg_body = encode(msg_id, msg_obj)
-		ws_conn.send(msg_body)
 	};
+	setInterval(() => {
+		if (!active_conn) return
+		active_conn.send(encode('heartbeat', {}))
+	}, 5000)
 </script>

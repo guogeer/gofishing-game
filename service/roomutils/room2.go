@@ -43,7 +43,7 @@ func (obj *RoomObj) TryEnter() errcode.Error {
 	// 比赛场先全部进入一个房间，比赛开始后再分配座位
 	if roomAction, ok := obj.player.GameAction.(RoomAction); ok {
 		room, e := roomAction.ChooseRoom()
-		if !errcode.IsOk(e) {
+		if e == nil {
 			return e
 		}
 		obj.room = room

@@ -217,7 +217,7 @@ func funcEffectLocalScript(ctx *cmd.Context, in any) {
 func loadAllScripts() {
 	path := gLocalScriptPath
 	if err := script.LoadScripts(path); err != nil {
-		log.Fatalf("load scripts %s error: %v", path, err)
+		log.Warnf("load scripts %s error: %v", path, err)
 	}
 }
 

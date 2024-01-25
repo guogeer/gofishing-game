@@ -3,9 +3,8 @@ package errcode
 import "encoding/json"
 
 type Error interface {
-	IsOk() bool
 	Code() string
-	Message() string
+	Error() string
 }
 
 var errorCodes = map[string]Error{}
@@ -19,7 +18,7 @@ func (e BaseError) Code() string {
 	return e.code
 }
 
-func (e BaseError) Message() string {
+func (e BaseError) Error() string {
 	return e.msg
 }
 
@@ -60,10 +59,6 @@ func New(code, msg string) Error {
 
 func Get(key string) Error {
 	return errorCodes[key]
-}
-
-func IsOk(e Error) bool {
-	return e.Code() == Ok.Code()
 }
 
 var (

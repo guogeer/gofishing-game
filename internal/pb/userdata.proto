@@ -23,11 +23,15 @@ message SimpleUserInfo {
 message UserInfo {
     int32 uid = 1;
     string token = 2;
-    string serverName = 3;
+    string serverId = 3;
     string createTime = 4;
     string chanId = 5;
     string openId = 6;
 	int32 subId = 7;
+	int32 sex = 8;
+	string icon = 9;
+	string plateIcon = 10;
+	string nickname = 11;
 }
 
 

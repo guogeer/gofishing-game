@@ -72,7 +72,7 @@ type loginSession struct {
 
 // 创建账号，若账号存在，返回token
 // 2020-07-02 有头像的用户，需要定期更新平台信息
-func CreateAccount(method string, account *pb.AccountInfo, params *pb.LoginParams) (ss *loginSession, e errcode.Error) {
+func CreateAccount(method string, account *pb.AccountInfo, params *pb.LoginParams) (*loginSession, error) {
 	gw, err := GetBestGateway()
 	if err != nil {
 		return nil, errNoGateway
@@ -80,15 +80,13 @@ func CreateAccount(method string, account *pb.AccountInfo, params *pb.LoginParam
 	if _, _, err := net.SplitHostPort(gw); err != nil {
 		return nil, errInvalidAddr
 	}
+
 	host := account.Ip
 	if strings.Contains(host, ":") {
 		host, _, _ = net.SplitHostPort(host)
 	}
 
-	_, e = Auth(&pb.AccountInfo{
-		Address: account.Address,
-	})
-	if e != errcode.Ok {
+	if _, e := Auth(&pb.AccountInfo{Address: account.Address}); e != errcode.Ok {
 		return nil, e
 	}
 	account.Sex = account.Sex % 2
@@ -115,32 +113,28 @@ func CreateAccount(method string, account *pb.AccountInfo, params *pb.LoginParam
 
 	resp, err := rpc.CacheClient().CreateAccount(context.Background(), &pb.CreateAccountReq{Info: account})
 	if err != nil {
-		e = errcode.Retry
-		return
+		return nil, errcode.Retry
 	}
 	uid, newid := int(resp.Uid), int(resp.NewUserId)
 	//log.Debugf("uid %v CreateAccount newId %v", uid, newid)
 	if uid <= 0 {
-		e = errAuthFailed
+		return nil, errAuthFailed
 	}
 	if uid == -1 && method == "register" {
-		e = errAccountExisted
+		return nil, errAccountExisted
 	}
 	if uid == -2 {
-		e = errIPLimit
-	}
-	if e != errcode.Ok {
-		return
+		return nil, errIPLimit
 	}
 
 	account.Uid = int32(uid)
 	token, e := Auth(account)
 	if e != errcode.Ok {
-		return
+		return nil, e
 	}
 
 	// Ok
-	ss = &loginSession{
+	ss := &loginSession{
 		UId:   uid,
 		NewId: newid,
 		Token: token,
@@ -214,8 +208,8 @@ func login(c *api.Context, data any) (any, error) {
 	util.DeepCopy(accountInfo, args)
 	util.DeepCopy(loginParams, args)
 	ss, e := CreateAccount("login", accountInfo, loginParams)
-	if !e.IsOk() {
-		return nil, errors.New(e.Message())
+	if e != nil {
+		return nil, errors.New(e.Error())
 	}
 	return struct {
 		*loginSession

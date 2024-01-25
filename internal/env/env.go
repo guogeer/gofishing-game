@@ -1,8 +1,6 @@
 package env
 
 import (
-	"fmt"
-
 	"github.com/guogeer/quasar/config"
 )
 
@@ -29,7 +27,6 @@ var defaultConfig Env
 
 func init() {
 	config.LoadFile(config.Config().Path(), &defaultConfig)
-	fmt.Println(config.Config().Path(), defaultConfig)
 }
 
 func Config() *Env {

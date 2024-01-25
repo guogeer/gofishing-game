@@ -24,7 +24,7 @@ message AccountInfo {
   string phone = 17;
   string osVersion = 18;
   string netMode = 19;
-  string version = 20;
+  string clientVersion = 20;
   string phoneBrand = 21;
   string iosIDFA = 24; // IOS设备标识
   int32 subId = 25;
@@ -44,8 +44,7 @@ message CreateAccountResp {
 }
 
 message LoginParams {
-	string distinctId = 1;
-	double timeZone = 2;
+	double timeZone = 1;
 }
 
 message LoginParamsReq {
@@ -119,5 +118,5 @@ message AuthResp {
   string clientVersion = 5; // 版本
   string loginTime = 6;     // 登陆时间
   repeated string loginPlates = 7;
-  string serverName = 8;
+  string serverId = 8;
 }

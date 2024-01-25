@@ -7,8 +7,6 @@ import (
 	"github.com/guogeer/quasar/util"
 )
 
-var _ = fmt.Println
-
 func addStructFieldsWithMulti(obj, add any, multi int) {
 	if obj == nil || add == nil {
 		return
@@ -28,7 +26,6 @@ func addStructFieldsWithMulti(obj, add any, multi int) {
 
 		objkind := util.ConvertKind(objfield.Kind())
 		addkind := util.ConvertKind(addfield.Kind())
-		// fmt.Println(objkind, addkind)
 		if !objfield.CanSet() {
 			continue
 		}

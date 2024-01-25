@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"strconv"
 	"time"
 
 	"gofishing-game/internal/dbo"
@@ -57,7 +58,7 @@ func (cc *Cache) EnterGame(ctx context.Context, req *pb.EnterGameReq) (*pb.Enter
 func (cc *Cache) QueryLoginParams(ctx context.Context, req *pb.QueryLoginParamsReq) (*pb.QueryLoginParamsResp, error) {
 	db := dbo.Get()
 	params := &pb.LoginParams{}
-	err := db.QueryRow("select account_info from user_info where uid=?", req.Uid).Scan(dbo.JSON(params)) // 登陆参数
+	err := db.QueryRow("select time_zone from user_info where uid=?", req.Uid).Scan(&params.TimeZone) // 登陆参数
 	return &pb.QueryLoginParamsResp{Params: params}, err
 }
 
@@ -105,7 +106,7 @@ func (cc *Cache) Auth(ctx context.Context, req *pb.AuthReq) (*pb.AuthResp, error
 		db.QueryRow("select plate from user_plate where uid=?", uid).Scan(&plate)
 		plates = append(plates, plate)
 		resp.LoginPlates = plates
-		resp.ServerName = infoResp.Info.ServerName
+		resp.ServerId = infoResp.Info.ServerId
 
 		// IP白名单
 		type clientVersion struct {
@@ -218,22 +219,13 @@ func (cc *Cache) SaveBin(ctx context.Context, req *pb.SaveBinReq) (*pb.EmptyResp
 // 玩家访问房间
 func (cc *Cache) Visit(ctx context.Context, req *pb.VisitReq) (*pb.EmptyResp, error) {
 	db := dbo.Get()
-	_, err := db.Exec("update user_info set account_info=json_set(account_info,'$.SubId',?,'$.ServerName',?) where (ifnull(account_info->>'$.ServerName','') = '' or ? = '') and uid=?", req.SubId, req.ServerName, req.ServerName, req.Uid)
-	return &pb.EmptyResp{}, err
-}
 
-type dbAccountInfo struct {
-	ChanId     string
-	Nickname   string
-	Sex        int
-	Icon       string
-	OS         string
-	NetMode    string
-	Version    string
-	PhoneBrand string
-	SubId      int32
-	IP         string
-	PlateIcon  string
+	location := req.ServerId
+	if location != "" {
+		location = req.ServerId + ":" + strconv.Itoa(int(req.SubId))
+	}
+	_, err := db.Exec("update user_info set game_location=? where (game_location = '' or ? = '') and uid=?", location, location, req.Uid)
+	return &pb.EmptyResp{}, err
 }
 
 // 注册账号
@@ -255,25 +247,25 @@ func (cc *Cache) CreateAccount(ctx context.Context, req *pb.CreateAccountReq) (*
 		newInfo.Phone = "" // 忽略手机号
 		db.QueryRow("select uid from user_plate where open_id=? limit 1", newInfo.OpenId).Scan(&newInfo.Uid)
 		userInfo, _ := cc.QueryUserInfo(ctx, &pb.QueryUserInfoReq{Uid: newInfo.Uid})
-		util.DeepCopy(oldInfo, userInfo)
+		util.DeepCopy(oldInfo, userInfo.Info)
 	}
 
 	fields := map[string]any{}
 	// 更新昵称
 	if oldInfo.Uid > 0 && newInfo.Nickname != "" && oldInfo.Nickname == "" {
-		fields["Nickname"] = newInfo.Nickname
+		fields["nickname"] = newInfo.Nickname
 	}
 	// 更新头像
 	if oldInfo.Uid > 0 && newInfo.Icon != "" {
-		fields["Icon"] = newInfo.Icon
+		fields["icon"] = newInfo.Icon
 	}
 	// 更新头像
 	if oldInfo.Uid > 0 && newInfo.PlateIcon != "" {
-		fields["PlateIcon"] = newInfo.PlateIcon
+		fields["plate_icon"] = newInfo.PlateIcon
 	}
 
 	for k, v := range fields {
-		db.Exec("update user_info set account_info=json_set(account_info,'$."+k+"',?) where uid=?", v, oldInfo.Uid)
+		db.Exec("update user_info set "+k+"=? where uid=?", v, oldInfo.Uid)
 	}
 
 	var newid int64
@@ -290,9 +282,10 @@ func (cc *Cache) CreateAccount(ctx context.Context, req *pb.CreateAccountReq) (*
 			return nil, err
 		}
 		if rowNum > 0 {
-			dbInfo := &dbAccountInfo{}
-			util.DeepCopy(dbInfo, newInfo)
-			rs, err = tx.Exec("insert into user_info(account_info) values(?)", dbo.JSON(dbInfo))
+			rs, err = tx.Exec("insert into user_info(nickname,sex,icon,email,ip,chan_id,client_version,mac,imei,imsi) values(?,?,?,?,?,?,?,?,?,?,?)",
+				newInfo.Nickname, newInfo.Sex, newInfo.Icon, newInfo.Email, newInfo.Ip,
+				newInfo.ChanId, newInfo.ClientVersion, newInfo.Mac, newInfo.Imei, newInfo.Imsi,
+			)
 			if err != nil {
 				tx.Rollback()
 				return nil, err
@@ -313,21 +306,12 @@ func (cc *Cache) CreateAccount(ctx context.Context, req *pb.CreateAccountReq) (*
 
 func (cc *Cache) UpdateLoginParams(ctx context.Context, req *pb.UpdateLoginParamsReq) (*pb.EmptyResp, error) {
 	db := dbo.Get()
-	tx, _ := db.Begin()
-	val := reflect.ValueOf(req.Params).Elem()
-	for i := 0; i < val.NumField(); i++ {
-		field := val.Field(i)
-		if !(field.Kind() == reflect.String && field.IsZero()) && field.CanInterface() {
-			tx.Exec("update user_info set account_info=json_set(account_info,'$."+val.Type().Field(i).Name+"',?) where uid=?", field.Interface(), req.Uid)
-		}
-	}
-	tx.Commit()
+	db.Exec("update user_info set time_zone=? where uid=?", req.Params.TimeZone, req.Uid)
 	return &pb.EmptyResp{}, nil
 }
 
 func (cc *Cache) ClearAccount(ctx context.Context, req *pb.ClearAccountReq) (*pb.EmptyResp, error) {
 	db := dbo.Get()
-	// db.Exec("update user_info set account_info='{}' where uid=?", req.UId)
 	db.Exec("delete from user_plate where uid=?", req.Uid)
 	return &pb.EmptyResp{}, nil
 }
