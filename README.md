@@ -2,7 +2,7 @@
 
 过往棋牌、休闲项目代码总结，按如下计划更新
 - 移除了相关的业务（√）
-- 项目可以在本地正常运行（×）
+- 项目可以在本地正常运行（90/100）。待修复物品存档问题
 - 添加可体验的小游戏demo（×）
 - 开放管理后台等仓库（×）
 
@@ -41,4 +41,26 @@ cp ~/go/bin/router router_server
 cp config_bak.yaml config.yaml #根据实际部署修改配置
 nohup ./router_server 1>/dev/null 2>>error.log &
 nohup ./gateway_server 1>/dev/null 2>>error.log &
+```
+3、启动业务（调试模式）
+3.1 创建go.work
+```go
+go 1.21.1
+
+use (
+	./gofishing-game
+	./gofishing-game/cache
+	./gofishing-game/hall
+	./gofishing-game/login
+	./gofishing-plate
+	./quasar
+	./quasar/gateway
+	./quasar/router
+)
+```
+3.2 启动服务
+```sh
+go run ./gofishing-game/cache
+go run ./gofishing-game/hall
+go run ./gofishing-game/login
 ```
