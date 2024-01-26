@@ -64,3 +64,9 @@ go run ./gofishing-game/cache
 go run ./gofishing-game/hall
 go run ./gofishing-game/login
 ```
+4、调试工具
+新增了client.html调试工具
+- 自动登录并连接网关
+- 打开控制台可以看到消息历史
+- 可以模拟消息请求
+- 支持url自定义参数open_id（默认test001）、addr（默认localhost:9501）
