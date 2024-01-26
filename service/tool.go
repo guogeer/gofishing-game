@@ -71,7 +71,7 @@ func funcGetTestTools(ctx *cmd.Context, data any) {
 	}
 	log.Debugf("player %d get test tools", ply.Id)
 	tools := getTestTools(ply.Id)
-	ply.WriteJSON("GetTestTools", map[string]any{"Tools": tools})
+	ply.WriteJSON("getTestTools", map[string]any{"tools": tools})
 }
 
 func funcUseTestTool(ctx *cmd.Context, data any) {
@@ -98,8 +98,9 @@ type testTool struct{}
 
 func (tool *testTool) Test_Q强制断线(ctx *cmd.Context, params string) {
 	ply := GetPlayerByContext(ctx)
-	WriteMessage(ply.enterReq.session, "", "ServerClose", cmd.M{
-		"ServerName": ply.enterReq.ServerName,
+	WriteMessage(ply.enterReq.session, "", "serverClose", cmd.M{
+		"serverId": ply.enterReq.ServerName,
+		"cause":    "test tool",
 	})
 }
 
@@ -140,7 +141,7 @@ func (tool *testTool) Test_Z增加指定物品数量(ctx *cmd.Context, params st
 	itemId, _ := strconv.Atoi(ss[0])
 	num, _ := strconv.Atoi(ss[1])
 	if itemId == 0 {
-		ply.WriteJSON("Prompt", cmd.M{"Msg": "格式：物品ID,物品数量"})
+		ply.WriteJSON("prompt", cmd.M{"msg": "格式：物品ID,物品数量"})
 	}
 	ply.ItemObj().Add(itemId, int64(num), util.GUID())
 }

@@ -80,7 +80,7 @@ func (obj *shopObj) OnAddItems(itemLog *gameutils.ItemLog) {
 		"FirstPay": firstPay,
 	}
 
-	p.WriteJSON("PayOk", data)
+	p.WriteJSON("payOk", data)
 }
 
 func (obj *shopObj) getSubscriptionReward() (string, string) {

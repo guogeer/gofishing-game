@@ -58,7 +58,7 @@ func (cc *Cache) EnterGame(ctx context.Context, req *pb.EnterGameReq) (*pb.Enter
 func (cc *Cache) QueryLoginParams(ctx context.Context, req *pb.QueryLoginParamsReq) (*pb.QueryLoginParamsResp, error) {
 	db := dbo.Get()
 	params := &pb.LoginParams{}
-	err := db.QueryRow("select time_zone from user_info where uid=?", req.Uid).Scan(&params.TimeZone) // 登陆参数
+	err := db.QueryRow("select time_zone from user_info where id=?", req.Uid).Scan(&params.TimeZone) // 登陆参数
 	return &pb.QueryLoginParamsResp{Params: params}, err
 }
 
@@ -224,7 +224,7 @@ func (cc *Cache) Visit(ctx context.Context, req *pb.VisitReq) (*pb.EmptyResp, er
 	if location != "" {
 		location = req.ServerId + ":" + strconv.Itoa(int(req.SubId))
 	}
-	_, err := db.Exec("update user_info set game_location=? where (game_location = '' or ? = '') and uid=?", location, location, req.Uid)
+	_, err := db.Exec("update user_info set game_location=? where (game_location = '' or ? = '') and id=?", location, location, req.Uid)
 	return &pb.EmptyResp{}, err
 }
 
@@ -306,7 +306,7 @@ func (cc *Cache) CreateAccount(ctx context.Context, req *pb.CreateAccountReq) (*
 
 func (cc *Cache) UpdateLoginParams(ctx context.Context, req *pb.UpdateLoginParamsReq) (*pb.EmptyResp, error) {
 	db := dbo.Get()
-	db.Exec("update user_info set time_zone=? where uid=?", req.Params.TimeZone, req.Uid)
+	db.Exec("update user_info set time_zone=? where id=?", req.Params.TimeZone, req.Uid)
 	return &pb.EmptyResp{}, nil
 }
 

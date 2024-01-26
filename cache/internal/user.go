@@ -19,7 +19,7 @@ func (cc *Cache) QueryUserInfo(ctx context.Context, req *pb.QueryUserInfoReq) (*
 	}
 
 	var gameLocation string
-	db.QueryRow("select chan_id,game_location,nickname,sex,icon,plate_icon,create_time from user_info where uid=?", uid).Scan(
+	db.QueryRow("select chan_id,game_location,nickname,sex,icon,plate_icon,create_time from user_info where id=?", uid).Scan(
 		&userInfo.ChanId, &gameLocation, &userInfo.Nickname, &userInfo.Sex, &userInfo.Icon, &userInfo.PlateIcon,
 		&userInfo.CreateTime)
 	db.QueryRow("select open_id from user_plate where uid=?", uid).Scan(&userInfo.OpenId)
@@ -28,7 +28,7 @@ func (cc *Cache) QueryUserInfo(ctx context.Context, req *pb.QueryUserInfoReq) (*
 
 func (cc *Cache) SetUserInfo(ctx context.Context, req *pb.SetUserInfoReq) (*pb.EmptyResp, error) {
 	db := dbo.Get()
-	db.Exec(`update user_info set sex=?,nickname=?,icon=?,email=? where uid=?`,
+	db.Exec(`update user_info set sex=?,nickname=?,icon=?,email=? where id=?`,
 		req.Sex, req.Nickname, req.Icon, req.Email, req.Uid)
 	return &pb.EmptyResp{}, nil
 }

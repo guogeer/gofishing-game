@@ -71,7 +71,7 @@ func (obj *mailObj) BeforeEnter() {
 		p.mailObj.OnRecv(len(massMails))
 	}
 
-	p.Notify(cmd.M{"Mails": obj.newMailNum})
+	p.Notify(cmd.M{"mails": obj.newMailNum})
 }
 
 func (obj *mailObj) IsMassMailValid(mail *Mail) bool {
@@ -161,8 +161,8 @@ func (obj *mailObj) Look() {
 			if emptyMailId > 0 {
 				p.mailObj.OnRecv(-1)
 			}
-			p.WriteJSON("LookMails", cmd.M{
-				"List": mails,
+			p.WriteJSON("lookMails", cmd.M{
+				"list": mails,
 			})
 		})
 	}()
@@ -188,7 +188,7 @@ func (obj *mailObj) OnRecv(n int) {
 	}
 	obj.newMailNum += n
 	obj.player.Notify(cmd.M{
-		"Mails": obj.newMailNum,
+		"mails": obj.newMailNum,
 	})
 }
 
@@ -225,12 +225,12 @@ func (obj *mailObj) Draw(id int64) {
 				return
 			}
 
-			e := errcode.Ok
+			var e errcode.Error
 			if pbMail == nil || pbMail.Id == 0 {
 				e = errcode.Retry
 			}
-			p.WriteJSON("DrawMail", e)
-			if e != errcode.Ok {
+			p.WriteJSON("drawMail", e)
+			if e != nil {
 				return
 			}
 			// OK
@@ -290,8 +290,8 @@ type mailArgs struct {
 }
 
 func init() {
-	cmd.Bind("LookMails", funcLookMails, (*mailArgs)(nil))
-	cmd.Bind("DrawMail", funcDrawMail, (*mailArgs)(nil))
+	cmd.Bind("lookMails", funcLookMails, (*mailArgs)(nil))
+	cmd.Bind("drawMail", funcDrawMail, (*mailArgs)(nil))
 }
 
 func funcLookMails(ctx *cmd.Context, in any) {

@@ -38,7 +38,7 @@ func newRoomObj(player *service.Player) service.EnterAction {
 
 func (obj *RoomObj) TryEnter() errcode.Error {
 	if obj.room != nil {
-		return errcode.Ok
+		return nil
 	}
 	// 比赛场先全部进入一个房间，比赛开始后再分配座位
 	if roomAction, ok := obj.player.GameAction.(RoomAction); ok {
@@ -49,7 +49,7 @@ func (obj *RoomObj) TryEnter() errcode.Error {
 		obj.room = room
 	}
 
-	return errcode.Ok
+	return nil
 }
 
 func (obj *RoomObj) BeforeEnter() {
@@ -72,7 +72,7 @@ func (obj *RoomObj) OnLeave() {
 	room := obj.room
 	log.Infof("player %d leave room", obj.player.Id)
 	delete(room.allPlayers, obj.player.Id)
-	room.Broadcast("Leave", errcode.Ok, obj.player.Id)
+	room.Broadcast("Leave", nil, obj.player.Id)
 	obj.room = nil
 }
 
@@ -117,14 +117,14 @@ func (obj *RoomObj) ChangeRoom() errcode.Error {
 		return errcode.Retry
 	}
 	room, e := roomAction.ChooseRoom()
-	if e != errcode.Ok {
+	if e != nil {
 		return e
 	}
 
 	// OK
 	obj.OnLeave()
 	obj.room = room
-	return errcode.Ok
+	return nil
 }
 func (obj *RoomObj) Choose() (*Room, errcode.Error) {
 	ply := obj.player
@@ -157,7 +157,7 @@ func (obj *RoomObj) Choose() (*Room, errcode.Error) {
 		freeRoom = service.GetWorld().(RoomWorld).NewRoom(subId)
 		sub.rooms = append(sub.rooms, freeRoom)
 	}
-	return freeRoom, errcode.Ok
+	return freeRoom, nil
 }
 
 func init() {

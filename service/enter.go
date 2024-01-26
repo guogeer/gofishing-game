@@ -126,7 +126,7 @@ func (eq *enterQueue) PushBack(args *enterRequest) errcode.Error {
 			if oldss.Id == ss.Id {
 				return errNoResponse
 			}
-			old.WriteJSON("Enter", errcode.New("enter_already", "账号已登录"))
+			old.WriteJSON("enter", errcode.New("enter_already", "账号已登录"))
 			delete(gGatewayPlayers, oldss.Id)
 		}
 		if old.enterReq.Token != args.Token {
@@ -153,9 +153,8 @@ func (eq *enterQueue) PushBack(args *enterRequest) errcode.Error {
 
 	// 处理登陆队列
 	eq.LoadAndEnter(uid)
-	return errcode.Ok
+	return nil
 }
-
 func (eq *enterQueue) LoadAndEnter(uid int) {
 	args := eq.m[uid]
 	ip, subId, token := args.clientIP, args.SubId, args.Token
@@ -222,7 +221,7 @@ func (eq *enterQueue) Pop(req *enterRequest) {
 		p.enterReq.Data = nil
 	} else if !req.IsFirst() {
 		// 重连进入失败
-		WriteMessage(ss, req.ServerName, "Enter", e)
+		WriteMessage(ss, req.ServerName, "enter", e)
 	} else {
 		// 首次进入失败
 		mySubId := req.Data.UserInfo.SubId
@@ -232,7 +231,7 @@ func (eq *enterQueue) Pop(req *enterRequest) {
 			if e != errEnterOtherGame {
 				rpc.CacheClient().Visit(context.Background(), &pb.VisitReq{Uid: int32(uid)})
 			}
-			WriteMessage(ss, req.ServerName, "Enter", cmd.M{"Key": e, "Msg": e.Error(), "SubId": mySubId})
+			WriteMessage(ss, req.ServerName, "enter", cmd.M{"err": e, "subId": mySubId})
 		}()
 	}
 }
@@ -248,7 +247,7 @@ func (eq *enterQueue) TryEnter(args *enterRequest) errcode.Error {
 		if player.IsBusy() {
 			return errcode.Retry
 		}
-		return errcode.Ok
+		return nil
 	}
 	// 验证失败
 	if token != args.Auth.Token {
@@ -301,8 +300,8 @@ func funcEnter(ctx *cmd.Context, data any) {
 	}
 
 	e := gEnterQueue.PushBack(enterReq)
-	if e != errcode.Ok && e != errNoResponse {
-		WriteMessage(enterReq.session, enterReq.ServerName, "Enter", cmd.M{"Err": e, "SubId": enterReq.oldSubId})
+	if e != nil && e != errNoResponse {
+		WriteMessage(enterReq.session, enterReq.ServerName, "enter", cmd.M{"err": e, "subId": enterReq.oldSubId})
 	}
 	log.Infof("player %d enter %s:%d user+robot num %d cost(except rpc) %v", enterReq.UId, enterReq.ServerName, enterReq.SubId, len(gAllPlayers), time.Since(enterReq.startTime))
 }
@@ -314,8 +313,8 @@ func funcAutoLeave(ctx *cmd.Context, data any) {
 	// log.Debugf("player %d auto leave", uid)
 
 	if ply == nil {
-		ctx.Out.WriteJSON("FUNC_Leave", cmd.M{"UId": uid})
+		ctx.Out.WriteJSON("FUNC_Leave", cmd.M{"uid": uid})
 	} else {
-		ply.Leave2(ctx, errcode.Ok)
+		ply.Leave2(ctx, nil)
 	}
 }

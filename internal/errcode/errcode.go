@@ -23,8 +23,8 @@ func (e BaseError) Error() string {
 }
 
 type fakeBaseError struct {
-	Code string
-	Msg  string
+	Code string `json:"code,omitempty"`
+	Msg  string `json:"msg,omitempty"`
 }
 
 func (e *BaseError) MarshalJSON() ([]byte, error) {
@@ -43,10 +43,6 @@ func (e *BaseError) UnmarshalJSON(buf []byte) error {
 	return nil
 }
 
-func (e *BaseError) IsOk() bool {
-	return e.code == Ok.Code()
-}
-
 func New(code, msg string) Error {
 	if _, ok := errorCodes[code]; ok {
 		panic("redefined error code: " + code)
@@ -62,6 +58,5 @@ func Get(key string) Error {
 }
 
 var (
-	Ok    = New("ok", "ok")
 	Retry = New("retry", "catch error, please retry")
 )

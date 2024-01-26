@@ -58,7 +58,7 @@ func (obj *fingerGuessingPlayer) ChooseGesture(guesture string) errcode.Error {
 		room.GameOver()
 	}
 
-	return errcode.Ok
+	return nil
 }
 
 const enterActionFingerGuessingPlayer = "fingerGuessingPlayer"
@@ -86,5 +86,5 @@ func funcChooseGesture(ctx *cmd.Context, data any) {
 	}
 
 	e := getFingerGuessingPlayer(ply).ChooseGesture(args.Guesture)
-	ply.WriteJSON("ChooseGesture", e)
+	ply.WriteJSON("chooseGesture", e)
 }

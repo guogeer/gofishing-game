@@ -72,7 +72,7 @@ func Start() {
 		Addr: addr,
 	})
 
-	log.Infof("game %s start ok...", GetName())
+	log.Infof("server id %s name %s start ok.", GetName(), GetName())
 
 	for {
 		select {

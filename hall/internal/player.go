@@ -15,11 +15,11 @@ type hallPlayer struct {
 }
 
 func (ply *hallPlayer) TryEnter() errcode.Error {
-	return errcode.Ok
+	return nil
 }
 
 func (ply *hallPlayer) TryLeave() errcode.Error {
-	return errcode.Ok
+	return nil
 }
 
 func (ply *hallPlayer) BeforeEnter() {

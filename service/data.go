@@ -62,7 +62,7 @@ func (obj *dataObj) Enter() errcode.Error {
 	data := obj.player.enterReq.Data
 	obj.loadAll(data.Bin)
 	obj.updateNewDay()
-	return errcode.Ok
+	return nil
 }
 
 func (obj *dataObj) BeforeEnter() {

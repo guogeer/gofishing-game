@@ -41,7 +41,7 @@ func Auth(req *pb.AccountInfo) (string, errcode.Error) {
 	if err != nil {
 		return "", errcode.Retry
 	}
-	e := errcode.Ok
+	var e errcode.Error
 	if resp.Reason == -2 {
 		e = errIPLimit
 	}
@@ -86,7 +86,7 @@ func CreateAccount(method string, account *pb.AccountInfo, params *pb.LoginParam
 		host, _, _ = net.SplitHostPort(host)
 	}
 
-	if _, e := Auth(&pb.AccountInfo{Address: account.Address}); e != errcode.Ok {
+	if _, e := Auth(&pb.AccountInfo{Address: account.Address}); e != nil {
 		return nil, e
 	}
 	account.Sex = account.Sex % 2
@@ -129,7 +129,7 @@ func CreateAccount(method string, account *pb.AccountInfo, params *pb.LoginParam
 
 	account.Uid = int32(uid)
 	token, e := Auth(account)
-	if e != errcode.Ok {
+	if e != nil {
 		return nil, e
 	}
 

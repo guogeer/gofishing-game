@@ -25,19 +25,19 @@ var errDelayLeave = errcode.New("delay_leave", "delay leave")
 
 // 必须可直接复制
 type UserInfo struct {
-	Id       int    `json:"UId" alias:"UId"`
-	Nickname string // 昵称
-	Icon     string // 头像
-	Sex      int    // 0:女性，1:男性
-	VIP      int    // VIP等级
-	CurExp   int    // 升级后消耗后剩余的经验值
+	Id       int    `json:"uid,omitempty" alias:"Uid"`
+	Nickname string `json:"nickname,omitempty"` // 昵称
+	Icon     string `json:"icon,omitempty"`     // 头像
+	Sex      int    `json:"sex,omitempty"`      // 0:女性，1:男性
+	VIP      int    `json:"vip,omitempty"`      // VIP等级
+	CurExp   int    `json:"curExp,omitempty"`   // 升级后消耗后剩余的经验值
 
-	Level  int
-	IP     string // IP地址
-	ChanId string // 渠道号
-	OS     string // 系统版本
+	Level  int    `json:"level,omitempty"`
+	IP     string `json:"ip,omitempty"`     // IP地址
+	ChanId string `json:"chanId,omitempty"` // 渠道号
+	OS     string `json:"os,omitempty"`     // 系统版本
 
-	IsRobot bool `json:"-"` // 机器人 true
+	IsRobot bool `json:"-,omitempty"` // 机器人 true
 }
 
 type GameAction interface {
@@ -76,8 +76,7 @@ type Player struct {
 	leaveCtx     *cmd.Context   // 离开游戏的上下文
 	CreateTime   string         // 注册时间
 
-	tempTable map[string]any //临时上下文数据
-	//SmallGameItems map[int]*SmallGameItem //小游戏数据
+	tempValues   map[string]any // 临时上下文数据
 	allNotify    map[string]any // 通知数据
 	enterActions map[string]EnterAction
 }
@@ -98,12 +97,12 @@ func (player *Player) EnterReq() *enterRequest {
 	return player.enterReq
 }
 
-func (player *Player) SetTempTable(key string, value any) {
-	player.tempTable[key] = value
+func (player *Player) SetTempValue(key string, value any) {
+	player.tempValues[key] = value
 }
 
-func (player *Player) GetTempTable(key string) any {
-	return player.tempTable[key]
+func (player *Player) GetTempValue(key string) any {
+	return player.tempValues[key]
 }
 
 func (player *Player) DataObj() *dataObj {
@@ -125,17 +124,17 @@ func (player *Player) Enter() errcode.Error {
 	player.IsRobot = (player.ChanId == "robot")
 	player.TimerGroup = &util.TimerGroup{}
 	player.IsSessionClose = false
-	player.tempTable = map[string]any{}
+	player.tempValues = map[string]any{}
 	player.allNotify = map[string]any{}
 
-	if e := player.dataObj.Enter(); e != errcode.Ok {
-		return errcode.Ok
-	}
-
-	if e := player.GameAction.TryEnter(); e != errcode.Ok {
+	if e := player.dataObj.Enter(); e != nil {
 		return e
 	}
-	return errcode.Ok
+
+	if e := player.GameAction.TryEnter(); e != nil {
+		return e
+	}
+	return nil
 }
 
 func (player *Player) OnEnter() {
@@ -143,7 +142,7 @@ func (player *Player) OnEnter() {
 	player.isBusy = true
 	player.IsSessionClose = true
 	player.clientValues = map[string]any{}
-	player.LeaveErr = errcode.Ok
+	player.LeaveErr = nil
 
 	if obj := player.dataObj; obj != nil {
 		obj.BeforeEnter()
@@ -161,23 +160,23 @@ func (player *Player) OnEnter() {
 	}
 
 	player.IsSessionClose = false
-	player.WriteJSON("Enter", errcode.Ok)
+	player.WriteJSON("enter", nil)
 	items := player.itemObj.GetItems()
 	//log.Debugf("player %v OnEnter items %v", player.Id, items)
-	player.SetClientValue("Items", items)
+	player.SetClientValue("items", items)
 
 	// 角色个人信息
-	player.MergeClientValue("UserInfo", player.UserInfo)
+	player.MergeClientValue("userInfo", player.UserInfo)
 	// 最后更新背包
-	player.WriteJSON("GetPlayerInfo", player.clientValues)
+	player.WriteJSON("getPlayerInfo", player.clientValues)
 	player.GameAction.AfterEnter()
 
 	//测试工具推送
 	if tools := getTestTools(player.Id); len(tools) > 0 {
-		player.WriteJSON("GetTestTools", map[string]any{"Tools": tools})
+		player.WriteJSON("getTestTools", map[string]any{"tools": tools})
 	}
 	if len(player.allNotify) > 0 {
-		player.WriteJSON("Notify", player.allNotify)
+		player.WriteJSON("notify", player.allNotify)
 	}
 
 	player.isBusy = false
@@ -212,11 +211,11 @@ func (player *Player) MergeClientValue(key string, data any) {
 }
 
 func (player *Player) TryLeave() errcode.Error {
-	return errcode.Ok
+	return nil
 }
 
 func (player *Player) Leave() {
-	player.Leave2(nil, errcode.Ok)
+	player.Leave2(nil, nil)
 }
 
 func (player *Player) Leave2(leaveCtx *cmd.Context, cause errcode.Error) {
@@ -226,7 +225,7 @@ func (player *Player) Leave2(leaveCtx *cmd.Context, cause errcode.Error) {
 	}
 
 	e := player.GameAction.TryLeave()
-	if e != errcode.Ok {
+	if e != nil {
 		return
 	}
 
@@ -256,9 +255,9 @@ func (player *Player) onLeave() {
 	uid := player.Id
 	leaveCtx := player.leaveCtx
 	if leaveCtx == nil {
-		player.WriteJSON("Leave", cmd.M{
-			"Error": nil,
-			"UId":   uid,
+		player.WriteJSON("leave", cmd.M{
+			"error": nil,
+			"uid":   uid,
 		})
 	}
 	// 克隆的玩家，会话为空，此时不能清理
@@ -282,7 +281,7 @@ func (player *Player) onLeave() {
 	player.IsSessionClose = true // 离开房间算断线
 
 	if leaveCtx != nil {
-		leaveCtx.Out.WriteJSON("FUNC_Leave", map[string]any{"UId": uid})
+		leaveCtx.Out.WriteJSON("FUNC_Leave", map[string]any{"uid": uid})
 	}
 	player.leaveCtx = nil
 }
@@ -339,9 +338,12 @@ func (player *Player) OnClose() {
 	player.TimerGroup.ResetTimer(&player.closeTimer, func() { player.Leave2(nil, errKickOut) }, 10*time.Minute)
 }
 
-func (player *Player) WriteJSON(name string, iArgs any) {
+func (player *Player) WriteJSON(name string, data any) {
+	if data == nil {
+		data = json.RawMessage(`{"code":"ok","msg":"success"}`)
+	}
 	if !player.IsSessionClose {
-		WriteMessage(player.enterReq.session, player.enterReq.ServerName, name, iArgs)
+		WriteMessage(player.enterReq.session, player.enterReq.ServerName, name, data)
 	}
 }
 
@@ -363,9 +365,9 @@ func (player *Player) updateLevel(reason string) {
 	}
 
 	if player.Level > level && player.Level > 1 {
-		player.WriteJSON("LevelUp", map[string]any{
-			"Level":  player.Level,
-			"CurExp": player.CurExp,
+		player.WriteJSON("levelUp", map[string]any{
+			"level":  player.Level,
+			"curExp": player.CurExp,
 		})
 		// 跨越等级的修复
 		items := make([]*gameutils.Item, 0, 8)
@@ -376,7 +378,7 @@ func (player *Player) updateLevel(reason string) {
 
 		// player.ItemObj().AddSome(items, util.GUID(), "level_up")
 		// player.shopObj.OnLevelUp()
-		player.SetTempTable("LevelReward", gameutils.FormatItems(items))
+		player.SetTempValue("LevelReward", gameutils.FormatItems(items))
 		for _, action := range player.enterActions {
 			if h, ok := action.(actionLevelUp); ok {
 				h.OnLevelUp(reason)
@@ -393,7 +395,7 @@ func (player *Player) OnAddItems(itemLog *gameutils.ItemLog) {
 	}
 
 	response := cmd.M{
-		"UId": player.Id,
+		"uid": player.Id,
 	}
 	val := reflect.ValueOf(itemLog)
 	val = reflect.Indirect(val)
@@ -403,11 +405,11 @@ func (player *Player) OnAddItems(itemLog *gameutils.ItemLog) {
 			response[client] = val.Field(i).Interface()
 		}
 	}
-	if response["Way"] == "" {
-		response["Way"] = itemLog.Way
+	if response["way"] == "" {
+		response["way"] = itemLog.Way
 	}
 	if len(itemLog.Items) > 0 {
-		player.WriteJSON("AddItems", response)
+		player.WriteJSON("addItems", response)
 	}
 }
 
@@ -425,5 +427,5 @@ func (player *Player) Notify(data any) {
 		return
 	}
 
-	player.WriteJSON("Notify", data)
+	player.WriteJSON("notify", data)
 }

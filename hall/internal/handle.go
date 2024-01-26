@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"strings"
 
-	"gofishing-game/internal/errcode"
 	"gofishing-game/internal/pb"
 	"gofishing-game/internal/rpc"
 	"gofishing-game/service"
@@ -77,7 +76,7 @@ func syncDeleteAccount(ctx *cmd.Context, data any) {
 	rpc.CacheClient().ClearAccount(context.Background(), &pb.ClearAccountReq{
 		Uid: int32(args.UId),
 	})
-	ctx.Out.WriteJSON("FUNC_DeleteAccount", errcode.Ok)
+	ctx.Out.WriteJSON("FUNC_DeleteAccount", struct{}{})
 }
 
 func funcUpdateMaintain(ctx *cmd.Context, data any) {

@@ -45,18 +45,18 @@ func (obj *dailySignInObj) update(current time.Time) {
 }
 
 type signInState struct {
-	IsDraw    bool
-	DrawState int
-	DayIndex  int
+	IsDraw    bool `json:"isDraw,omitempty"`
+	DrawState int  `json:"drawState,omitempty"`
+	DayIndex  int  `json:"dayIndex,omitempty"`
 }
 
 func (obj *dailySignInObj) currentState(current time.Time) signInState {
 	obj.update(current)
 
 	dayIndex := countIntervalDay(current, obj.startTime)
-	dayIndex = (dayIndex + 1) % maxSignInDay
+	dayIndex = dayIndex % maxSignInDay
 	return signInState{
-		IsDraw:    countIntervalDay(obj.drawTime, current) != 0,
+		IsDraw:    countIntervalDay(obj.drawTime, current) == 0,
 		DrawState: obj.drawState,
 		DayIndex:  dayIndex,
 	}
@@ -75,11 +75,10 @@ func (obj *dailySignInObj) Draw() errcode.Error {
 
 	reward, _ := config.String("signin", config.RowId(state.DayIndex), "Reward")
 	obj.player.ItemObj().AddSome(gameutils.ParseItems(reward), "sign_in")
-	return errcode.Ok
+	return nil
 }
-
 func (obj *dailySignInObj) Look() {
-	obj.player.WriteJSON("LookSignIn", obj.currentState(time.Now()))
+	obj.player.WriteJSON("lookSignIn", obj.currentState(time.Now()))
 }
 
 // 计算间隔天数
@@ -115,7 +114,7 @@ func funcDrawSignIn(ctx *cmd.Context, data any) {
 	}
 
 	e := getSignInObj(ply).Draw()
-	ply.WriteJSON("DrawSignIn", e)
+	ply.WriteJSON("drawSignIn", e)
 }
 
 func funcLookSignIn(ctx *cmd.Context, data any) {

@@ -38,8 +38,6 @@
 		return query
 	}
 	function encode(msg_id, msg_obj) {
-		console.log("send msg", msg_id, msg_obj);
-
 		const default_sign = '12345678'
 		const pkg = {
 			"id": msg_id,
@@ -60,6 +58,15 @@
 		const msg_body = raw_body.substring(0, last_index) + md5_part + raw_body.substring(last_index + md5_part.length)
 		return msg_body
 	}
+	function inArray(arr, target) {
+		for (i = 0; i < arr.length; i++) {
+			if (arr[i] == target) {
+				return true
+			}
+		}
+		return false
+	}
+
 	const url_args = parseQuery()
 
 	const login_addr = url_args['addr'] || "localhost:9501"
@@ -84,7 +91,7 @@
 			// Connection opened
 			conn.addEventListener("open", function (event) {
 				active_conn = conn
-				console.log(ws_addr + "链接建立成功");
+				console.log(ws_addr, "connect successfully")
 				document.getElementById("buttonSendMsg").disabled = false
 			});
 
@@ -92,22 +99,22 @@
 			conn.addEventListener("message", function (event) {
 				try {
 					const obj = JSON.parse(event.data)
-					if (!(obj.data.id in ignore_msgs)) {
+					if (!inArray(ignore_msgs, obj.id.toLowerCase())) {
 						console.log("recv msg", obj)
 					}
 				} catch (error) {
-					console.error('recv invalid data', event.data)
+					console.error('recv invalid data', error, event.data)
 				}
-			});
+			})
 
 			conn.addEventListener("error", function (event) {
 				active_conn = null
 				console.log("connect error");
-			});
+			})
 
-			document.getElementById("inputMsgId").value = "hall.Enter"
+			document.getElementById("inputMsgId").value = "hall.enter"
 			document.getElementById("inputMsgData").value = JSON.stringify({ 'uid': res.data.uid, 'token': res.data.token })
-		});
+		})
 
 
 	function sendMsg() {
@@ -118,6 +125,7 @@
 		try {
 			const msg_obj = JSON.parse(msg_data)
 			const msg_body = encode(msg_id, msg_obj)
+			console.log("send msg", msg_id, msg_obj)
 			active_conn.send(msg_body)
 		} catch (error) {
 			console.error("invalid json data", error)

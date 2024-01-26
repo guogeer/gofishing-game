@@ -49,14 +49,14 @@ type msgHandler interface {
 
 func hook(ctx *cmd.Context, data any) {
 	// 非客户端发过来的消息或进入游戏
-	if ctx.ClientAddr == "" || ctx.MsgId == "Enter" {
+	if ctx.ClientAddr == "" || ctx.MsgId == "enter" {
 		return
 	}
 
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
 		ss := &cmd.Session{Id: ctx.Ssid, Out: ctx.Out}
-		WriteMessage(ss, "", "ServerClose", cmd.M{"ServerName": ctx.ServerName})
+		WriteMessage(ss, "", "serverClose", cmd.M{"serverName": ctx.ServerName, "cause": "not found player"})
 
 		ctx.Fail()
 	} else {
