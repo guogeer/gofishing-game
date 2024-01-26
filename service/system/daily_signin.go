@@ -73,7 +73,7 @@ func (obj *dailySignInObj) Draw() errcode.Error {
 	obj.drawState |= 1 << state.DayIndex
 	obj.drawTime = now
 
-	reward, _ := config.String("signin", config.RowId(state.DayIndex), "Reward")
+	reward, _ := config.String("signin", config.RowId(state.DayIndex+1), "reward")
 	obj.player.ItemObj().AddSome(gameutils.ParseItems(reward), "sign_in")
 	return nil
 }

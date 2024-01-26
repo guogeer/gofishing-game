@@ -13,7 +13,7 @@ import (
 var mpool = dbo.NewPool()
 
 func init() {
-	t := env.Config().ManageDataSource
+	t := env.Config().DB.Manage
 	mpool.SetSource(t.User, t.Password, t.Addr, t.Name)
 
 	db := mpool.Get()

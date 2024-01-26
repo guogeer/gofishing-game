@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"gofishing-game/internal/dbo"
-	"gofishing-game/internal/env"
 	"gofishing-game/internal/pb"
 
+	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
 	"github.com/guogeer/quasar/util"
 	"google.golang.org/protobuf/proto"
@@ -25,7 +25,7 @@ type Cache struct {
 	pb.UnimplementedCacheServer
 }
 
-var tokenKey = "lolbye2023" + env.Config().Sign
+var tokenKey = "lolbye2023" + config.Config().ServerKey
 
 func generateToken(uid int) string {
 	sign := fmt.Sprintf("%s_%d", tokenKey, uid)

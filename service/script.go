@@ -5,6 +5,7 @@ import (
 	"strings"
 	"sync"
 
+	"gofishing-game/internal/env"
 	"gofishing-game/internal/errcode"
 	"gofishing-game/internal/gameutils"
 
@@ -16,10 +17,6 @@ import (
 	lua "github.com/yuin/gopher-lua"
 	luajson "layeh.com/gopher-json"
 	luahelper "layeh.com/gopher-luar"
-)
-
-const (
-	gLocalScriptPath = "scripts"
 )
 
 type scriptFuncEntry struct {
@@ -208,21 +205,21 @@ type scriptArgs struct {
 func funcEffectLocalScript(ctx *cmd.Context, in any) {
 	args := in.(*scriptArgs)
 	name := args.Name
-	err := script.LoadScripts(gLocalScriptPath + "/" + name)
+	err := script.LoadScripts(env.Config().ScriptPath + "/" + name)
 	if err != nil {
 		log.Errorf("load local script %s error: %v", name, err)
 	}
 }
 
 func loadAllScripts() {
-	path := gLocalScriptPath
+	path := env.Config().ScriptPath
 	if err := script.LoadScripts(path); err != nil {
 		log.Warnf("load scripts %s error: %v", path, err)
 	}
 }
 
 func init() {
-	cmd.Bind("FUNC_EffectScript", funcEffectLocalScript, (*scriptArgs)(nil))
-	cmd.Bind("FUNC_EffectLocalScript", funcEffectLocalScript, (*scriptArgs)(nil))
+	cmd.Bind("FUNC_EffectScript", funcEffectLocalScript, (*scriptArgs)(nil)).SetPrivate()
+	cmd.Bind("FUNC_EffectLocalScript", funcEffectLocalScript, (*scriptArgs)(nil)).SetPrivate()
 	script.PreloadModule("game", externScript)
 }

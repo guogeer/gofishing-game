@@ -2,7 +2,6 @@
 package service
 
 import (
-	"encoding/json"
 	"reflect"
 	"sort"
 	"strconv"
@@ -106,14 +105,14 @@ func (tool *testTool) Test_Q强制断线(ctx *cmd.Context, params string) {
 
 func (tool *testTool) Test_Z增加各种数值(ctx *cmd.Context, params string) {
 	ply := GetPlayerByContext(ctx)
-	items := [][2]int{
-		{1107, 10000}, {1104, 10000}, {10001, 10}, {10003, 10},
-		{11002, 10}, {11004, 10}, {12002, 10}, {12003, 10}, {20002, 1}, {1110, 1000000},
-		{20001, 1}, {1300, 10000}, {1401, 10000}, {1111, 100},
+
+	var items []*gameutils.Item
+	for _, rowId := range config.Rows("item") {
+		id, _ := config.Int("item", rowId, "id")
+		items = append(items, &gameutils.Item{Id: int(id), Num: 9999})
 	}
 
-	buf, _ := json.Marshal(items)
-	ply.ItemObj().AddSome(gameutils.ParseItems(string(buf)), util.GUID())
+	ply.ItemObj().AddSome(items, "tool")
 }
 
 func (tool *testTool) Test_S升级到X(ctx *cmd.Context, params string) {

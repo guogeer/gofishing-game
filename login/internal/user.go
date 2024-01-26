@@ -20,9 +20,9 @@ var gRandNames []string
 var table = [...]byte{'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'}
 
 func init() {
-	for _, rowId := range config.Rows("robot2") {
+	for _, rowId := range config.Rows("robot") {
 		var nickname, icon string
-		config.Scan("robot2", rowId, "Nickname,Icon", &nickname, &icon)
+		config.Scan("robot", rowId, "Nickname,Icon", &nickname, &icon)
 		if icon == "" {
 			gRandNames = append(gRandNames, nickname)
 		}

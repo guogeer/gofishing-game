@@ -1,0 +1,4 @@
+物品ID	物品名称	图标
+id	name	icon
+1001	gold	icons/item/gold.png
+1002	diamond	icons/item/diamond.png

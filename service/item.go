@@ -5,8 +5,6 @@ package service
 import (
 	"strings"
 
-	"github.com/guogeer/quasar/script"
-
 	"gofishing-game/internal/gameutils"
 
 	"github.com/guogeer/quasar/util"
@@ -41,9 +39,6 @@ func (obj *ItemObj) BeforeEnter() {
 // 更新背包，清理无效的物品
 func (obj *ItemObj) update() {
 	p := obj.player
-
-	// 自动使用物品
-	script.Call("item.lua", "auto_update_bag", p.GameAction, obj.GetItems())
 
 	var cur int
 	for k, item := range p.dataObj.items {
@@ -112,7 +107,6 @@ func (obj *ItemObj) AddByLog(itemLog *gameutils.ItemLog) {
 	}
 
 	itemLog.Items = gameutils.MergeItems(itemLog.Items)
-	script.Call("item.lua", "fix_add_items", p, itemLog)
 	//需要区分离线数据
 	for _, item := range itemLog.Items {
 		n := obj.NumItem(item.Id)

@@ -183,7 +183,9 @@ func (eq *enterQueue) LoadAndEnter(uid int) {
 		rpc.OnResponse(func() {
 			if args, ok := eq.m[uid]; ok {
 				args.Data = enterGameResp
-				args.LoginParams = loginParamsResp.Params
+				if loginParamsResp != nil {
+					args.LoginParams = loginParamsResp.Params
+				}
 				args.Auth = auth
 				eq.Pop(args)
 			}

@@ -21,7 +21,7 @@ func main() {
 	flag.Parse()
 
 	// init database
-	t := env.Config().DataSource
+	t := env.Config().DB.Game
 	dbo.SetSource(t.User, t.Password, t.Addr, t.Name)
 	db := dbo.Get()
 	if n := t.MaxIdleConns; n > 0 {

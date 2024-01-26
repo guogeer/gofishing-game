@@ -14,13 +14,15 @@ type DataSource struct {
 }
 
 type Env struct {
-	Version          int        `yaml:"version"`
-	Environment      string     `yaml:"environment"`
-	DataSource       DataSource `yaml:"dataSource"`
-	ManageDataSource DataSource `yaml:"manageDataSource"`
-	SlaveDataSource  DataSource `yaml:"slaveDataSource"`
-	ProductName      string     `yaml:"productName"`
-	Sign             string     `yaml:"sign"`
+	Version     int    `yaml:"version"`
+	Environment string `yaml:"environment"`
+	DB          struct {
+		Game   DataSource `yaml:"game"`
+		Manage DataSource `yaml:"manage"`
+	} `yaml:"db"`
+	ProductName string `yaml:"productName"`
+	ScriptPath  string `yaml:"scriptPath"`
+	TablePath   string `yaml:"tablePath"`
 }
 
 var defaultConfig Env

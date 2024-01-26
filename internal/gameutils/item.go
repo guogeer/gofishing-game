@@ -106,27 +106,24 @@ func MergeItems(items ...[]*Item) []*Item {
 // 物品日志
 // struct tag新增client，带给客户端的数据
 type ItemLog struct {
-	Way     string  `client:"Way"`
-	IsTemp  bool    `json:",omitempty"`
-	IsBatch bool    `json:",omitempty"`
-	IsNoLog bool    `json:",omitempty"`
-	IsQuiet bool    `json:",omitempty"` // 不通知客户端
-	Kind    string  `json:",omitempty"` // 类型。user：玩家内部流通；sys：系统产出回收
-	Uuid    string  `json:",omitempty"`
-	Items   []*Item `json:",omitempty" client:"Items"`
+	Way     string  `client:"Way" json:"way,omitempty"`
+	IsTemp  bool    `json:"isTemp,omitempty"`
+	IsBatch bool    `json:"isBatch,omitempty"`
+	IsNoLog bool    `json:"isNoLog,omitempty"`
+	IsQuiet bool    `json:"isQuiet,omitempty"` // 不通知客户端
+	Kind    string  `json:"kind,omitempty"`    // 类型。user：玩家内部流通；sys：系统产出回收
+	Uuid    string  `json:"uuid,omitempty"`
+	Items   []*Item `json:"items,omitempty" client:"items"`
 
-	SubId       int    `json:",omitempty"`
-	OtherId     int    `json:",omitempty"`
-	IsTestPay   bool   `json:",omitempty"`
-	Round       int    `json:",omitempty"` // 限时活动阶段
-	IsFix       bool   `json:",omitempty"` // 修正数值，跳过增加物品
-	OrderId     string `json:",omitempty"` // 付费订单ID
-	RegisterFee int    `json:",omitempty"` // 当前选卡费用
-	IsFirstPay  bool   `json:",omitempty"`
+	SubId      int    `json:"subId,omitempty"`
+	OtherId    int    `json:"otherId,omitempty"`
+	IsTestPay  bool   `json:"isTestPay,omitempty"`
+	OrderId    string `json:"orderId,omitempty"` // 付费订单ID
+	IsFirstPay bool   `json:"isFirstPay,omitempty"`
 
 	// CLIENT
-	ShopId    int    `json:",omitempty"`
-	ClientWay string `json:",omitempty" client:"Way"` // 修正客户端Way
-	PaySDK    string `json:",omitempty"`              // 支付SDK。google,coda
-	IsDouble  bool   `json:",omitempty"`              // 奖励加倍
+	ShopId    int    `json:"shopId,omitempty"`
+	ClientWay string `json:"clientWay,omitempty" client:"way"` // 修正客户端Way
+	PaySDK    string `json:"paySDK,omitempty"`                 // 支付SDK。google,coda
+	IsDouble  bool   `json:"isDouble,omitempty"`               // 奖励加倍
 }

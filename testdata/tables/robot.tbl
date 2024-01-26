@@ -1,0 +1,3 @@
+序号[id]	名称	性别[int]	头像
+id	nickname	sex	icon
+1	Gale	0	http://localhost/icons/m1.jpg

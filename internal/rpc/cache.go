@@ -5,6 +5,7 @@ import (
 	"io"
 	"time"
 
+	"gofishing-game/internal/env"
 	"gofishing-game/internal/pb"
 
 	"github.com/guogeer/quasar/cmd"
@@ -37,17 +38,9 @@ func init() {
 	}
 	log.Debugf("connect rpc server successfully.")
 	// 优先加载本地配置
-	config.LoadLocalTables("tables")
+	config.LoadLocalTables(env.Config().TablePath)
 	// 如果DB存在相同的配置表，将覆盖替换本地的拷贝
 	loadRemoteTables()
-
-	// 加载屏蔽词
-	words := make([]string, 0, 4096)
-	for _, row := range config.Rows("Fuck") {
-		if s, ok := config.String("Fuck", row, "Fuck"); ok {
-			words = append(words, s)
-		}
-	}
 
 	cmd.Bind("FUNC_EffectConfigTable", funcEffectConfigTable, (*tableArgs)(nil)).SetNoQueue()
 }
