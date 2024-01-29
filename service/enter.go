@@ -41,7 +41,7 @@ type enterRequest struct {
 	SubId       int // 房间有场次概念
 	Token       string
 	LeaveServer string // 离开旧场景进入新的场景
-	ServerName  string
+	ServerId    string
 
 	e          *list.Element
 	session    *cmd.Session
@@ -112,7 +112,7 @@ func (eq *enterQueue) PushBack(args *enterRequest) errcode.Error {
 	}
 
 	// 玩家已经在游戏中
-	if old, ok := gAllPlayers[uid]; ok && args.LeaveServer != old.enterReq.ServerName {
+	if old, ok := gAllPlayers[uid]; ok && args.LeaveServer != old.enterReq.ServerId {
 		args.isOnline = true
 		if old.IsBusy() {
 			return errNoResponse
@@ -170,7 +170,7 @@ func (eq *enterQueue) LoadAndEnter(uid int) {
 		if !args.isOnline {
 			// 不请求离开，玩家直接离开进入游戏
 			if args.LeaveServer != "" && auth.ServerId != "" {
-				cmd.Request(auth.ServerId, "FUNC_Leave", cmd.M{"UId": uid})
+				cmd.Request(auth.ServerId, "FUNC_Leave", cmd.M{"uid": uid})
 			}
 
 			rpc.CacheClient().Visit(context.Background(), &pb.VisitReq{Uid: int32(uid), SubId: int32(subId), ServerId: GetName()})
@@ -207,7 +207,7 @@ func (eq *enterQueue) Pop(req *enterRequest) {
 		matchServer = req.Data.UserInfo.ServerId
 	}
 	if matchServer != "" {
-		ss.WriteJSON("FUNC_SwitchServer", cmd.M{"MatchServer": matchServer, "ServerName": req.ServerName, "UId": uid})
+		ss.WriteJSON("FUNC_SwitchServer", cmd.M{"MatchServer": matchServer, "ServerName": req.ServerId, "UId": uid})
 	}
 
 	// 首次成功进入或者重连
@@ -223,7 +223,7 @@ func (eq *enterQueue) Pop(req *enterRequest) {
 		p.enterReq.Data = nil
 	} else if !req.IsFirst() {
 		// 重连进入失败
-		WriteMessage(ss, req.ServerName, "enter", e)
+		WriteMessage(ss, req.ServerId, "enter", e)
 	} else {
 		// 首次进入失败
 		mySubId := req.Data.UserInfo.SubId
@@ -233,7 +233,7 @@ func (eq *enterQueue) Pop(req *enterRequest) {
 			if e != errEnterOtherGame {
 				rpc.CacheClient().Visit(context.Background(), &pb.VisitReq{Uid: int32(uid)})
 			}
-			WriteMessage(ss, req.ServerName, "enter", cmd.M{"err": e, "subId": mySubId})
+			WriteMessage(ss, req.ServerId, "enter", cmd.M{"err": e, "subId": mySubId})
 		}()
 	}
 }
@@ -284,7 +284,7 @@ func funcEnter(ctx *cmd.Context, data any) {
 		SubId:       args.SubId,
 		Token:       args.Token,
 		LeaveServer: args.LeaveServer,
-		ServerName:  ctx.ServerName,
+		ServerId:    ctx.ServerName,
 
 		clientIP:   clientIP,
 		session:    &cmd.Session{Id: ctx.Ssid, Out: ctx.Out},
@@ -303,9 +303,9 @@ func funcEnter(ctx *cmd.Context, data any) {
 
 	e := gEnterQueue.PushBack(enterReq)
 	if e != nil && e != errNoResponse {
-		WriteMessage(enterReq.session, enterReq.ServerName, "enter", cmd.M{"err": e, "subId": enterReq.oldSubId})
+		WriteMessage(enterReq.session, enterReq.ServerId, "enter", cmd.M{"err": e, "subId": enterReq.oldSubId})
 	}
-	log.Infof("player %d enter %s:%d user+robot num %d cost(except rpc) %v", enterReq.UId, enterReq.ServerName, enterReq.SubId, len(gAllPlayers), time.Since(enterReq.startTime))
+	log.Infof("player %d enter %s:%d user+robot num %d cost(except rpc) %v", enterReq.UId, enterReq.ServerId, enterReq.SubId, len(gAllPlayers), time.Since(enterReq.startTime))
 }
 
 func funcAutoLeave(ctx *cmd.Context, data any) {

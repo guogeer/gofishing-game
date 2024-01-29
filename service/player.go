@@ -343,7 +343,7 @@ func (player *Player) WriteJSON(name string, data any) {
 		data = json.RawMessage(`{"code":"ok","msg":"success"}`)
 	}
 	if !player.IsSessionClose {
-		WriteMessage(player.enterReq.session, player.enterReq.ServerName, name, data)
+		WriteMessage(player.enterReq.session, player.enterReq.ServerId, name, data)
 	}
 }
 
