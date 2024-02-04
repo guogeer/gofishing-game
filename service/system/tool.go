@@ -29,7 +29,7 @@ func (tool *testTool) Test_Q清理物品(ctx *cmd.Context, params string) {
 
 		addItems = append(addItems, &gameutils.NumericItem{Id: int(itemId), Num: -num})
 	}
-	ply.BagObj().AddSome(addItems, "tool")
+	ply.BagObj().AddSomeItems(addItems, "tool")
 }
 
 func (tool *testTool) Test_Q签到可领(ctx *cmd.Context, params string) {

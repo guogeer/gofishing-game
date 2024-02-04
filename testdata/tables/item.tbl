@@ -1,4 +1,4 @@
-物品ID	物品名称	图标
-id	name	icon
-1001	gold	icons/item/gold.png
-1002	diamond	icons/item/diamond.png
+物品ID[INT]	物品名称	图标	注册赠送[INT]
+id	name	icon	regNum
+1001	gold	icons/item/gold.png	1001
+1002	diamond	icons/item/diamond.png	1002

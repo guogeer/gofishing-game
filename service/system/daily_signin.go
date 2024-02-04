@@ -74,7 +74,7 @@ func (obj *dailySignInObj) Draw() errcode.Error {
 	obj.drawTime = now
 
 	reward, _ := config.String("signin", config.RowId(state.DayIndex+1), "reward")
-	obj.player.BagObj().AddSome(gameutils.ParseNumbericItems(reward), "sign_in")
+	obj.player.BagObj().AddSomeItems(gameutils.ParseNumbericItems(reward), "sign_in")
 	return nil
 }
 func (obj *dailySignInObj) Look() {

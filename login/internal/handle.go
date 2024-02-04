@@ -113,7 +113,7 @@ func CreateAccount(method string, account *pb.AccountInfo, params *pb.LoginParam
 
 	resp, err := rpc.CacheClient().CreateAccount(context.Background(), &pb.CreateAccountReq{Info: account})
 	if err != nil {
-		return nil, errcode.Retry
+		return nil, err
 	}
 	uid, newid := int(resp.Uid), int(resp.NewUserId)
 	//log.Debugf("uid %v CreateAccount newId %v", uid, newid)

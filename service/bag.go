@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/guogeer/quasar/config"
-	"github.com/guogeer/quasar/util"
 )
 
 // 在item物品表出现
@@ -31,6 +30,7 @@ func newBagObj(player *Player) *bagObj {
 	obj := &bagObj{
 		player: player,
 	}
+	obj.player.DataObj().Push(obj)
 	return obj
 }
 
@@ -46,7 +46,7 @@ func (obj *bagObj) clearEmptyItems() {
 func (obj *bagObj) GetItems() []gameutils.Item {
 	items := make([]gameutils.Item, 0, 4)
 	for _, item := range obj.items {
-		if item.GetNum() == 0 {
+		if item.GetNum() != 0 {
 			items = append(items, item)
 		}
 	}
@@ -58,7 +58,7 @@ func (obj *bagObj) IsEnough(id int, num int64) bool {
 }
 
 func (obj *bagObj) Add(id int, num int64, way string) {
-	obj.AddSome([]gameutils.Item{&gameutils.NumericItem{Id: id, Num: num}}, way)
+	obj.AddSomeItems([]gameutils.Item{&gameutils.NumericItem{Id: id, Num: num}}, way)
 }
 
 func (obj *bagObj) NumItem(id int) int64 {
@@ -70,8 +70,11 @@ func (obj *bagObj) NumItem(id int) int64 {
 	return 0
 }
 
-func (obj *bagObj) AddSome(items []gameutils.Item, way string) {
-	obj.clearEmptyItems()
+func (obj *bagObj) AddSomeItems(items []gameutils.Item, way string) {
+	for _, item := range items {
+		obj.addItem(item)
+	}
+	obj.items = gameutils.MergeItems(obj.items)
 
 	obj.player.GameAction.OnAddItems(items, way)
 	AddSomeItemLog(obj.player.Id, obj.items, way)
@@ -86,13 +89,12 @@ func (obj *bagObj) GetItem(id int) gameutils.Item {
 	return nil
 }
 
-func (obj *bagObj) LoadBin(data any) {
+func (obj *bagObj) Load(data any) {
 	bin := data.(*pb.UserBin)
 
 	obj.items = make([]gameutils.Item, 0, 8)
 	for _, item := range bin.Global.Bag.NumericItems {
-		newItem := &gameutils.NumericItem{}
-		util.DeepCopy(newItem, item)
+		newItem := &gameutils.NumericItem{Id: int(item.Id), Num: item.Num}
 		obj.addItem(newItem)
 	}
 
@@ -104,16 +106,20 @@ func (obj *bagObj) LoadBin(data any) {
 	}
 }
 
-func (obj *bagObj) SaveBin(data any) {
+func (obj *bagObj) Save(data any) {
 	bin := data.(*pb.UserBin)
 
 	var numericItems []*pb.NumericItem
 	for _, item := range obj.items {
-		newItem := &pb.NumericItem{}
-		util.DeepCopy(newItem, item)
+		newItem := &pb.NumericItem{Id: int32(item.GetId()), Num: item.GetNum()}
 		numericItems = append(numericItems, newItem)
 	}
-	bin.Global.Bag.NumericItems = numericItems
+	bin.Global.Bag = &pb.Bag{
+		NumericItems: numericItems,
+	}
+	if bin.Offline == nil {
+		bin.Offline = &pb.OfflineBin{}
+	}
 	bin.Offline.Items, obj.offlineItems = obj.offlineItems, nil
 }
 

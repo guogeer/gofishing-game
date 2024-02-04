@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"time"
 
+	"gofishing-game/internal"
 	"gofishing-game/internal/dbo"
 	"gofishing-game/internal/pb"
 
@@ -178,12 +179,13 @@ func (cc *Cache) SaveBin(ctx context.Context, req *pb.SaveBinReq) (*pb.EmptyResp
 	}
 
 	tx, _ := db.Begin()
+	curTime := time.Now().Format(internal.LongDateFmt)
 	// NOTE any == nil需必须同时满足无类型&空值
 	for key, field := range fields {
 		if !reflect.ValueOf(field).IsNil() {
 			buf, _ := proto.Marshal(field)
-			tx.Exec("insert ignore into user_bin(uid,`class`,bin) values(?,?,?)", uid, key, buf)
-			tx.Exec("update user_bin set bin=? where uid=? and `class`=?", buf, uid, key)
+			tx.Exec("insert ignore into user_bin(uid,`class`,bin,update_time) values(?,?,?,?)", uid, key, buf, curTime)
+			tx.Exec("update user_bin set bin=?, update_time=? where uid=? and `class`=?", buf, curTime, uid, key)
 		}
 	}
 
@@ -208,8 +210,9 @@ func (cc *Cache) SaveBin(ctx context.Context, req *pb.SaveBinReq) (*pb.EmptyResp
 			}
 		}
 
+		curTime := time.Now().Format(internal.LongDateFmt)
 		buf, _ = proto.Marshal(bin.Offline)
-		tx.Exec("insert ignore into user_bin(uid,`class`,bin) values(?,?,?)", uid, "offline", buf)
+		tx.Exec("insert ignore into user_bin(uid,`class`,bin,update_time) values(?,?,?,?)", uid, "offline", buf, curTime)
 		tx.Exec("update user_bin set bin=? where uid=? and `class`=?", buf, uid, "offline")
 	}
 	tx.Commit()
@@ -282,9 +285,10 @@ func (cc *Cache) CreateAccount(ctx context.Context, req *pb.CreateAccountReq) (*
 			return nil, err
 		}
 		if rowNum > 0 {
-			rs, err = tx.Exec("insert into user_info(nickname,sex,icon,email,ip,chan_id,client_version,mac,imei,imsi) values(?,?,?,?,?,?,?,?,?,?,?)",
+			createTime := time.Now().Format(internal.LongDateFmt)
+			rs, err = tx.Exec("insert into user_info(nickname,sex,icon,email,ip,chan_id,client_version,mac,imei,imsi,create_time) values(?,?,?,?,?,?,?,?,?,?,?)",
 				newInfo.Nickname, newInfo.Sex, newInfo.Icon, newInfo.Email, newInfo.Ip,
-				newInfo.ChanId, newInfo.ClientVersion, newInfo.Mac, newInfo.Imei, newInfo.Imsi,
+				newInfo.ChanId, newInfo.ClientVersion, newInfo.Mac, newInfo.Imei, newInfo.Imsi, createTime,
 			)
 			if err != nil {
 				tx.Rollback()

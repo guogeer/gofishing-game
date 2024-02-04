@@ -62,7 +62,7 @@ CREATE TABLE user_bin (
 	`uid` INT NOT NULL,
     `class` varchar(16) not null,
     bin blob not null,
-	create_time TIMESTAMP NOT NULL,
+	update_time TIMESTAMP NOT NULL,
     unique index idx_uid_class(`uid`,`class`)
 );
 

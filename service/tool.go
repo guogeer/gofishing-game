@@ -112,7 +112,7 @@ func (tool *testTool) Test_Z增加各种数值(ctx *cmd.Context, params string) 
 		items = append(items, &gameutils.NumericItem{Id: int(id), Num: 9999})
 	}
 
-	ply.BagObj().AddSome(items, "tool")
+	ply.BagObj().AddSomeItems(items, "tool")
 }
 
 func (tool *testTool) Test_S升级到X(ctx *cmd.Context, params string) {
