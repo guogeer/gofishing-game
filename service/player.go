@@ -62,7 +62,7 @@ type Player struct {
 	isBusy         bool // 玩家进入游戏，离开游戏时
 
 	dataObj    *dataObj
-	itemObj    *ItemObj
+	bagObj     *bagObj
 	GameAction GameAction
 
 	TimerGroup *util.TimerGroup // 定时器组
@@ -88,7 +88,7 @@ func NewPlayer(action GameAction) *Player {
 
 	// 加载顺序room->base->item
 	player.dataObj = newDataObj(player)
-	player.itemObj = newItemObj(player)
+	player.bagObj = newBagObj(player)
 	return player
 }
 
@@ -108,8 +108,8 @@ func (player *Player) DataObj() *dataObj {
 	return player.dataObj
 }
 
-func (player *Player) ItemObj() *ItemObj {
-	return player.itemObj
+func (player *Player) BagObj() *bagObj {
+	return player.bagObj
 }
 
 func (player *Player) Enter() errcode.Error {
@@ -147,7 +147,7 @@ func (player *Player) OnEnter() {
 		obj.BeforeEnter()
 	}
 
-	player.ItemObj().BeforeEnter()
+	player.BagObj().BeforeEnter()
 	for _, action := range player.enterActions {
 		action.BeforeEnter()
 	}
@@ -160,7 +160,7 @@ func (player *Player) OnEnter() {
 
 	player.IsSessionClose = false
 	player.WriteJSON("enter", nil)
-	items := player.itemObj.GetItems()
+	items := player.bagObj.GetItems()
 	//log.Debugf("player %v OnEnter items %v", player.Id, items)
 	player.SetClientValue("items", items)
 
@@ -356,7 +356,7 @@ func (player *Player) updateLevel(reason string) {
 		config.Scan("level", rowId, "Level,Exp", &id, &needExp)
 		totalNeedExp += needExp
 
-		num := player.ItemObj().NumItem(gameutils.ItemIdExp)
+		num := player.BagObj().NumItem(gameutils.ItemIdExp)
 		if num >= int64(totalNeedExp) {
 			player.Level = id
 			player.CurExp = int(num) - totalNeedExp

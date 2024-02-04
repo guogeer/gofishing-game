@@ -23,8 +23,6 @@ var port = flag.Int("port", 0, "server port")
 
 // 异常退出时保存玩家的数据
 func saveAllPlayers() {
-	const maxSaveNum = 50
-
 	startTime := time.Now()
 	for _, player := range gAllPlayers {
 		bin := &pb.UserBin{}

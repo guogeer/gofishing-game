@@ -25,11 +25,11 @@ func (tool *testTool) Test_Q清理物品(ctx *cmd.Context, params string) {
 	addItems := []gameutils.Item{}
 	for _, rowId := range config.Rows("item") {
 		itemId, _ := config.Int("item", rowId, "shopid")
-		num := ply.ItemObj().NumItem(int(itemId))
+		num := ply.BagObj().NumItem(int(itemId))
 
 		addItems = append(addItems, &gameutils.NumericItem{Id: int(itemId), Num: -num})
 	}
-	ply.ItemObj().AddSome(addItems, "tool")
+	ply.BagObj().AddSome(addItems, "tool")
 }
 
 func (tool *testTool) Test_Q签到可领(ctx *cmd.Context, params string) {

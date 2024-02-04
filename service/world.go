@@ -145,7 +145,7 @@ func WriteMessage(ss *cmd.Session, serverName, id string, i any) {
 func AddItems(uid int, items []gameutils.Item, way string) {
 	// log.Debugf("player %d AddItems way %s", uid, itemLog.Way)
 	if p := GetPlayer(uid); p != nil && !p.IsBusy() {
-		p.itemObj.AddSome(items, way)
+		p.bagObj.AddSome(items, way)
 	} else {
 		// 玩家不在线
 		bin := &pb.UserBin{Offline: &pb.OfflineBin{}}
@@ -171,7 +171,7 @@ func AddSomeItemLog(uid int, items []gameutils.Item, way string) {
 
 	if p := GetPlayer(uid); p != nil {
 		for _, pbItem := range pbItems {
-			pbItem.Balance = p.ItemObj().NumItem(int(pbItem.Id))
+			pbItem.Balance = p.BagObj().NumItem(int(pbItem.Id))
 		}
 	}
 

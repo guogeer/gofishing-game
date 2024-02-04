@@ -20,30 +20,30 @@ func isItemValid(id int) bool {
 	return strings.ToLower(s) != "no"
 }
 
-type ItemObj struct {
+type bagObj struct {
 	player *Player
 
 	items        []gameutils.Item
 	offlineItems []*pb.NumericItem
 }
 
-func newItemObj(player *Player) *ItemObj {
-	obj := &ItemObj{
+func newBagObj(player *Player) *bagObj {
+	obj := &bagObj{
 		player: player,
 	}
 	return obj
 }
 
-func (obj *ItemObj) BeforeEnter() {
+func (obj *bagObj) BeforeEnter() {
 	obj.clearEmptyItems()
 }
 
 // 移除空物品
-func (obj *ItemObj) clearEmptyItems() {
+func (obj *bagObj) clearEmptyItems() {
 	obj.items = gameutils.MergeItems(obj.items)
 }
 
-func (obj *ItemObj) GetItems() []gameutils.Item {
+func (obj *bagObj) GetItems() []gameutils.Item {
 	items := make([]gameutils.Item, 0, 4)
 	for _, item := range obj.items {
 		if item.GetNum() == 0 {
@@ -53,15 +53,15 @@ func (obj *ItemObj) GetItems() []gameutils.Item {
 	return items
 }
 
-func (obj *ItemObj) IsEnough(id int, num int64) bool {
+func (obj *bagObj) IsEnough(id int, num int64) bool {
 	return obj.NumItem(id) >= num
 }
 
-func (obj *ItemObj) Add(id int, num int64, way string) {
+func (obj *bagObj) Add(id int, num int64, way string) {
 	obj.AddSome([]gameutils.Item{&gameutils.NumericItem{Id: id, Num: num}}, way)
 }
 
-func (obj *ItemObj) NumItem(id int) int64 {
+func (obj *bagObj) NumItem(id int) int64 {
 	for _, item := range obj.items {
 		if item.GetId() == id {
 			return item.GetNum()
@@ -70,14 +70,14 @@ func (obj *ItemObj) NumItem(id int) int64 {
 	return 0
 }
 
-func (obj *ItemObj) AddSome(items []gameutils.Item, way string) {
+func (obj *bagObj) AddSome(items []gameutils.Item, way string) {
 	obj.clearEmptyItems()
 
 	obj.player.GameAction.OnAddItems(items, way)
 	AddSomeItemLog(obj.player.Id, obj.items, way)
 }
 
-func (obj *ItemObj) GetItem(id int) gameutils.Item {
+func (obj *bagObj) GetItem(id int) gameutils.Item {
 	for _, item := range obj.items {
 		if item.GetId() == id {
 			return item
@@ -86,7 +86,7 @@ func (obj *ItemObj) GetItem(id int) gameutils.Item {
 	return nil
 }
 
-func (obj *ItemObj) LoadBin(data any) {
+func (obj *bagObj) LoadBin(data any) {
 	bin := data.(*pb.UserBin)
 
 	obj.items = make([]gameutils.Item, 0, 8)
@@ -104,7 +104,7 @@ func (obj *ItemObj) LoadBin(data any) {
 	}
 }
 
-func (obj *ItemObj) SaveBin(data any) {
+func (obj *bagObj) SaveBin(data any) {
 	bin := data.(*pb.UserBin)
 
 	var numericItems []*pb.NumericItem
@@ -117,7 +117,7 @@ func (obj *ItemObj) SaveBin(data any) {
 	bin.Offline.Items, obj.offlineItems = obj.offlineItems, nil
 }
 
-func (obj *ItemObj) addItem(newItem gameutils.Item) {
+func (obj *bagObj) addItem(newItem gameutils.Item) {
 	if isItemValid(newItem.GetId()) {
 		obj.items = append(obj.items, newItem)
 	}

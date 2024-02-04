@@ -236,7 +236,7 @@ func (obj *mailObj) Draw(id int64) {
 			// OK
 			mail := &Mail{}
 			util.DeepCopy(mail, pbMail)
-			p.ItemObj().AddSome(gameutils.ParseNumbericItems(mail.Reward), "mail_draw")
+			p.BagObj().AddSome(gameutils.ParseNumbericItems(mail.Reward), "mail_draw")
 			p.mailObj.OnRecv(-1)
 		})
 	}()

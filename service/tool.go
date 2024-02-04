@@ -112,7 +112,7 @@ func (tool *testTool) Test_Z增加各种数值(ctx *cmd.Context, params string) 
 		items = append(items, &gameutils.NumericItem{Id: int(id), Num: 9999})
 	}
 
-	ply.ItemObj().AddSome(items, "tool")
+	ply.BagObj().AddSome(items, "tool")
 }
 
 func (tool *testTool) Test_S升级到X(ctx *cmd.Context, params string) {
@@ -125,7 +125,7 @@ func (tool *testTool) Test_S升级到X(ctx *cmd.Context, params string) {
 		addExp += exp
 	}
 
-	ply.ItemObj().Add(1110, addExp, util.GUID())
+	ply.BagObj().Add(1110, addExp, util.GUID())
 }
 
 func (tool *testTool) Test_L离开游戏(ctx *cmd.Context, params string) {
@@ -142,7 +142,7 @@ func (tool *testTool) Test_Z增加指定物品数量(ctx *cmd.Context, params st
 	if itemId == 0 {
 		ply.WriteJSON("prompt", cmd.M{"msg": "格式：物品ID,物品数量"})
 	}
-	ply.ItemObj().Add(itemId, int64(num), util.GUID())
+	ply.BagObj().Add(itemId, int64(num), util.GUID())
 }
 
 type testReseter interface {
