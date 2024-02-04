@@ -229,11 +229,11 @@ func (cc *Cache) Visit(ctx context.Context, req *pb.VisitReq) (*pb.EmptyResp, er
 }
 
 // 注册账号
-// UId = -3 会话已失效
-// UId = -2 IP下同路账号过多
-// UId = -1 注册时，账号已存在
-// UId = 0  用户名或密码错误
-// UId > 0  OK
+// uid = -3 会话已失效
+// uid = -2 IP下同路账号过多
+// uid = -1 注册时，账号已存在
+// uid = 0  用户名或密码错误
+// uid > 0  OK
 func (cc *Cache) CreateAccount(ctx context.Context, req *pb.CreateAccountReq) (*pb.CreateAccountResp, error) {
 	newInfo := req.Info
 	if newInfo.Nickname == "" {

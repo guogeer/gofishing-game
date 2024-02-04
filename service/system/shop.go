@@ -22,7 +22,7 @@ type shopObj struct {
 
 type payArgs struct {
 	OrderId    string  `json:"orderId,omitempty"`
-	Uid        int     `json:"uId,omitempty"`
+	Uid        int     `json:"uid,omitempty"`
 	Price      float64 `json:"price,omitempty"`
 	GoodsId    int     `json:"GoodsId,omitempty"`
 	IsTest     bool    `json:"isTest,omitempty"`

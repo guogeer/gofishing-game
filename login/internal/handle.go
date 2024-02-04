@@ -62,7 +62,7 @@ func GetBestGateway() (string, error) {
 }
 
 type loginSession struct {
-	UId   int    `json:"uid"`
+	Uid   int    `json:"uid"`
 	NewId int    `json:"-"`
 	Addr  string `json:"addr"`
 	Token string `json:"token"`
@@ -135,7 +135,7 @@ func CreateAccount(method string, account *pb.AccountInfo, params *pb.LoginParam
 
 	// Ok
 	ss := &loginSession{
-		UId:   uid,
+		Uid:   uid,
 		NewId: newid,
 		Token: token,
 		Addr:  gw,
@@ -257,12 +257,12 @@ type queryAccountReq struct {
 
 type queryAccountResp struct {
 	GuestUser struct {
-		UId   int `json:"uid"`
+		Uid   int `json:"uid"`
 		Level int `json:"level"`
 	} `json:"guestUser"`
 
 	PlateUser struct {
-		UId   int `json:"uid"`
+		Uid   int `json:"uid"`
 		Level int `json:"level"`
 	} `json:"plateUser"`
 }
@@ -278,9 +278,9 @@ func queryAccount(c *api.Context, data any) (any, error) {
 	plateUser, _ := rpc.CacheClient().QuerySimpleUserInfo(context.Background(), &pb.QuerySimpleUserInfoReq{OpenId: args.PlateOpenId})
 
 	resp := queryAccountResp{}
-	resp.GuestUser.UId = int(guestUser.Info.Uid)
+	resp.GuestUser.Uid = int(guestUser.Info.Uid)
 	resp.GuestUser.Level = int(guestUser.Info.Level)
-	resp.PlateUser.UId = int(plateUser.Info.Uid)
+	resp.PlateUser.Uid = int(plateUser.Info.Uid)
 	resp.PlateUser.Level = int(plateUser.Info.Level)
 	return cmd.M{}, nil
 }

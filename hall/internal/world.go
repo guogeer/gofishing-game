@@ -27,7 +27,7 @@ type ClientVersion struct {
 }
 
 type buildRankItem struct {
-	UId        int
+	Uid        int
 	Nickname   string
 	Icon       string
 	BuildLevel int

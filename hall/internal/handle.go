@@ -17,7 +17,7 @@ type hallArgs struct {
 	Id int `json:"id,omitempty"`
 
 	Plate    string                      `json:"plate,omitempty"`
-	UId      int                         `json:"uId,omitempty"`
+	Uid      int                         `json:"uid,omitempty"`
 	Address  string                      `json:"address,omitempty"`
 	Version  string                      `json:"version,omitempty"`
 	Segments []service.GameOnlineSegment `json:"segments,omitempty"`
@@ -72,9 +72,9 @@ func S2C_GetBestGateway(ctx *cmd.Context, data any) {
 // 同步删除账号
 func syncDeleteAccount(ctx *cmd.Context, data any) {
 	args := data.(*hallArgs)
-	log.Debug("gm delete account", args.UId)
+	log.Debug("gm delete account", args.Uid)
 	rpc.CacheClient().ClearAccount(context.Background(), &pb.ClearAccountReq{
-		Uid: int32(args.UId),
+		Uid: int32(args.Uid),
 	})
 	ctx.Out.WriteJSON("FUNC_DeleteAccount", struct{}{})
 }

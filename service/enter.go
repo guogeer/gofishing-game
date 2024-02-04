@@ -37,7 +37,7 @@ type enterRequest struct {
 	Data        *pb.EnterGameResp `json:"-"`
 	LoginParams *pb.LoginParams   `json:"-"`
 
-	UId         int
+	Uid         int
 	SubId       int // 房间有场次概念
 	Token       string
 	LeaveServer string // 离开旧场景进入新的场景
@@ -74,7 +74,7 @@ func newEnterQueue() *enterQueue {
 
 func (eq *enterQueue) Check(uid int) {
 	if args, ok := eq.m[uid]; ok {
-		eq.LoadAndEnter(args.UId)
+		eq.LoadAndEnter(args.Uid)
 	}
 }
 
@@ -91,7 +91,7 @@ func (eq *enterQueue) clean() {
 		if now.Before(enterReq.expireTime) {
 			break
 		}
-		eq.Remove(enterReq.UId)
+		eq.Remove(enterReq.Uid)
 	}
 }
 
@@ -106,7 +106,7 @@ func (eq *enterQueue) Remove(uid int) {
 }
 
 func (eq *enterQueue) PushBack(args *enterRequest) errcode.Error {
-	uid, subId, ss := args.UId, args.SubId, args.session
+	uid, subId, ss := args.Uid, args.SubId, args.session
 	if eq.isQuit {
 		return errcode.New("service_maintain", "服务器正在维护中...")
 	}
@@ -194,7 +194,7 @@ func (eq *enterQueue) LoadAndEnter(uid int) {
 }
 
 func (eq *enterQueue) Pop(req *enterRequest) {
-	uid := req.UId
+	uid := req.Uid
 	ss := req.session
 	e := eq.TryEnter(req)
 
@@ -207,7 +207,7 @@ func (eq *enterQueue) Pop(req *enterRequest) {
 		matchServer = req.Data.UserInfo.ServerId
 	}
 	if matchServer != "" {
-		ss.WriteJSON("FUNC_SwitchServer", cmd.M{"MatchServer": matchServer, "ServerName": req.ServerId, "UId": uid})
+		ss.WriteJSON("FUNC_SwitchServer", cmd.M{"MatchServer": matchServer, "ServerName": req.ServerId, "Uid": uid})
 	}
 
 	// 首次成功进入或者重连
@@ -239,7 +239,7 @@ func (eq *enterQueue) Pop(req *enterRequest) {
 }
 
 func (eq *enterQueue) TryEnter(args *enterRequest) errcode.Error {
-	uid, subId, token := args.UId, args.SubId, args.Token
+	uid, subId, token := args.Uid, args.SubId, args.Token
 	// 游戏正在关闭存档
 	if eq.isQuit {
 		return errcode.Retry
@@ -280,7 +280,7 @@ func funcEnter(ctx *cmd.Context, data any) {
 	clientIP, _, _ := net.SplitHostPort(ctx.ClientAddr)
 
 	enterReq := &enterRequest{
-		UId:         args.Uid,
+		Uid:         args.Uid,
 		SubId:       args.SubId,
 		Token:       args.Token,
 		LeaveServer: args.LeaveServer,
@@ -297,7 +297,7 @@ func funcEnter(ctx *cmd.Context, data any) {
 	}
 	// 忽略同一个链接登陆不同的账号
 	ply := GetGatewayPlayer(ctx.Ssid)
-	if ply != nil && ply.Id != enterReq.UId {
+	if ply != nil && ply.Id != enterReq.Uid {
 		return
 	}
 
@@ -305,7 +305,7 @@ func funcEnter(ctx *cmd.Context, data any) {
 	if e != nil && e != errNoResponse {
 		WriteMessage(enterReq.session, enterReq.ServerId, "enter", cmd.M{"err": e, "subId": enterReq.oldSubId})
 	}
-	log.Infof("player %d enter %s:%d user+robot num %d cost(except rpc) %v", enterReq.UId, enterReq.ServerId, enterReq.SubId, len(gAllPlayers), time.Since(enterReq.startTime))
+	log.Infof("player %d enter %s:%d user+robot num %d cost(except rpc) %v", enterReq.Uid, enterReq.ServerId, enterReq.SubId, len(gAllPlayers), time.Since(enterReq.startTime))
 }
 
 func funcAutoLeave(ctx *cmd.Context, data any) {
