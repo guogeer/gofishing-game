@@ -198,18 +198,17 @@ message QueryUserInfoResp {
 
 message AddSomeItemReq {
   int32 uid = 1;
-  repeated Item items = 10;
+  repeated NumericItem items = 10;
 }
 
 message AddSomeItemLogReq {
   int32 uid = 1;
   string way = 5;
   string uuid = 6;
-  int32 otherId = 8;
+  int32 otherUid = 8;
   int32 subId = 9;
-  repeated Item items = 10;
-  string createTime = 12;
-  bytes extra = 13;
+  repeated NumericItem items = 10;
+  int64 createTs = 12;
 }
 
 message QueryDictReq {

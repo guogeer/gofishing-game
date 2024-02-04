@@ -42,7 +42,6 @@ type dataObj struct {
 	loadSavers []loadSaver
 	period     time.Duration
 	saveTimer  *util.Timer
-	items      []*gameutils.Item
 	// offlinePos int32
 	offline *pb.OfflineBin
 
@@ -116,30 +115,8 @@ func (obj *dataObj) Load(data any) {
 	bin := data.(*pb.UserBin)
 	gameutils.InitNilFields(bin.Global)
 
-	obj.items = make([]*gameutils.Item, 0, 8)
 	p.Level = int(bin.Global.Level)
-	// p.BuildLevel = int(bin.Global.BuildLevel)
-	for _, item := range bin.Global.Items {
-		newItem := &gameutils.Item{}
-		util.DeepCopy(newItem, item)
-		obj.addItem(newItem)
-	}
-
-	// 对离线数据进行合并
-	// obj.offlinePos = bin.Global.CurItemMaxPos
-	obj.offline = &pb.OfflineBin{}
-	for _, item := range bin.Offline.Items {
-		obj.addItem(&gameutils.Item{Id: int(item.Id), Num: item.Num})
-		obj.offline.Items = append(obj.offline.Items, &pb.Item{Id: item.Id, Num: -item.Num})
-	}
-	// obj.offlinePos = bin.OfflineBin.OfflineItemPos
 	obj.lastDayUpdateTs = bin.Global.LastDayUpdateTs
-}
-
-func (obj *dataObj) addItem(newItem *gameutils.Item) {
-	if isItemValid(newItem.Id) {
-		obj.items = append(obj.items, newItem)
-	}
 }
 
 func (obj *dataObj) updateNewDay() {
@@ -159,15 +136,7 @@ func (obj *dataObj) Save(data any) {
 	bin := data.(*pb.UserBin)
 	bin.Global = &pb.GlobalBin{}
 
-	var items []*pb.Item
-	for _, item := range obj.items {
-		newItem := &pb.Item{}
-		util.DeepCopy(newItem, item)
-		items = append(items, newItem)
-	}
-	bin.Global.Items = items
 	bin.Global.Level = int32(p.Level)
-	// bin.Global.BuildLevel = int32(p.BuildLevel)
 	bin.Offline, obj.offline = obj.offline, &pb.OfflineBin{}
 	bin.Global.LastDayUpdateTs = obj.lastDayUpdateTs
 }

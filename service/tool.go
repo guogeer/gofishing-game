@@ -106,10 +106,10 @@ func (tool *testTool) Test_Q强制断线(ctx *cmd.Context, params string) {
 func (tool *testTool) Test_Z增加各种数值(ctx *cmd.Context, params string) {
 	ply := GetPlayerByContext(ctx)
 
-	var items []*gameutils.Item
+	var items []gameutils.Item
 	for _, rowId := range config.Rows("item") {
 		id, _ := config.Int("item", rowId, "id")
-		items = append(items, &gameutils.Item{Id: int(id), Num: 9999})
+		items = append(items, &gameutils.NumericItem{Id: int(id), Num: 9999})
 	}
 
 	ply.ItemObj().AddSome(items, "tool")

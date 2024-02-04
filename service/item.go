@@ -3,26 +3,28 @@ package service
 // 背包逻辑更新
 
 import (
+	"gofishing-game/internal/gameutils"
+	"gofishing-game/internal/pb"
 	"strings"
 
-	"gofishing-game/internal/gameutils"
-
-	"github.com/guogeer/quasar/util"
-
 	"github.com/guogeer/quasar/config"
+	"github.com/guogeer/quasar/util"
 )
 
 // 在item物品表出现
 func isItemValid(id int) bool {
-	if _, ok := config.Int("item", id, "ShopID"); !ok {
+	if _, ok := config.Int("item", id, "id"); !ok {
 		return false
 	}
-	s, _ := config.String("item", id, "Visible")
+	s, _ := config.String("item", id, "visible")
 	return strings.ToLower(s) != "no"
 }
 
 type ItemObj struct {
 	player *Player
+
+	items        []gameutils.Item
+	offlineItems []*pb.NumericItem
 }
 
 func newItemObj(player *Player) *ItemObj {
@@ -33,33 +35,18 @@ func newItemObj(player *Player) *ItemObj {
 }
 
 func (obj *ItemObj) BeforeEnter() {
-	obj.update()
+	obj.clearEmptyItems()
 }
 
-// 更新背包，清理无效的物品
-func (obj *ItemObj) update() {
-	p := obj.player
-
-	var cur int
-	for k, item := range p.dataObj.items {
-		for _, item2 := range p.dataObj.items[k:] {
-			if item.IsNumeric() && item2.IsNumeric() && item != item2 && item.Id == item2.Id {
-				item.Num, item2.Num = item.Num+item2.Num, 0
-			}
-		}
-		if item.Num != 0 {
-			p.dataObj.items[cur] = item
-			cur++
-		}
-	}
-	p.dataObj.items = p.dataObj.items[:cur]
+// 移除空物品
+func (obj *ItemObj) clearEmptyItems() {
+	obj.items = gameutils.MergeItems(obj.items)
 }
 
-func (obj *ItemObj) GetItems() []*gameutils.Item {
-	p := obj.player
-	items := make([]*gameutils.Item, 0, 4)
-	for _, item := range p.dataObj.items {
-		if item.Num > 0 {
+func (obj *ItemObj) GetItems() []gameutils.Item {
+	items := make([]gameutils.Item, 0, 4)
+	for _, item := range obj.items {
+		if item.GetNum() == 0 {
 			items = append(items, item)
 		}
 	}
@@ -71,78 +58,67 @@ func (obj *ItemObj) IsEnough(id int, num int64) bool {
 }
 
 func (obj *ItemObj) Add(id int, num int64, way string) {
-	obj.AddSome([]*gameutils.Item{{Id: id, Num: num}}, way)
+	obj.AddSome([]gameutils.Item{&gameutils.NumericItem{Id: id, Num: num}}, way)
 }
 
-func (obj *ItemObj) NumItem(id int) (sum int64) {
-	p := obj.player
-	for _, item := range p.dataObj.items {
-		if item.Id == id {
-			sum += item.Num
+func (obj *ItemObj) NumItem(id int) int64 {
+	for _, item := range obj.items {
+		if item.GetId() == id {
+			return item.GetNum()
 		}
 	}
-	return
+	return 0
 }
 
-func (obj *ItemObj) AddSome(items []*gameutils.Item, way string) {
-	kindAndWay := strings.Split(way, ".")
-	if len(kindAndWay) == 1 {
-		kindAndWay = []string{"", kindAndWay[0]}
-	}
-	obj.AddByLog(&gameutils.ItemLog{
-		Items: items,
-		Way:   kindAndWay[1],
-		Uuid:  util.GUID(),
-		Kind:  kindAndWay[0],
-	})
+func (obj *ItemObj) AddSome(items []gameutils.Item, way string) {
+	obj.clearEmptyItems()
+
+	obj.player.GameAction.OnAddItems(items, way)
+	AddSomeItemLog(obj.player.Id, obj.items, way)
 }
 
-func (obj *ItemObj) AddByLog(itemLog *gameutils.ItemLog) {
-	p := obj.player
-	if itemLog.Uuid == "" {
-		itemLog.Uuid = util.GUID()
-	}
-	if itemLog.Kind == "" {
-		itemLog.Kind = "sys"
-	}
-
-	itemLog.Items = gameutils.MergeItems(itemLog.Items)
-	//需要区分离线数据
-	for _, item := range itemLog.Items {
-		n := obj.NumItem(item.Id)
-		if item.MaxValue > 0 && item.Num+n > item.MaxValue {
-			item.Num = item.MaxValue - n
-		}
-		if item.Num+n <= 0 {
-			item.Num = -n
-		}
-
-		if !itemLog.IsTemp && item.Num != 0 {
-			if obj.GetItem(item.Id) == nil {
-				newItem := *item // copy
-				p.dataObj.addItem(&newItem)
-			} else {
-				bagItem := obj.GetItem(item.Id)
-				bagItem.Num += item.Num
-			}
-		}
-	}
-	itemLog.Items = gameutils.MergeItems(itemLog.Items)
-	//log.Debugf("ply %v add items %v", p.Id, itemLog.Items)
-
-	p.GameAction.OnAddItems(itemLog)
-	//添加日志
-	if !itemLog.IsTemp && !itemLog.IsNoLog {
-		AddSomeItemLog(p.Id, itemLog)
-	}
-}
-
-func (obj *ItemObj) GetItem(id int) *gameutils.Item {
-	p := obj.player
-	for _, item := range p.dataObj.items {
-		if item.Id == id {
+func (obj *ItemObj) GetItem(id int) gameutils.Item {
+	for _, item := range obj.items {
+		if item.GetId() == id {
 			return item
 		}
 	}
 	return nil
+}
+
+func (obj *ItemObj) LoadBin(data any) {
+	bin := data.(*pb.UserBin)
+
+	obj.items = make([]gameutils.Item, 0, 8)
+	for _, item := range bin.Global.Bag.NumericItems {
+		newItem := &gameutils.NumericItem{}
+		util.DeepCopy(newItem, item)
+		obj.addItem(newItem)
+	}
+
+	obj.offlineItems = nil
+	// 对离线数据进行合并
+	for _, item := range bin.Offline.Items {
+		obj.addItem(&gameutils.NumericItem{Id: int(item.Id), Num: item.Num})
+		obj.offlineItems = append(obj.offlineItems, &pb.NumericItem{Id: item.Id, Num: -item.Num})
+	}
+}
+
+func (obj *ItemObj) SaveBin(data any) {
+	bin := data.(*pb.UserBin)
+
+	var numericItems []*pb.NumericItem
+	for _, item := range obj.items {
+		newItem := &pb.NumericItem{}
+		util.DeepCopy(newItem, item)
+		numericItems = append(numericItems, newItem)
+	}
+	bin.Global.Bag.NumericItems = numericItems
+	bin.Offline.Items, obj.offlineItems = obj.offlineItems, nil
+}
+
+func (obj *ItemObj) addItem(newItem gameutils.Item) {
+	if isItemValid(newItem.GetId()) {
+		obj.items = append(obj.items, newItem)
+	}
 }

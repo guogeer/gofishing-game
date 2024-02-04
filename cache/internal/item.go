@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"gofishing-game/internal"
 	"gofishing-game/internal/dbo"
 	"gofishing-game/internal/pb"
 
@@ -30,9 +31,11 @@ func (cc *Cache) AddSomeItemLog(ctx context.Context, req *pb.AddSomeItemLogReq) 
 	way := req.Way
 	uuid := req.Uuid
 	db := dbo.Get()
+
+	createTime := time.Unix(req.CreateTs, 0).Format(internal.LongDateFmt)
 	for _, item := range req.Items {
-		db.Exec("insert item_log(uid,way,guid,item_id,num,balance,extra) values(?,?,?,?,?,?,?)",
-			uid, way, uuid, item.Id, item.Num, item.Balance, dbo.JSON(req.Extra))
+		db.Exec("insert item_log(uid,way,guid,item_id,num,balance,create_time) values(?,?,?,?,?,?,?)",
+			uid, way, uuid, item.Id, item.Num, item.Balance, createTime)
 	}
 	return &pb.EmptyResp{}, nil
 }

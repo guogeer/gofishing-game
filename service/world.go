@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"gofishing-game/internal"
 	"gofishing-game/internal/gameutils"
 	"gofishing-game/internal/pb"
 	"gofishing-game/internal/rpc"
@@ -143,54 +142,46 @@ func WriteMessage(ss *cmd.Session, serverName, id string, i any) {
 	ss.WriteJSON("FUNC_Route", buf)
 }
 
-func AddItems(uid int, itemLog *gameutils.ItemLog) {
-	// log.Debugf("ply %v AddItems way %s", uid, itemLog.Way)
+func AddItems(uid int, items []gameutils.Item, way string) {
+	// log.Debugf("player %d AddItems way %s", uid, itemLog.Way)
 	if p := GetPlayer(uid); p != nil && !p.IsBusy() {
-		p.itemObj.AddByLog(itemLog)
-	} else if !itemLog.IsTemp {
+		p.itemObj.AddSome(items, way)
+	} else {
 		// 玩家不在线
 		bin := &pb.UserBin{Offline: &pb.OfflineBin{}}
-		for _, item := range itemLog.Items {
-			bin.Offline.Items = append(bin.Offline.Items, &pb.Item{Id: int32(item.Id), Num: item.Num})
+		for _, item := range items {
+			bin.Offline.Items = append(bin.Offline.Items, &pb.NumericItem{Id: int32(item.GetId()), Num: item.GetNum()})
 		}
-		AddSomeItemLog(uid, itemLog)
+		AddSomeItemLog(uid, items, way)
 		go func() {
 			rpc.CacheClient().SaveBin(context.Background(), &pb.SaveBinReq{Uid: int32(uid), Bin: bin})
 		}()
 	}
 }
 
-func AddSomeItemLog(uid int, itemLog *gameutils.ItemLog) {
-	if itemLog.IsTemp || itemLog.Kind == "sum" || len(itemLog.Items) == 0 {
+func AddSomeItemLog(uid int, items []gameutils.Item, way string) {
+	if len(items) == 0 {
 		return
 	}
 
-	pbItems := make([]*pb.Item, 0, 4)
-	itemLog.Items = gameutils.MergeItems(itemLog.Items)
-	for _, item := range itemLog.Items {
-		pbItem := &pb.Item{}
-		util.DeepCopy(pbItem, item)
-		pbItems = append(pbItems, pbItem)
+	pbItems := make([]*pb.NumericItem, 0, 4)
+	for _, item := range items {
+		pbItems = append(pbItems, &pb.NumericItem{Id: int32(item.GetId()), Num: item.GetNum()})
 	}
 
 	if p := GetPlayer(uid); p != nil {
-		itemLog.SubId = p.enterReq.SubId
-		if p.IsRobot {
-			itemLog.Way = itemLog.Kind + ".robot_" + itemLog.Way
-		}
 		for _, pbItem := range pbItems {
 			pbItem.Balance = p.ItemObj().NumItem(int(pbItem.Id))
 		}
 	}
 
-	itemLog.Way = itemLog.Kind + "." + itemLog.Way
 	// 玩家日志按时序更新
 	req := &pb.AddSomeItemLogReq{
-		Uid:        int32(uid),
-		Items:      pbItems,
-		Uuid:       string(itemLog.Uuid),
-		Way:        itemLog.Way,
-		CreateTime: time.Now().Format(internal.LongDateFmt),
+		Uid:      int32(uid),
+		Items:    pbItems,
+		Uuid:     util.GUID(),
+		Way:      way,
+		CreateTs: time.Now().Unix(),
 	}
 	go func() {
 		rpc.CacheClient().AddSomeItemLog(context.Background(), req)

@@ -34,15 +34,6 @@ message UserInfo {
 	string nickname = 11;
 }
 
-
-message Item {
-	int32 id = 1;
-	int64 num = 2;
-	int64 balance = 3;
-	int64 expireTs = 4;
-	int32 updateTs = 5;
-}
-
 message Task {
 	int32 id = 1;
 	int64 num = 2; // 当前进度
@@ -50,17 +41,27 @@ message Task {
 	int32 status = 4;
 }
 
+message NumericItem {
+	int32 id = 1;
+	int64 num = 2;
+	int64 balance = 3;
+}
+
+message Bag {
+	repeated NumericItem numericItems = 1;
+}
+
 message GlobalBin {
 	int64 lastDayUpdateTs = 1; // 每日数据上次更新时间
-	repeated Item items = 2; // 物品
-	int32 level = 3;         // 等级
+	Bag bag = 2; // 背包
+	int32 level = 3; // 等级
 	SignIn signIn = 4; // 签到数据
 	repeated Task tasks = 5;
 }
 
-// 离线物品待合并
+// 离线数据
 message OfflineBin {
-  repeated Item items = 2;
+  repeated NumericItem items = 2;
 }
 
 message UserBin {

@@ -34,7 +34,7 @@ type actionLevelUp interface {
 }
 
 type actionAddItems interface {
-	OnAddItems(*gameutils.ItemLog)
+	OnAddItems(items []gameutils.Item, way string)
 }
 
 type actionClose interface {

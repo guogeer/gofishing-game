@@ -9,10 +9,9 @@ import (
 
 type serviceArgs struct {
 	Id      int    `json:"id,omitempty"`
-	UId     int    `json:"uId,omitempty"`
+	Uid     int    `json:"uid,omitempty"`
 	Answer  int    `json:"answer,omitempty"`
 	OrderId string `json:"orderId,omitempty"`
-	Guid    string `json:"guid,omitempty"`
 	Way     string `json:"way,omitempty"`
 	Msg     string `json:"msg,omitempty"`
 	Type    int    `json:"type,omitempty"`
@@ -24,9 +23,8 @@ type serviceArgs struct {
 	ItemId  int    `json:"itemId,omitempty"`
 	ItemNum int64  `json:"itemNum,omitempty"`
 
-	Name      string            `json:"name,omitempty"`
-	Items     []*gameutils.Item `json:"items,omitempty"`
-	IsWatchAd bool              `json:"isWatchAd,omitempty"`
+	Name  string                   `json:"name,omitempty"`
+	Items []*gameutils.NumericItem `json:"items,omitempty"`
 }
 
 func init() {
@@ -89,9 +87,9 @@ func funcEffectTableOk(ctx *cmd.Context, data any) {
 func funcAddItems(ctx *cmd.Context, data any) {
 	args := data.(*serviceArgs)
 
-	AddItems(args.UId, &gameutils.ItemLog{
-		Kind:  "sys",
-		Items: args.Items,
-		Way:   args.Way,
-	})
+	var items []gameutils.Item
+	for _, item := range args.Items {
+		items = append(items, item)
+	}
+	AddItems(args.Uid, items, args.Way)
 }

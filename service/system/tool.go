@@ -22,12 +22,12 @@ func init() {
 func (tool *testTool) Test_Q清理物品(ctx *cmd.Context, params string) {
 	ply := service.GetPlayerByContext(ctx)
 
-	addItems := []*gameutils.Item{}
+	addItems := []gameutils.Item{}
 	for _, rowId := range config.Rows("item") {
 		itemId, _ := config.Int("item", rowId, "shopid")
 		num := ply.ItemObj().NumItem(int(itemId))
 
-		addItems = append(addItems, &gameutils.Item{Id: int(itemId), Num: -num})
+		addItems = append(addItems, &gameutils.NumericItem{Id: int(itemId), Num: -num})
 	}
 	ply.ItemObj().AddSome(addItems, "tool")
 }

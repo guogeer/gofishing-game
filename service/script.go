@@ -121,7 +121,7 @@ func scriptGetPlayer(L *lua.LState) int {
 
 func scriptParseItems(L *lua.LState) int {
 	reward := L.ToString(1)
-	items := gameutils.ParseItems(reward)
+	items := gameutils.ParseNumbericItems(reward)
 	L.Push(luahelper.New(L, items))
 	return 1
 }

@@ -5,7 +5,6 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"reflect"
 	"time"
 
 	"gofishing-game/internal/errcode"
@@ -48,7 +47,7 @@ type GameAction interface {
 	BeforeLeave() // 离开游戏前
 
 	OnClose()
-	OnAddItems(*gameutils.ItemLog)
+	OnAddItems(items []gameutils.Item, way string)
 	//OnPurchaseSubscription()
 }
 
@@ -370,15 +369,15 @@ func (player *Player) updateLevel(reason string) {
 			"curExp": player.CurExp,
 		})
 		// 跨越等级的修复
-		items := make([]*gameutils.Item, 0, 8)
+		var items []gameutils.Item
 		for i := level + 1; i <= player.Level; i++ {
 			reward, _ := config.String("level", i, "Reward")
-			items = append(items, gameutils.ParseItems(reward)...)
+			items = append(items, gameutils.ParseNumbericItems(reward)...)
 		}
 
 		// player.ItemObj().AddSome(items, util.GUID(), "level_up")
 		// player.shopObj.OnLevelUp()
-		player.SetTempValue("LevelReward", gameutils.FormatItems(items))
+		player.SetTempValue("LevelReward", items)
 		for _, action := range player.enterActions {
 			if h, ok := action.(actionLevelUp); ok {
 				h.OnLevelUp(reason)
@@ -387,30 +386,20 @@ func (player *Player) updateLevel(reason string) {
 	}
 }
 
-func (player *Player) OnAddItems(itemLog *gameutils.ItemLog) {
+func (player *Player) OnAddItems(items []gameutils.Item, way string) {
+	if len(items) == 0 {
+		return
+	}
 	for _, action := range player.enterActions {
 		if h, ok := action.(actionAddItems); ok {
-			h.OnAddItems(itemLog)
+			h.OnAddItems(items, way)
 		}
 	}
-
-	response := cmd.M{
-		"uid": player.Id,
-	}
-	val := reflect.ValueOf(itemLog)
-	val = reflect.Indirect(val)
-	for i := 0; i < val.NumField(); i++ {
-		client := val.Type().Field(i).Tag.Get("client")
-		if client != "" {
-			response[client] = val.Field(i).Interface()
-		}
-	}
-	if response["way"] == "" {
-		response["way"] = itemLog.Way
-	}
-	if len(itemLog.Items) > 0 {
-		player.WriteJSON("addItems", response)
-	}
+	player.WriteJSON("addItems", cmd.M{
+		"uid":   player.Id,
+		"items": items,
+		"way":   way,
+	})
 }
 
 // 通知

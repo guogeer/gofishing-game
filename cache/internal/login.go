@@ -204,7 +204,7 @@ func (cc *Cache) SaveBin(ctx context.Context, req *pb.SaveBinReq) (*pb.EmptyResp
 		}
 		for id, num := range mergeItems {
 			if num != 0 {
-				bin.Offline.Items = append(bin.Offline.Items, &pb.Item{Id: id, Num: num})
+				bin.Offline.Items = append(bin.Offline.Items, &pb.NumericItem{Id: id, Num: num})
 			}
 		}
 

@@ -150,12 +150,12 @@ func CreateAccount(method string, account *pb.AccountInfo, params *pb.LoginParam
 	rpc.CacheClient().UpdateLoginParams(context.Background(), &pb.UpdateLoginParamsReq{Uid: int32(uid), Params: params})
 	// 新注册账号
 	if newid > 0 {
-		var items []*pb.Item
+		var items []*pb.NumericItem
 		for _, rowId := range config.Rows("item") {
 			var id, num int
-			config.Scan("item", rowId, "ShopID,RegNum", &id, &num)
+			config.Scan("item", rowId, "id,regNum", &id, &num)
 			if num > 0 {
-				pbItem := &pb.Item{
+				pbItem := &pb.NumericItem{
 					Id:      int32(id),
 					Num:     int64(num),
 					Balance: int64(num),
@@ -166,10 +166,11 @@ func CreateAccount(method string, account *pb.AccountInfo, params *pb.LoginParam
 		//log.Debugf("%v CreateAccount %v", newid, s)
 		rpc.CacheClient().AddSomeItem(context.Background(), &pb.AddSomeItemReq{Uid: int32(uid), Items: items})
 		rpc.CacheClient().AddSomeItemLog(context.Background(), &pb.AddSomeItemLogReq{
-			Uid:   int32(uid),
-			Uuid:  util.GUID(),
-			Way:   "sys.new_user",
-			Items: items,
+			Uid:      int32(uid),
+			Uuid:     util.GUID(),
+			Way:      "sys.new_user",
+			Items:    items,
+			CreateTs: time.Now().Unix(),
 		})
 	}
 	rpc.CacheClient().AddLoginLog(context.Background(), &pb.AddLoginLogReq{Uid: int32(uid), LoginTime: time.Now().Format("2006-01-02 15:04:05")})

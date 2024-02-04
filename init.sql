@@ -28,7 +28,6 @@ CREATE TABLE item_log (
     item_id INT NOT NULL,
 	num INT NOT NULL,
 	balance INT NOT NULL,
-    extra JSON NOT NULL,
 	uuid varchar(64) NOT NULL,
     create_time TIMESTAMP NOT NULL
 );
