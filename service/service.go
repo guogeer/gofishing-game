@@ -20,6 +20,7 @@ import (
 )
 
 var port = flag.Int("port", 0, "server port")
+var serverId = flag.String("server_id", "", "server id")
 
 // 异常退出时保存玩家的数据
 func saveAllPlayers() {
@@ -30,7 +31,7 @@ func saveAllPlayers() {
 		rpc.CacheClient().SaveBin(context.Background(), &pb.SaveBinReq{Uid: int32(player.Id), Bin: bin})
 		log.Infof("player %d force save data", player.Id)
 	}
-	log.Infof("server %s quit and save data cost %v", GetName(), time.Since(startTime))
+	log.Infof("server %s quit and save data cost %v", GetServerId(), time.Since(startTime))
 }
 
 func Start() {
@@ -65,18 +66,18 @@ func Start() {
 	go func() { srv.Serve(l) }()
 
 	cmd.RegisterService(&cmd.ServiceConfig{
-		Id:   GetName(),
-		Name: GetName(),
+		Id:   GetServerId(),
+		Name: GetServerName(),
 		Addr: addr,
 	})
 
-	log.Infof("server id %s name %s start ok.", GetName(), GetName())
+	log.Infof("server id %s name %s start ok.", GetServerId(), GetServerName())
 
 	for {
 		select {
 		default:
 		case <-ctx.Done():
-			log.Infof("server %s recv signal SIGINT and quit", GetName())
+			log.Infof("server %s recv signal SIGINT and quit", GetServerId())
 			return
 		}
 		util.GetTimerSet().RunOnce()

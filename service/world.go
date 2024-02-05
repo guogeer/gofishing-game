@@ -30,7 +30,7 @@ type ClientOnline struct {
 	ServerName string `json:"serverName,omitempty"`
 }
 
-func createPlayer() *Player {
+func createPlayer(uid int) *Player {
 	for len(playerObjectPool) < 1 {
 		p := GetWorld().NewPlayer()
 		playerObjectPool = append(playerObjectPool, p)
@@ -44,6 +44,7 @@ func createPlayer() *Player {
 	n := len(playerObjectPool)
 	comer := playerObjectPool[n-1]
 	playerObjectPool = playerObjectPool[:n-1]
+	comer.Id = uid
 	return comer
 }
 
@@ -117,14 +118,22 @@ func GetGatewayPlayer(ssid string) *Player {
 	return p
 }
 
-func GetName() string {
+func GetServerName() string {
 	return GetWorld().GetName()
 }
 
-func WriteMessage(ss *cmd.Session, serverName, id string, i any) {
+func GetServerId() string {
+	if *serverId == "" {
+		return GetServerName()
+	}
+	return *serverId
+}
+
+func WriteMessage(ss *cmd.Session, id string, i any) {
 	if ss == nil {
 		return
 	}
+	serverName := GetServerName()
 	if serverName != "" {
 		id = fmt.Sprintf("%s.%s", serverName, id)
 	}
@@ -198,4 +207,8 @@ type GameOnlineSegment struct {
 	Id          int
 	PlayerTotal int
 	PlayerCure  []int
+}
+
+func GetPlayerByContext(ctx *cmd.Context) *Player {
+	return GetGatewayPlayer(ctx.Ssid)
 }

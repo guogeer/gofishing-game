@@ -10,6 +10,7 @@ import (
 	"gofishing-game/internal/pb"
 	"gofishing-game/internal/rpc"
 	"gofishing-game/service"
+	"gofishing-game/service/system"
 
 	"github.com/guogeer/quasar/cmd"
 	"github.com/guogeer/quasar/config"
@@ -66,7 +67,7 @@ func newMailObj(p *hallPlayer) *mailObj {
 
 func (obj *mailObj) BeforeEnter() {
 	p := obj.player
-	if p.EnterReq().IsFirst() {
+	if service.GetPlayer(p.Id) != nil {
 		massMails := obj.checkMassMails()
 		p.mailObj.OnRecv(len(massMails))
 	}
@@ -81,7 +82,7 @@ func (obj *mailObj) IsMassMailValid(mail *Mail) bool {
 	if obj.lastMassMail > sendTime.Unix() {
 		return false
 	}
-	if mail.ClientVersion != "" && p.EnterReq().Auth.ClientVersion != mail.ClientVersion {
+	if mail.ClientVersion != "" && system.GetLoginObj(p.Player).ClientVersion != mail.ClientVersion {
 		return false
 	}
 	if len(mail.LoginTime) > 1 &&
@@ -172,7 +173,7 @@ func (obj *mailObj) Load(pdata any) {
 	bin := pdata.(*pb.UserBin)
 	obj.lastMassMail = bin.Hall.LastMassMail
 	obj.newMailNum = 0
-	if data := obj.player.EnterReq().Data; data != nil {
+	if data := service.GetEnterQueue().GetRequest(obj.player.Id).EnterGameResp; data != nil {
 		obj.newMailNum = int(data.NewMailNum)
 	}
 }

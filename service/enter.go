@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"gofishing-game/internal/errcode"
+	"gofishing-game/internal/gameutils"
 	"gofishing-game/internal/pb"
 	"gofishing-game/internal/rpc"
 
@@ -15,45 +16,30 @@ import (
 )
 
 const maxLoginQueue = 99 // 同时处理的登陆请求
-var (
-	errNoResponse     = errcode.New("no_response", "no response")
-	errEnterOtherGame = errcode.New("enter_other_game", "重复登录")
-)
 
-type enterArgs struct {
-	Uid         int    `json:"uid,omitempty"`
-	Token       string `json:"token,omitempty"`
-	LeaveServer string `json:"leaveServer,omitempty"`
-	SubId       int    `json:"subId,omitempty"`
-}
-
-func init() {
-	cmd.Bind("FUNC_Leave", funcAutoLeave, (*enterArgs)(nil))
-	cmd.Bind("Enter", funcEnter, (*enterArgs)(nil))
-}
+var errEnterOtherGame = errcode.New("enter_other_game", "enter other game")
 
 type enterRequest struct {
-	Auth        *pb.AuthResp
-	Data        *pb.EnterGameResp `json:"-"`
-	LoginParams *pb.LoginParams   `json:"-"`
+	AuthResp        *pb.AuthResp
+	EnterGameResp   *pb.EnterGameResp
+	LoginParamsResp *pb.QueryLoginParamsResp
 
 	Uid         int
-	SubId       int // 房间有场次概念
 	Token       string
 	LeaveServer string // 离开旧场景进入新的场景
 	ServerId    string
+	RawData     []byte
 
 	e          *list.Element
 	session    *cmd.Session
 	expireTime time.Time // 过期时间
-	oldSubId   int
 	clientIP   string
 	startTime  time.Time
 	isOnline   bool
 }
 
-func (args *enterRequest) IsFirst() bool {
-	return args.Data != nil
+func (args *enterRequest) IsOnline() bool {
+	return args.isOnline
 }
 
 // 登陆队列：1、防止同时出现多个玩家异步耗时操作；2、控制同时登陆的用户数
@@ -63,7 +49,7 @@ type enterQueue struct {
 	isQuit bool      // 正在退出游戏
 }
 
-var gEnterQueue = newEnterQueue()
+var defaultEnterQueue = newEnterQueue()
 
 func newEnterQueue() *enterQueue {
 	eq := &enterQueue{
@@ -72,9 +58,17 @@ func newEnterQueue() *enterQueue {
 	return eq
 }
 
+func GetEnterQueue() *enterQueue {
+	return defaultEnterQueue
+}
+
+func (q *enterQueue) GetRequest(uid int) *enterRequest {
+	return q.m[uid]
+}
+
 func (eq *enterQueue) Check(uid int) {
 	if args, ok := eq.m[uid]; ok {
-		eq.LoadAndEnter(args.Uid)
+		eq.loadAndEnter(args.Uid)
 	}
 }
 
@@ -91,11 +85,11 @@ func (eq *enterQueue) clean() {
 		if now.Before(enterReq.expireTime) {
 			break
 		}
-		eq.Remove(enterReq.Uid)
+		eq.removeUser(enterReq.Uid)
 	}
 }
 
-func (eq *enterQueue) Remove(uid int) {
+func (eq *enterQueue) removeUser(uid int) {
 	if data, ok := eq.m[uid]; ok {
 		delete(eq.m, uid)
 		if e := data.e; e != nil {
@@ -105,106 +99,103 @@ func (eq *enterQueue) Remove(uid int) {
 	}
 }
 
-func (eq *enterQueue) PushBack(args *enterRequest) errcode.Error {
-	uid, subId, ss := args.Uid, args.SubId, args.session
+func (eq *enterQueue) PushBack(ctx *cmd.Context, uid int, token, leaveServer string, data []byte) (*cmd.Session, errcode.Error) {
+	clientIP, _, _ := net.SplitHostPort(ctx.ClientAddr)
+
+	enterReq := &enterRequest{
+		Uid:         uid,
+		Token:       token,
+		LeaveServer: leaveServer,
+		ServerId:    ctx.ServerName,
+		RawData:     data,
+
+		clientIP:   clientIP,
+		session:    &cmd.Session{Id: ctx.Ssid, Out: ctx.Out},
+		expireTime: time.Now().Add(30 * time.Second),
+		startTime:  time.Now(),
+	}
 	if eq.isQuit {
-		return errcode.New("service_maintain", "服务器正在维护中...")
+		return enterReq.session, errcode.New("service_maintain", "服务器正在维护中...")
+	}
+
+	if err := gameutils.Validate(uid, enterReq.Token); err != nil {
+		return enterReq.session, err
 	}
 
 	// 玩家已经在游戏中
-	if old, ok := gAllPlayers[uid]; ok && args.LeaveServer != old.enterReq.ServerId {
-		args.isOnline = true
+	if old, ok := gAllPlayers[uid]; ok && enterReq.LeaveServer != GetServerId() {
+		enterReq.isOnline = true
 		if old.IsBusy() {
-			return errNoResponse
+			return nil, nil
 		}
-		if oldSubId := old.enterReq.SubId; subId != oldSubId {
-			args.oldSubId = oldSubId
-			return errEnterOtherGame
-		}
+
 		// CLIENT 屏蔽相同链接的多个登陆请求
-		if oldss := old.enterReq.session; oldss != nil {
-			if oldss.Id == ss.Id {
-				return errNoResponse
+		if oldss := old.session; oldss != nil {
+			if oldss.Id == enterReq.session.Id {
+				return nil, nil
 			}
 			old.WriteJSON("enter", errcode.New("enter_already", "账号已登录"))
 			delete(gGatewayPlayers, oldss.Id)
 		}
-		if old.enterReq.Token != args.Token {
-			return errcode.New("invalid_token", "会话无效")
-		}
 	}
 	// 限制同时登陆的请求数
 	if _, ok := eq.m[uid]; !ok && eq.waitq.Len() >= maxLoginQueue {
-		return errcode.New("too_much_login", "登录需要排队")
+		return enterReq.session, errcode.New("too_much_login", "登录需要排队")
 	}
 
 	// 清理登陆队列中过期的请求
 	eq.clean()
-	if last, ok := eq.m[uid]; ok && last.Token == args.Token {
-		eq.Remove(uid)
+	if last, ok := eq.m[uid]; ok && last.Token == enterReq.Token {
+		eq.removeUser(uid)
 	}
 	if _, ok := eq.m[uid]; ok {
-		return errcode.Retry
+		return enterReq.session, errcode.Retry
 	}
 
 	// 保存或替换登陆请求
-	eq.m[uid] = args
-	args.e = eq.waitq.PushBack(args)
+	eq.m[uid] = enterReq
+	enterReq.e = eq.waitq.PushBack(enterReq)
 
 	// 处理登陆队列
-	eq.LoadAndEnter(uid)
-	return nil
+	eq.loadAndEnter(uid)
+	return enterReq.session, nil
 }
-func (eq *enterQueue) LoadAndEnter(uid int) {
+func (eq *enterQueue) loadAndEnter(uid int) {
 	args := eq.m[uid]
-	ip, subId, token := args.clientIP, args.SubId, args.Token
+	ip := args.Token
 
 	go func() {
-		var enterGameResp *pb.EnterGameResp
-		var loginParamsResp *pb.QueryLoginParamsResp
-		auth, err := rpc.CacheClient().Auth(context.Background(), &pb.AuthReq{Uid: int32(uid), Ip: ip})
-		if err != nil {
-			return
+		auth, _ := rpc.CacheClient().Auth(context.Background(), &pb.AuthReq{Uid: int32(uid), Ip: ip})
+		if args.LeaveServer != "" && auth.ServerId != "" {
+			cmd.Request(auth.ServerId, "FUNC_Leave", cmd.M{"uid": uid})
 		}
 
-		if !args.isOnline {
-			// 不请求离开，玩家直接离开进入游戏
-			if args.LeaveServer != "" && auth.ServerId != "" {
-				cmd.Request(auth.ServerId, "FUNC_Leave", cmd.M{"uid": uid})
-			}
-
-			rpc.CacheClient().Visit(context.Background(), &pb.VisitReq{Uid: int32(uid), SubId: int32(subId), ServerId: GetName()})
-			// token相同，并且玩家不在游戏中
-			if token == auth.Token {
-				enterGameResp, _ = rpc.CacheClient().EnterGame(context.Background(), &pb.EnterGameReq{Uid: int32(uid)})
-				loginParamsResp, _ = rpc.CacheClient().QueryLoginParams(context.TODO(), &pb.QueryLoginParamsReq{Uid: int32(uid)})
-			}
-		}
+		rpc.CacheClient().Visit(context.Background(), &pb.VisitReq{Uid: int32(uid), ServerId: GetServerId()})
+		enterGameResp, _ := rpc.CacheClient().EnterGame(context.Background(), &pb.EnterGameReq{Uid: int32(uid)})
+		loginParamsResp, _ := rpc.CacheClient().QueryLoginParams(context.TODO(), &pb.QueryLoginParamsReq{Uid: int32(uid)})
 		rpc.OnResponse(func() {
 			if args, ok := eq.m[uid]; ok {
-				args.Data = enterGameResp
-				if loginParamsResp != nil {
-					args.LoginParams = loginParamsResp.Params
-				}
-				args.Auth = auth
-				eq.Pop(args)
+				args.EnterGameResp = enterGameResp
+				args.LoginParamsResp = loginParamsResp
+				args.AuthResp = auth
+				eq.pop(args)
 			}
 		})
 	}()
 }
 
-func (eq *enterQueue) Pop(req *enterRequest) {
+func (eq *enterQueue) pop(req *enterRequest) {
 	uid := req.Uid
 	ss := req.session
 	e := eq.TryEnter(req)
 
-	eq.Remove(uid)
+	defer eq.removeUser(uid)
 	// 更新网关地址
 	var matchServer string
 	if e == nil {
-		matchServer = GetName()
+		matchServer = GetServerId()
 	} else if e == errEnterOtherGame {
-		matchServer = req.Data.UserInfo.ServerId
+		matchServer = req.EnterGameResp.UserInfo.ServerId
 	}
 	if matchServer != "" {
 		ss.WriteJSON("FUNC_SwitchServer", cmd.M{"MatchServer": matchServer, "ServerName": req.ServerId, "Uid": uid})
@@ -214,109 +205,46 @@ func (eq *enterQueue) Pop(req *enterRequest) {
 	if e == nil {
 		p := gAllPlayers[uid]
 		p.IP = req.clientIP
-		p.enterReq.session = ss
+		p.session = ss
 		gGatewayPlayers[ss.Id] = p
 
 		p.OnEnter()
 		log.Debugf("player %d enter all cost %v", p.Id, time.Since(req.startTime))
-
-		p.enterReq.Data = nil
-	} else if !req.IsFirst() {
+	} else if req.isOnline {
 		// 重连进入失败
-		WriteMessage(ss, req.ServerId, "enter", e)
+		WriteMessage(ss, "enter", e)
 	} else {
 		// 首次进入失败
-		mySubId := req.Data.UserInfo.SubId
+		mySubId := req.EnterGameResp.UserInfo.SubId
 		delete(gAllPlayers, uid)
 		delete(gGatewayPlayers, ss.Id)
 		go func() {
 			if e != errEnterOtherGame {
 				rpc.CacheClient().Visit(context.Background(), &pb.VisitReq{Uid: int32(uid)})
 			}
-			WriteMessage(ss, req.ServerId, "enter", cmd.M{"err": e, "subId": mySubId})
+			WriteMessage(ss, "enter", cmd.M{"err": e, "subId": mySubId})
 		}()
 	}
 }
 
 func (eq *enterQueue) TryEnter(args *enterRequest) errcode.Error {
-	uid, subId, token := args.Uid, args.SubId, args.Token
 	// 游戏正在关闭存档
 	if eq.isQuit {
 		return errcode.Retry
 	}
 	// 玩家已在游戏中
-	if player, ok := gAllPlayers[uid]; ok {
+	if player, ok := gAllPlayers[args.Uid]; ok {
 		if player.IsBusy() {
 			return errcode.Retry
 		}
 		return nil
 	}
-	// 验证失败
-	if token != args.Auth.Token {
-		return errcode.Retry
-	}
 	// 无效的玩家
-	if args.Data == nil || args.Data.UserInfo == nil {
+	if args.EnterGameResp == nil || args.EnterGameResp.UserInfo == nil {
 		return errcode.Retry
 	}
 
-	mySubId := int(args.Data.UserInfo.SubId)
-	myServer := args.Data.UserInfo.ServerId
-	if myServer != "" && !(mySubId == subId && GetName() == myServer) {
-		args.oldSubId = mySubId
-		return errEnterOtherGame
-	}
-	comer := createPlayer()
-	comer.Id = uid
-	comer.enterReq = args
-
-	gAllPlayers[uid] = comer
-	// gGatewayPlayers[ss.Id] = comer
-	return comer.Enter() // enter
-}
-
-func funcEnter(ctx *cmd.Context, data any) {
-	args := data.(*enterArgs)
-	clientIP, _, _ := net.SplitHostPort(ctx.ClientAddr)
-
-	enterReq := &enterRequest{
-		Uid:         args.Uid,
-		SubId:       args.SubId,
-		Token:       args.Token,
-		LeaveServer: args.LeaveServer,
-		ServerId:    ctx.ServerName,
-
-		clientIP:   clientIP,
-		session:    &cmd.Session{Id: ctx.Ssid, Out: ctx.Out},
-		expireTime: time.Now().Add(30 * time.Second),
-		startTime:  time.Now(),
-	}
-
-	if args.Token == "" {
-		return
-	}
-	// 忽略同一个链接登陆不同的账号
-	ply := GetGatewayPlayer(ctx.Ssid)
-	if ply != nil && ply.Id != enterReq.Uid {
-		return
-	}
-
-	e := gEnterQueue.PushBack(enterReq)
-	if e != nil && e != errNoResponse {
-		WriteMessage(enterReq.session, enterReq.ServerId, "enter", cmd.M{"err": e, "subId": enterReq.oldSubId})
-	}
-	log.Infof("player %d enter %s:%d user+robot num %d cost(except rpc) %v", enterReq.Uid, enterReq.ServerId, enterReq.SubId, len(gAllPlayers), time.Since(enterReq.startTime))
-}
-
-func funcAutoLeave(ctx *cmd.Context, data any) {
-	args := data.(*enterArgs)
-	uid := args.Uid
-	ply := GetPlayer(uid)
-	// log.Debugf("player %d auto leave", uid)
-
-	if ply == nil {
-		ctx.Out.WriteJSON("FUNC_Leave", cmd.M{"uid": uid})
-	} else {
-		ply.Leave2(ctx, nil)
-	}
+	comer := createPlayer(args.Uid)
+	gAllPlayers[args.Uid] = comer
+	return comer.Enter()
 }

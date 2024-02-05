@@ -4,6 +4,7 @@ package roomutils
 // 房间内玩家
 
 import (
+	"encoding/json"
 	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
 
@@ -11,9 +12,19 @@ import (
 	"github.com/guogeer/quasar/log"
 )
 
-var errTooMuchRoom = errcode.New("too_much_room", "too much room")
-
 const actionRoom = "Room"
+
+type roomError struct {
+	*errcode.BaseError
+	SubId int `json:"subId,omitempty"`
+}
+
+var errTooMuchRoom = errcode.New("too_much_room", "too much room")
+var errEnterOtherRoom = errcode.New("enter_other_room", "enter other room")
+
+type roomEnterArgs struct {
+	SubId int `json:"subId,omitempty"`
+}
 
 type RoomAction interface {
 	// ChangeRoom()
@@ -40,6 +51,24 @@ func (obj *RoomObj) TryEnter() errcode.Error {
 	if obj.room != nil {
 		return nil
 	}
+
+	args := &roomEnterArgs{}
+	enterReq := service.GetEnterQueue().GetRequest(obj.player.Id)
+	json.Unmarshal(enterReq.RawData, args)
+
+	curSubId := int(enterReq.EnterGameResp.UserInfo.SubId)
+	curServerId := enterReq.EnterGameResp.UserInfo.ServerId
+	if enterReq.IsOnline() {
+		old := service.GetPlayer(obj.player.Id)
+		if GetRoomObj(old).room.SubId != args.SubId {
+			return &roomError{BaseError: errEnterOtherRoom, SubId: curSubId}
+		}
+	} else {
+		if curServerId != "" && !(curSubId == args.SubId && service.GetServerId() == curServerId) {
+			return &roomError{BaseError: errEnterOtherRoom, SubId: curSubId}
+		}
+	}
+
 	// 比赛场先全部进入一个房间，比赛开始后再分配座位
 	if roomAction, ok := obj.player.GameAction.(RoomAction); ok {
 		room, e := roomAction.ChooseRoom()
@@ -89,7 +118,7 @@ func (obj *RoomObj) CustomRoom() CustomRoom {
 
 func (obj *RoomObj) ChangeRoom() errcode.Error {
 	player := obj.player
-	subId, mySubId := -1, player.EnterReq().SubId
+	subId, mySubId := -1, obj.room.SubId
 	if room := obj.room; room != nil {
 		mySubId = room.SubId
 	}
@@ -126,10 +155,7 @@ func (obj *RoomObj) ChangeRoom() errcode.Error {
 	obj.room = room
 	return nil
 }
-func (obj *RoomObj) Choose() (*Room, errcode.Error) {
-	ply := obj.player
-	subId := ply.EnterReq().SubId
-
+func (obj *RoomObj) Choose(subId int) (*Room, errcode.Error) {
 	// 优先分配座位未满的房间，最后分配座位坐满可观战的房间
 	var maxPlayerNum, robotNum, maxRoomNum int
 	config.Scan("Room", subId, "MaxPlayerNum,RobotNumPerRoom,RoomNum",
@@ -140,7 +166,7 @@ func (obj *RoomObj) Choose() (*Room, errcode.Error) {
 		return nil, errcode.Retry
 	}
 	if maxRoomNum > 0 && len(sub.rooms) >= maxRoomNum {
-		log.Errorf("server %s sub_id %d room num %d limit %d error: %v", service.GetName(), subId, len(sub.rooms), maxRoomNum, errTooMuchRoom)
+		log.Errorf("server %s sub_id %d room num %d limit %d error: %v", service.GetServerName(), subId, len(sub.rooms), maxRoomNum, errTooMuchRoom)
 		return nil, errTooMuchRoom
 	}
 

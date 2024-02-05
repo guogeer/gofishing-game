@@ -48,17 +48,17 @@ type GameAction interface {
 
 	OnClose()
 	OnAddItems(items []gameutils.Item, way string)
-	//OnPurchaseSubscription()
 }
 
 // 想了一个小时，最后决定叫这个名字，我尽力了
 type Player struct {
 	UserInfo        // 基本信息
 	Phone    string // 手机号
-	enterReq *enterRequest
+	// enterReq *enterRequest
 
 	// IsClose、IsClone容易混淆
 	IsSessionClose bool // 断开连接
+	session        *cmd.Session
 	isBusy         bool // 玩家进入游戏，离开游戏时
 
 	dataObj    *dataObj
@@ -92,10 +92,6 @@ func NewPlayer(action GameAction) *Player {
 	return player
 }
 
-func (player *Player) EnterReq() *enterRequest {
-	return player.enterReq
-}
-
 func (player *Player) SetTempValue(key string, value any) {
 	player.tempValues[key] = value
 }
@@ -113,7 +109,7 @@ func (player *Player) BagObj() *bagObj {
 }
 
 func (player *Player) Enter() errcode.Error {
-	data := player.enterReq.Data
+	data := GetEnterQueue().GetRequest(player.Id).EnterGameResp
 	gameutils.InitNilFields(data)
 
 	util.DeepCopy(&player.UserInfo, data.UserInfo)
@@ -240,10 +236,10 @@ func (player *Player) Leave2(leaveCtx *cmd.Context, cause errcode.Error) {
 }
 
 func (player *Player) CallWithoutSession(f func()) {
-	ss := player.enterReq.session
-	player.enterReq.session = nil
+	ss := player.session
+	player.session = nil
 	f()
-	player.enterReq.session = ss
+	player.session = ss
 }
 
 func (player *Player) onLeave() {
@@ -260,10 +256,10 @@ func (player *Player) onLeave() {
 		})
 	}
 	// 克隆的玩家，会话为空，此时不能清理
-	if ss := player.enterReq.session; ss != nil {
+	if ss := player.session; ss != nil {
 		delete(gGatewayPlayers, ss.Id)
 	}
-	player.enterReq.session = nil
+	player.session = nil
 	player.isBusy = false
 	if player == gAllPlayers[uid] {
 		delete(gAllPlayers, uid)
@@ -329,9 +325,9 @@ func (player *Player) OnClose() {
 	}
 
 	player.IsSessionClose = true
-	if ss := player.enterReq.session; ss != nil {
+	if ss := player.session; ss != nil {
 		delete(gGatewayPlayers, ss.Id)
-		player.enterReq.session = nil
+		player.session = nil
 	}
 	// 大厅
 	player.TimerGroup.ResetTimer(&player.closeTimer, func() { player.Leave2(nil, errKickOut) }, 10*time.Minute)
@@ -342,7 +338,7 @@ func (player *Player) WriteJSON(name string, data any) {
 		data = json.RawMessage(`{"code":"ok","msg":"success"}`)
 	}
 	if !player.IsSessionClose {
-		WriteMessage(player.enterReq.session, player.enterReq.ServerId, name, data)
+		WriteMessage(player.session, name, data)
 	}
 }
 

@@ -3,8 +3,6 @@
 package system
 
 import (
-	"gofishing-game/internal/gameutils"
-	"gofishing-game/internal/pb"
 	"gofishing-game/service"
 )
 
@@ -13,29 +11,27 @@ const actionKeyLogin = "login"
 type loginObj struct {
 	player *service.Player
 
-	params *pb.LoginParams
+	TimeZone      float32
+	LoginPlates   []string
+	ClientVersion string
 }
 
 func (obj *loginObj) BeforeEnter() {
 }
 
 func (obj *loginObj) Load(data any) {
-	obj.params = obj.player.EnterReq().LoginParams
-	if obj.params == nil {
-		obj.params = &pb.LoginParams{}
+	req := service.GetEnterQueue().GetRequest(obj.player.Id)
+	if req != nil {
+		obj.TimeZone = float32(req.LoginParamsResp.Params.TimeZone)
+		obj.LoginPlates = append([]string{}, req.AuthResp.LoginPlates...)
 	}
-	gameutils.InitNilFields(obj.params)
 }
 
 func (obj *loginObj) Save(data any) {
 }
 
-func (obj *loginObj) Params() *pb.LoginParams {
-	return obj.params
-}
-
 func (obj *loginObj) IsBindPlate() bool {
-	for _, plate := range obj.player.EnterReq().Auth.LoginPlates {
+	for _, plate := range obj.LoginPlates {
 		if plate == "google" || plate == "facebook" {
 			return true
 		}

@@ -37,7 +37,7 @@ type subGame struct {
 func (sub *subGame) updateOnline() {
 	sub.Online = 0
 	for _, player := range service.GetAllPlayers() {
-		if player.EnterReq().SubId == sub.Id {
+		if GetRoomObj(player).room.SubId == sub.Id {
 			if !player.IsRobot && !player.IsSessionClose {
 				sub.Online++
 			}
@@ -59,7 +59,7 @@ func updateOnline() {
 		sub.updateOnline()
 		one := service.ClientOnline{
 			Online:     sub.Online,
-			ServerName: service.GetName() + ":" + strconv.Itoa(sub.Id),
+			ServerName: service.GetServerName() + ":" + strconv.Itoa(sub.Id),
 		}
 		onlines = append(onlines, one)
 	}
@@ -78,23 +78,12 @@ type RoomWorld interface {
 func LoadGames(w RoomWorld) {
 	gSubGames = map[int]*subGame{}
 
-	servers := []string{service.GetName()}
-	if gw, ok := w.(greatWorld); ok {
-		servers = append(servers, gw.Servers()...)
-	}
-	for _, rowId := range config.Rows("Room") {
-		tagStr, _ := config.String("Room", rowId, "Tags")
+	for _, rowId := range config.Rows("room") {
+		tagStr, _ := config.String("room", rowId, "tags")
 		tags := strings.Split(tagStr, ",")
+		name := service.GetServerName()
 
-		var name string
-		for _, sname := range servers {
-			if slices.Index(tags, sname) >= 0 {
-				name = sname
-				break
-			}
-		}
-
-		if name != "" {
+		if slices.Index(tags, name) >= 0 {
 			var subId, seatNum, roomNum int
 			config.Scan("Room", rowId, "RoomID,SeatNum,RoomNum", &subId, &seatNum, &roomNum)
 

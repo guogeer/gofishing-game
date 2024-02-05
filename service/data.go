@@ -58,8 +58,8 @@ func newDataObj(player *Player) *dataObj {
 }
 
 func (obj *dataObj) Enter() errcode.Error {
-	data := obj.player.enterReq.Data
-	obj.loadAll(data.Bin)
+	request := GetEnterQueue().GetRequest(obj.player.Id)
+	obj.loadAll(request.EnterGameResp.Bin)
 	obj.updateNewDay()
 	return nil
 }
@@ -68,8 +68,7 @@ func (obj *dataObj) BeforeEnter() {
 	p := obj.player
 	now := time.Now()
 
-	if p.EnterReq().IsFirst() {
-		util.StopTimer(obj.saveTimer)
+	if !obj.saveTimer.IsValid() {
 		obj.saveTimer = p.TimerGroup.NewPeriodTimer(obj.onTime, now, obj.period)
 	}
 }

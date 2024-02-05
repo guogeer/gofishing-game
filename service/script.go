@@ -33,7 +33,7 @@ func scriptCreateUUID(L *lua.LState) int {
 }
 
 func scriptGetServerName(L *lua.LState) int {
-	name := GetName()
+	name := GetServerName()
 	L.Push(lua.LString(name))
 	return 1
 }
