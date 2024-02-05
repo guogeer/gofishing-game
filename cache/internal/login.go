@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
-	"strconv"
 	"time"
 
 	"gofishing-game/internal"
@@ -107,7 +106,7 @@ func (cc *Cache) Auth(ctx context.Context, req *pb.AuthReq) (*pb.AuthResp, error
 		db.QueryRow("select plate from user_plate where uid=?", uid).Scan(&plate)
 		plates = append(plates, plate)
 		resp.LoginPlates = plates
-		resp.ServerId = infoResp.Info.ServerId
+		resp.ServerLocation = infoResp.Info.ServerLocation
 
 		// IP白名单
 		type clientVersion struct {
@@ -223,11 +222,8 @@ func (cc *Cache) SaveBin(ctx context.Context, req *pb.SaveBinReq) (*pb.EmptyResp
 func (cc *Cache) Visit(ctx context.Context, req *pb.VisitReq) (*pb.EmptyResp, error) {
 	db := dbo.Get()
 
-	location := req.ServerId
-	if location != "" {
-		location = req.ServerId + ":" + strconv.Itoa(int(req.SubId))
-	}
-	_, err := db.Exec("update user_info set game_location=? where (game_location = '' or ? = '') and id=?", location, location, req.Uid)
+	location := req.ServerLocation
+	_, err := db.Exec("update user_info set server_location=? where (server_location = '' or ? = '') and id=?", location, location, req.Uid)
 	return &pb.EmptyResp{}, err
 }
 

@@ -17,7 +17,7 @@ CREATE TABLE user_info (
     imei varchar(24) not null,
     imsi varchar(24) not null,
     chan_id varchar(32) not null,
-    game_location varchar(32) not null default '',
+    server_location varchar(32) not null default '',
     create_time TIMESTAMP not null default current_TIMESTAMP
 );
 

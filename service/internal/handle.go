@@ -29,27 +29,14 @@ type serviceArgs struct {
 	Items []*gameutils.NumericItem `json:"items,omitempty"`
 }
 
-type authArgs struct {
-	Uid         int    `json:"uid,omitempty"`
-	Token       string `json:"token,omitempty"`
-	LeaveServer string `json:"leaveServer,omitempty"`
-}
-
-type enterArgs struct {
-	authArgs
-
-	data []byte `json:"-"`
-}
-
-func (args *enterArgs) UnmarshalJSON(buf []byte) error {
-	args.data = buf
-	return json.Unmarshal(buf, &args.authArgs)
-}
-
 type addItemsArgs struct {
 	Uid   int                      `json:"uid,omitempty"`
 	Items []*gameutils.NumericItem `json:"items,omitempty"`
 	Way   string                   `json:"way,omitempty"`
+}
+
+type leaveArgs struct {
+	Uid int `json:"uid,omitempty"`
 }
 
 func init() {
@@ -61,8 +48,8 @@ func init() {
 	cmd.BindFunc(Leave, nil)
 	cmd.BindFunc(Close, nil)
 
-	cmd.BindFunc(FUNC_Leave, (*enterArgs)(nil)).SetPrivate()
-	cmd.BindFunc(Enter, (*enterArgs)(nil))
+	cmd.BindFunc(FUNC_Leave, (*leaveArgs)(nil)).SetPrivate()
+	cmd.BindFunc(Enter, (*json.RawMessage)(nil))
 }
 
 type msgHandler interface {
@@ -119,7 +106,11 @@ func FUNC_AddItems(ctx *cmd.Context, data any) {
 }
 
 func Enter(ctx *cmd.Context, data any) {
-	args := data.(*enterArgs)
+	rawData := *(data.(*json.RawMessage))
+
+	args := &enterArgs{}
+	json.Unmarshal(rawData, args)
+
 	if args.Token == "" {
 		return
 	}
@@ -129,15 +120,22 @@ func Enter(ctx *cmd.Context, data any) {
 		return
 	}
 
-	ss, e := service.GetEnterQueue().PushBack(ctx, args.Uid, args.Token, args.LeaveServer, args.data)
+	ss, e := service.GetEnterQueue().PushBack(ctx, args.Uid, args.Token, args.LeaveServer, rawData)
 	if e != nil && ss != nil {
 		service.WriteMessage(ss, "enter", e)
 	}
 	log.Infof("player %d enter %s user+robot num %d", args.Uid, ctx.ServerName, len(service.GetAllPlayers()))
 }
 
+type enterArgs struct {
+	Uid         int    `json:"uid,omitempty"`
+	Token       string `json:"token,omitempty"`
+	LeaveServer string `json:"leaveServer,omitempty"`
+}
+
 func FUNC_Leave(ctx *cmd.Context, data any) {
-	args := data.(*enterArgs)
+	args := data.(*leaveArgs)
+
 	uid := args.Uid
 	ply := service.GetPlayer(uid)
 	// log.Debugf("player %d auto leave", uid)

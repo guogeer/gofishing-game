@@ -4,6 +4,7 @@ import (
 	"container/list"
 	"context"
 	"net"
+	"strings"
 	"time"
 
 	"gofishing-game/internal/errcode"
@@ -27,7 +28,7 @@ type enterRequest struct {
 	Uid         int
 	Token       string
 	LeaveServer string // 离开旧场景进入新的场景
-	ServerId    string
+	ServerName  string
 	RawData     []byte
 
 	e          *list.Element
@@ -47,6 +48,8 @@ type enterQueue struct {
 	m      map[int]*enterRequest
 	waitq  list.List // 正在处理的登陆队列
 	isQuit bool      // 正在退出游戏
+
+	locationFunc func(int) string
 }
 
 var defaultEnterQueue = newEnterQueue()
@@ -54,7 +57,11 @@ var defaultEnterQueue = newEnterQueue()
 func newEnterQueue() *enterQueue {
 	eq := &enterQueue{
 		m: make(map[int]*enterRequest),
+		locationFunc: func(uid int) string {
+			return GetServerId()
+		},
 	}
+
 	return eq
 }
 
@@ -62,8 +69,16 @@ func GetEnterQueue() *enterQueue {
 	return defaultEnterQueue
 }
 
-func (q *enterQueue) GetRequest(uid int) *enterRequest {
-	return q.m[uid]
+func (eq *enterQueue) SetLocationFunc(f func(int) string) {
+	eq.locationFunc = f
+}
+
+func (eq *enterQueue) getServerLocation(uid int) string {
+	return eq.locationFunc(uid)
+}
+
+func (eq *enterQueue) GetRequest(uid int) *enterRequest {
+	return eq.m[uid]
 }
 
 func (eq *enterQueue) Check(uid int) {
@@ -106,7 +121,7 @@ func (eq *enterQueue) PushBack(ctx *cmd.Context, uid int, token, leaveServer str
 		Uid:         uid,
 		Token:       token,
 		LeaveServer: leaveServer,
-		ServerId:    ctx.ServerName,
+		ServerName:  ctx.ServerName,
 		RawData:     data,
 
 		clientIP:   clientIP,
@@ -163,14 +178,16 @@ func (eq *enterQueue) PushBack(ctx *cmd.Context, uid int, token, leaveServer str
 func (eq *enterQueue) loadAndEnter(uid int) {
 	args := eq.m[uid]
 	ip := args.Token
+	serverLocation := eq.getServerLocation(uid)
 
 	go func() {
 		auth, _ := rpc.CacheClient().Auth(context.Background(), &pb.AuthReq{Uid: int32(uid), Ip: ip})
-		if args.LeaveServer != "" && auth.ServerId != "" {
-			cmd.Request(auth.ServerId, "FUNC_Leave", cmd.M{"uid": uid})
+		values := strings.Split(auth.ServerLocation, ":")
+		if args.LeaveServer != "" && values[0] != "" {
+			cmd.Request(values[0], "FUNC_Leave", cmd.M{"uid": uid})
 		}
 
-		rpc.CacheClient().Visit(context.Background(), &pb.VisitReq{Uid: int32(uid), ServerId: GetServerId()})
+		rpc.CacheClient().Visit(context.Background(), &pb.VisitReq{Uid: int32(uid), ServerLocation: serverLocation})
 		enterGameResp, _ := rpc.CacheClient().EnterGame(context.Background(), &pb.EnterGameReq{Uid: int32(uid)})
 		loginParamsResp, _ := rpc.CacheClient().QueryLoginParams(context.TODO(), &pb.QueryLoginParamsReq{Uid: int32(uid)})
 		rpc.OnResponse(func() {
@@ -191,14 +208,15 @@ func (eq *enterQueue) pop(req *enterRequest) {
 
 	defer eq.removeUser(uid)
 	// 更新网关地址
-	var matchServer string
+	var matchServerId string
 	if e == nil {
-		matchServer = GetServerId()
+		matchServerId = GetServerId()
 	} else if e == errEnterOtherGame {
-		matchServer = req.EnterGameResp.UserInfo.ServerId
+		values := strings.Split(req.EnterGameResp.UserInfo.ServerLocation, ":")
+		matchServerId = values[0]
 	}
-	if matchServer != "" {
-		ss.WriteJSON("FUNC_SwitchServer", cmd.M{"MatchServer": matchServer, "ServerName": req.ServerId, "Uid": uid})
+	if matchServerId != "" {
+		ss.WriteJSON("FUNC_SwitchServer", cmd.M{"matchServer": matchServerId, "serverName": req.ServerName, "uid": uid})
 	}
 
 	// 首次成功进入或者重连
@@ -215,14 +233,13 @@ func (eq *enterQueue) pop(req *enterRequest) {
 		WriteMessage(ss, "enter", e)
 	} else {
 		// 首次进入失败
-		mySubId := req.EnterGameResp.UserInfo.SubId
 		delete(gAllPlayers, uid)
 		delete(gGatewayPlayers, ss.Id)
 		go func() {
 			if e != errEnterOtherGame {
 				rpc.CacheClient().Visit(context.Background(), &pb.VisitReq{Uid: int32(uid)})
 			}
-			WriteMessage(ss, "enter", cmd.M{"err": e, "subId": mySubId})
+			WriteMessage(ss, "enter", e)
 		}()
 	}
 }

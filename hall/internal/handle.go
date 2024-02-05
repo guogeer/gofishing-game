@@ -2,8 +2,6 @@ package internal
 
 import (
 	"context"
-	"strconv"
-	"strings"
 
 	"gofishing-game/internal/pb"
 	"gofishing-game/internal/rpc"
@@ -14,8 +12,7 @@ import (
 )
 
 type hallArgs struct {
-	Id int `json:"id,omitempty"`
-
+	Id       int                         `json:"id,omitempty"`
 	Plate    string                      `json:"plate,omitempty"`
 	Uid      int                         `json:"uid,omitempty"`
 	Address  string                      `json:"address,omitempty"`
@@ -31,7 +28,7 @@ func GetPlayerByContext(ctx *cmd.Context) *hallPlayer {
 }
 
 type updateOnlineArgs struct {
-	Games []service.ClientOnline `json:"games,omitempty"`
+	Games []service.ServerOnline `json:"games,omitempty"`
 }
 
 func init() {
@@ -40,9 +37,9 @@ func init() {
 	cmd.BindFunc(FUNC_SyncOnline, (*hallArgs)(nil)).SetPrivate()
 	cmd.BindFunc(S2C_GetBestGateway, (*hallArgs)(nil)).SetPrivate()
 
-	cmd.Bind("FUNC_DeleteAccount", syncDeleteAccount, (*hallArgs)(nil)).SetPrivate()
-	cmd.Bind("FUNC_UpdateMaintain", funcUpdateMaintain, (*hallArgs)(nil)).SetPrivate()
-	cmd.Bind("FUNC_UpdateFakeOnline", funcUpdateFakeOnline, (*hallArgs)(nil)).SetPrivate()
+	cmd.BindFunc(FUNC_DeleteAccount, (*hallArgs)(nil)).SetPrivate().SetNoQueue()
+	cmd.BindFunc(FUNC_UpdateMaintain, (*hallArgs)(nil)).SetPrivate()
+	cmd.BindFunc(FUNC_UpdateFakeOnline, (*hallArgs)(nil)).SetPrivate()
 }
 
 // 更新在线人数
@@ -50,9 +47,7 @@ func FUNC_UpdateOnline(ctx *cmd.Context, data any) {
 	w := GetWorld()
 	args := data.(*updateOnlineArgs)
 	for _, g := range args.Games {
-		keys := strings.Split(g.ServerName+":", ":")
-		subId, _ := strconv.Atoi(keys[1])
-		w.onlines[subId] = service.ClientOnline{ServerName: keys[0], Online: g.Online}
+		w.onlines[g.Id] = g
 	}
 }
 
@@ -70,7 +65,7 @@ func S2C_GetBestGateway(ctx *cmd.Context, data any) {
 }
 
 // 同步删除账号
-func syncDeleteAccount(ctx *cmd.Context, data any) {
+func FUNC_DeleteAccount(ctx *cmd.Context, data any) {
 	args := data.(*hallArgs)
 	log.Debug("gm delete account", args.Uid)
 	rpc.CacheClient().ClearAccount(context.Background(), &pb.ClearAccountReq{
@@ -79,11 +74,11 @@ func syncDeleteAccount(ctx *cmd.Context, data any) {
 	ctx.Out.WriteJSON("FUNC_DeleteAccount", struct{}{})
 }
 
-func funcUpdateMaintain(ctx *cmd.Context, data any) {
+func FUNC_UpdateMaintain(ctx *cmd.Context, data any) {
 	GetWorld().updateMaintain()
 }
 
-func funcUpdateFakeOnline(ctx *cmd.Context, data any) {
+func FUNC_UpdateFakeOnline(ctx *cmd.Context, data any) {
 	args := data.(*hallArgs)
 	GetWorld().segments = args.Segments
 }

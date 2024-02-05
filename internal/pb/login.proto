@@ -118,5 +118,5 @@ message AuthResp {
   string clientVersion = 5; // 版本
   string loginTime = 6;     // 登陆时间
   repeated string loginPlates = 7;
-  string serverId = 8;
+  string serverLocation = 8;
 }

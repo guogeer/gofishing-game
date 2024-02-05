@@ -1,6 +1,7 @@
 package roomutils
 
 import (
+	"encoding/json"
 	"slices"
 	"strconv"
 	"strings"
@@ -54,20 +55,16 @@ func GetServerName(subId int) string {
 }
 
 func updateOnline() {
-	var onlines []service.ClientOnline
+	var onlines []service.ServerOnline
 	for _, sub := range gSubGames {
 		sub.updateOnline()
-		one := service.ClientOnline{
-			Online:     sub.Online,
-			ServerName: service.GetServerName() + ":" + strconv.Itoa(sub.Id),
+		one := service.ServerOnline{
+			Online: sub.Online,
+			Id:     service.GetServerName() + ":" + service.GetServerId() + ":" + strconv.Itoa(sub.Id),
 		}
 		onlines = append(onlines, one)
 	}
 	cmd.Forward("hall", "FUNC_UpdateOnline", cmd.M{"Games": onlines})
-}
-
-type greatWorld interface {
-	Servers() []string
 }
 
 type RoomWorld interface {
@@ -98,6 +95,12 @@ func LoadGames(w RoomWorld) {
 }
 
 func init() {
+	service.GetEnterQueue().SetLocationFunc(func(uid int) string {
+		args := &roomEnterArgs{}
+		enterReq := service.GetEnterQueue().GetRequest(uid)
+		json.Unmarshal(enterReq.RawData, args)
+		return service.GetServerId() + ":" + strconv.Itoa(args.SubId)
+	})
 	util.GetTimerSet().NewPeriodTimer(tick10s, time.Now(), 10*time.Second)
 }
 

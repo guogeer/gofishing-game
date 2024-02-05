@@ -24,10 +24,10 @@ var (
 	defaultWorld World
 )
 
-// 客户端显示在线
-type ClientOnline struct {
-	Online     int    `json:"online,omitempty"`
-	ServerName string `json:"serverName,omitempty"`
+// 在线人数
+type ServerOnline struct {
+	Id     string `json:"id,omitempty"` // serverId:serverName{:subId}
+	Online int    `json:"online,omitempty"`
 }
 
 func createPlayer(uid int) *Player {

@@ -37,7 +37,7 @@ type buildRankItem struct {
 type hallWorld struct {
 	currentBestGateway string
 
-	onlines   map[int]service.ClientOnline
+	onlines   map[string]service.ServerOnline
 	buildRank []buildRankItem
 	massMails []*Mail // 系统群发的邮件
 
@@ -54,7 +54,7 @@ func GetWorld() *hallWorld {
 
 func init() {
 	w := &hallWorld{
-		onlines: make(map[int]service.ClientOnline),
+		onlines: make(map[string]service.ServerOnline),
 	}
 
 	service.CreateWorld(w)
@@ -92,10 +92,10 @@ func (w *hallWorld) NewPlayer() *service.Player {
 	return p.Player
 }
 
-func (w *hallWorld) GetCurrentOnline() []*pb.SubGame {
-	data := make([]*pb.SubGame, 0, 16)
-	for subId, g := range w.onlines {
-		data = append(data, &pb.SubGame{ServerName: g.ServerName, Id: int32(subId), Num: int32(g.Online)})
+func (w *hallWorld) GetCurrentOnline() []service.ServerOnline {
+	data := make([]service.ServerOnline, 0, 16)
+	for _, g := range w.onlines {
+		data = append(data, g)
 	}
 	return data
 }
@@ -105,7 +105,7 @@ func (w *hallWorld) UpdateOnline() {
 	if len(data) == 0 {
 		return
 	}
-	cmd.Forward("plate", "ReportOnline", cmd.M{"Servers": data})
+	cmd.Forward("plate", "reportOnline", cmd.M{"servers": data})
 }
 
 func GetPlayer(uid int) *hallPlayer {

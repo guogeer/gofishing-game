@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
+	"strconv"
+	"strings"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
@@ -56,8 +58,10 @@ func (obj *RoomObj) TryEnter() errcode.Error {
 	enterReq := service.GetEnterQueue().GetRequest(obj.player.Id)
 	json.Unmarshal(enterReq.RawData, args)
 
-	curSubId := int(enterReq.EnterGameResp.UserInfo.SubId)
-	curServerId := enterReq.EnterGameResp.UserInfo.ServerId
+	serverLocation := enterReq.EnterGameResp.UserInfo.ServerLocation
+	values := strings.Split(serverLocation+":", ":")
+	curSubId, _ := strconv.Atoi(values[1])
+	curServerId := values[0]
 	if enterReq.IsOnline() {
 		old := service.GetPlayer(obj.player.Id)
 		if GetRoomObj(old).room.SubId != args.SubId {
