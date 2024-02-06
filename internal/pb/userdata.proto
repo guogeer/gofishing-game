@@ -22,7 +22,6 @@ message SimpleUserInfo {
 
 message UserInfo {
     int32 uid = 1;
-    string token = 2;
     string serverLocation = 3;
     string createTime = 4;
     string chanId = 5;

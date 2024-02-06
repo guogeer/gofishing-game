@@ -112,7 +112,7 @@ func GetGatewayPlayer(ssid string) *Player {
 		return nil
 	}
 	// 玩家在进入游戏或离开游戏过程中，屏蔽其他消息请求
-	if p.isBusy {
+	if p.IsBusy() {
 		return nil
 	}
 	return p

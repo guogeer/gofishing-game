@@ -114,11 +114,9 @@ func (eq *enterQueue) removeUser(uid int) {
 	}
 }
 
-func (eq *enterQueue) PushBack(ctx *cmd.Context, uid int, token, leaveServer string, data []byte) (*cmd.Session, errcode.Error) {
+func (eq *enterQueue) PushBack(ctx *cmd.Context, token, leaveServer string, data []byte) (*cmd.Session, errcode.Error) {
 	clientIP, _, _ := net.SplitHostPort(ctx.ClientAddr)
-
 	enterReq := &enterRequest{
-		Uid:         uid,
 		Token:       token,
 		LeaveServer: leaveServer,
 		ServerName:  ctx.ServerName,
@@ -133,8 +131,16 @@ func (eq *enterQueue) PushBack(ctx *cmd.Context, uid int, token, leaveServer str
 		return enterReq.session, errcode.New("service_maintain", "服务器正在维护中...")
 	}
 
-	if err := gameutils.Validate(uid, enterReq.Token); err != nil {
+	uid, err := gameutils.ValidateToken(token)
+	if err != nil {
 		return enterReq.session, err
+	}
+	enterReq.Uid = uid
+
+	// 忽略同一个链接登陆不同的账号
+	ply := GetGatewayPlayer(ctx.Ssid)
+	if ply != nil && ply.Id != uid {
+		return nil, nil
 	}
 
 	// 玩家已经在游戏中

@@ -57,16 +57,18 @@ func (j *JWT) ParserToken(tokenString string) (*CustomClaims, errcode.Error) {
 	return nil, errUnknowToken
 }
 
-func Validate(uid int, token string) errcode.Error {
+func ValidateToken(token string) (int, errcode.Error) {
 	if token == "" {
-		return errcode.New("empty_token", "empty token")
+		return 0, errcode.New("empty_token", "empty token")
 	}
 	claims, err := defaultJWT.ParserToken(token)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	if claims.Uid != uid {
-		return errcode.New("not_match_user", "not match user")
-	}
-	return nil
+	return claims.Uid, nil
+}
+
+func CreateToken(uid int) string {
+	token, _ := defaultJWT.CreateToken(CustomClaims{Uid: uid})
+	return token
 }

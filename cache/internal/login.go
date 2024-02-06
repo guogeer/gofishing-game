@@ -2,8 +2,6 @@ package internal
 
 import (
 	"context"
-	"crypto/md5"
-	"encoding/hex"
 	"fmt"
 	"reflect"
 	"regexp"
@@ -11,9 +9,9 @@ import (
 
 	"gofishing-game/internal"
 	"gofishing-game/internal/dbo"
+	"gofishing-game/internal/gameutils"
 	"gofishing-game/internal/pb"
 
-	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
 	"github.com/guogeer/quasar/util"
 	"google.golang.org/protobuf/proto"
@@ -23,15 +21,6 @@ var matchIPs = regexp.MustCompile(`[0-9.]+`)
 
 type Cache struct {
 	pb.UnimplementedCacheServer
-}
-
-var tokenKey = "lolbye2023" + config.Config().ServerKey
-
-func generateToken(uid int) string {
-	sign := fmt.Sprintf("%s_%d", tokenKey, uid)
-	sum := md5.Sum([]byte(sign))
-	hexSum := hex.EncodeToString(sum[:])
-	return hexSum
 }
 
 func (cc *Cache) EnterGame(ctx context.Context, req *pb.EnterGameReq) (*pb.EnterGameResp, error) {
@@ -73,8 +62,8 @@ func (cc *Cache) AddLoginLog(ctx context.Context, req *pb.AddLoginLogReq) (*pb.E
 
 	db := dbo.Get()
 	now := time.Now()
-	today := now.Format("2006-01-02")
-	tomorrow := now.Add(24 * time.Hour).Format("2006-01-02")
+	today := now.Format(internal.ShortDateFmt)
+	tomorrow := now.Add(24 * time.Hour).Format(internal.ShortDateFmt)
 	db.Exec("update online_log set ip=?,mac=?,imei=?,imsi=?,enter_chan_id=?,client_version=?,login_time=now() where uid=? and login_time between ? and ?", ip, mac, imei, imsi, chanId, ver, uid, today, tomorrow)
 	db.Exec("insert into online_log(uid,ip,mac,imei,imsi,enter_chan_id,client_version,login_time) select ?,?,?,?,?,?,?,now() from dual where not exists (select 1 from online_log where uid=? and login_time between ? and ?)", uid, ip, mac, imei, imsi, chanId, ver, uid, today, tomorrow)
 	return &pb.EmptyResp{}, nil
@@ -84,7 +73,8 @@ func (cc *Cache) Auth(ctx context.Context, req *pb.AuthReq) (*pb.AuthResp, error
 	db := dbo.Get()
 	mdb := mpool.Get()
 	uid := req.Uid
-	token := generateToken(int(uid))
+
+	token := gameutils.CreateToken(int(uid))
 	resp := &pb.AuthResp{Token: token}
 
 	if uid > 0 {

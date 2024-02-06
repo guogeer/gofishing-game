@@ -161,9 +161,9 @@ func (player *Player) OnEnter() {
 	player.SetClientValue("items", items)
 
 	// 角色个人信息
-	player.MergeClientValue("userInfo", player.UserInfo)
+	player.MergeClientValue("baseInfo", player.UserInfo)
 	// 最后更新背包
-	player.WriteJSON("getPlayerInfo", player.clientValues)
+	player.WriteJSON("getUserInfo", player.clientValues)
 	player.GameAction.AfterEnter()
 
 	//测试工具推送

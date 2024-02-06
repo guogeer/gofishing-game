@@ -14,8 +14,7 @@ func (cc *Cache) QueryUserInfo(ctx context.Context, req *pb.QueryUserInfoReq) (*
 
 	uid := req.Uid
 	userInfo := &pb.UserInfo{
-		Uid:   uid,
-		Token: generateToken(int(uid)),
+		Uid: uid,
 	}
 
 	var gameLocation string
