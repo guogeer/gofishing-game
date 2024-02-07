@@ -6,6 +6,7 @@ package roomutils
 import (
 	"encoding/json"
 	"gofishing-game/internal/errcode"
+	"gofishing-game/internal/gameutils"
 	"gofishing-game/service"
 	"strconv"
 	"strings"
@@ -33,8 +34,12 @@ type RoomAction interface {
 	ChooseRoom() (*Room, errcode.Error)
 }
 
+func init() {
+	service.AddAction(actionRoom, newRoomObj)
+}
+
 type RoomObj struct {
-	seatId int
+	seatIndex int
 
 	player *service.Player
 	room   *Room
@@ -45,8 +50,12 @@ func GetRoomObj(player *service.Player) *RoomObj {
 }
 
 func newRoomObj(player *service.Player) service.EnterAction {
-	obj := &RoomObj{seatId: NoSeat, player: player}
+	obj := &RoomObj{seatIndex: NoSeat, player: player}
 	return obj
+}
+
+func (obj *RoomObj) GetSeat() int {
+	return obj.seatIndex
 }
 
 func (obj *RoomObj) TryEnter() errcode.Error {
@@ -95,6 +104,9 @@ func (obj *RoomObj) BeforeEnter() {
 	if _, ok := room.allPlayers[p.Id]; !ok {
 		room.allPlayers[p.Id] = p
 	}
+	if seat := room.GetEmptySeat(); seat != NoSeat {
+		obj.SitDown(seat)
+	}
 }
 
 func (obj *RoomObj) OnLeave() {
@@ -105,7 +117,10 @@ func (obj *RoomObj) OnLeave() {
 	room := obj.room
 	log.Infof("player %d leave room", obj.player.Id)
 	delete(room.allPlayers, obj.player.Id)
-	room.Broadcast("Leave", nil, obj.player.Id)
+	room.Broadcast("Leave", nil)
+	if obj.seatIndex != NoSeat {
+		obj.SitUp()
+	}
 	obj.room = nil
 }
 
@@ -162,8 +177,10 @@ func (obj *RoomObj) ChangeRoom() errcode.Error {
 func (obj *RoomObj) Choose(subId int) (*Room, errcode.Error) {
 	// 优先分配座位未满的房间，最后分配座位坐满可观战的房间
 	var maxPlayerNum, robotNum, maxRoomNum int
-	config.Scan("Room", subId, "MaxPlayerNum,RobotNumPerRoom,RoomNum",
-		&maxPlayerNum, &robotNum, &maxRoomNum)
+	var needItemStr, limitItemStr string
+	config.Scan("room", subId, "maxPlayerNum,robotNumPerRoom,roomNum,needItems,limitItems",
+		&maxPlayerNum, &robotNum, &maxRoomNum, &needItemStr, &limitItemStr,
+	)
 
 	sub, ok := gSubGames[subId]
 	if !ok {
@@ -172,6 +189,27 @@ func (obj *RoomObj) Choose(subId int) (*Room, errcode.Error) {
 	if maxRoomNum > 0 && len(sub.rooms) >= maxRoomNum {
 		log.Errorf("server %s sub_id %d room num %d limit %d error: %v", service.GetServerName(), subId, len(sub.rooms), maxRoomNum, errTooMuchRoom)
 		return nil, errTooMuchRoom
+	}
+	bagObj := obj.player.BagObj()
+
+	var needItemId int
+	for _, item := range gameutils.ParseNumbericItems(needItemStr) {
+		if item.GetNum() > bagObj.NumItem(item.GetId()) {
+			needItemId = item.GetId()
+		}
+	}
+	if needItemId > 0 {
+		return nil, errcode.MoreItem(needItemId)
+	}
+
+	var tooMuchItemId int
+	for _, item := range gameutils.ParseNumbericItems(needItemStr) {
+		if item.GetNum() > bagObj.NumItem(item.GetId()) {
+			needItemId = item.GetId()
+		}
+	}
+	if tooMuchItemId > 0 {
+		return nil, errcode.TooMuchItem(needItemId)
 	}
 
 	// 重复利用已有的房间
@@ -190,6 +228,32 @@ func (obj *RoomObj) Choose(subId int) (*Room, errcode.Error) {
 	return freeRoom, nil
 }
 
-func init() {
-	service.AddAction(actionRoom, newRoomObj)
+func (obj *RoomObj) SitDown(seatIndex int) errcode.Error {
+	room := obj.room
+	if obj.seatIndex != NoSeat {
+		return errcode.New("sit_down_already", "sit down already")
+	}
+	if seatIndex < 0 || seatIndex >= len(room.seatPlayers) {
+		return errcode.Retry
+	}
+	if room.seatPlayers[seatIndex] != nil {
+		return errcode.New("seat_had_player", "seat had player already")
+	}
+	obj.seatIndex = seatIndex
+	room.seatPlayers[seatIndex] = obj.player
+	return nil
+}
+
+func (obj *RoomObj) SitUp() errcode.Error {
+	room := obj.room
+	if obj.seatIndex == NoSeat {
+		return errcode.Retry
+	}
+	if sp := room.seatPlayers[obj.seatIndex]; !(sp != nil && sp == obj.player) {
+		return errcode.Retry
+	}
+
+	obj.seatIndex = NoSeat
+	room.seatPlayers[obj.seatIndex] = nil
+	return nil
 }

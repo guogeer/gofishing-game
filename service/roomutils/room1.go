@@ -25,10 +25,13 @@ type Room struct {
 	restartTime time.Duration
 	cardSet     *cardutils.CardSet // 牌堆
 
-	allPlayers map[int]*service.Player
+	seatPlayers []*service.Player
+	allPlayers  map[int]*service.Player
 }
 
 func NewRoom(subId int, CustomRoom CustomRoom) *Room {
+	var seatNum int
+	config.Scan("room", subId, "seatNum", &seatNum)
 	return &Room{
 		SubId:       subId,
 		allPlayers:  make(map[int]*service.Player),
@@ -36,6 +39,7 @@ func NewRoom(subId int, CustomRoom CustomRoom) *Room {
 		customRoom:  CustomRoom,
 		restartTime: -1,
 		cardSet:     cardutils.NewCardSet(),
+		seatPlayers: make([]*service.Player, seatNum),
 	}
 }
 
@@ -45,6 +49,16 @@ func (room *Room) GetAllPlayers() []*service.Player {
 		players = append(players, player)
 	}
 	return players
+}
+
+func (room *Room) GetSeatPlayers() []*service.Player {
+	var seats []*service.Player
+	for _, player := range room.seatPlayers {
+		if player != nil {
+			seats = append(seats, room.seatPlayers...)
+		}
+	}
+	return seats
 }
 
 func (room *Room) CardSet() *cardutils.CardSet {
@@ -93,4 +107,13 @@ func (room *Room) SetRestartTime(d time.Duration) {
 func (room *Room) GameOver() {
 	room.Status = 0
 	room.CardSet().Shuffle()
+}
+
+func (room *Room) GetEmptySeat() int {
+	for i, player := range room.seatPlayers {
+		if player == nil {
+			return i
+		}
+	}
+	return NoSeat
 }

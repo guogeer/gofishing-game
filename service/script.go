@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"gofishing-game/internal/env"
-	"gofishing-game/internal/errcode"
 	"gofishing-game/internal/gameutils"
 
 	"github.com/guogeer/quasar/cmd"
@@ -95,13 +94,6 @@ func scriptLog(L *lua.LState) int {
 	return 0
 }
 
-func scriptGetError(L *lua.LState) int {
-	key := L.ToString(1)
-	e := errcode.Get(key)
-	L.Push(luahelper.New(L, e))
-	return 1
-}
-
 func scriptGetTableRows(L *lua.LState) int {
 	name := L.ToString(1)
 	rows := config.Rows(name)
@@ -185,7 +177,6 @@ func externScript(L *lua.LState) int {
 		"get_server_name": scriptGetServerName,
 		"get_table_cell":  scriptGetTableCell,
 		"log":             scriptLog,
-		"get_error":       scriptGetError,
 		"get_table_rows":  scriptGetTableRows,
 		"get_player":      scriptGetPlayer,
 		"parse_items":     scriptParseItems,

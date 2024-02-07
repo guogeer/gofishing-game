@@ -222,7 +222,7 @@ func (eq *enterQueue) pop(req *enterRequest) {
 		matchServerId = values[0]
 	}
 	if matchServerId != "" {
-		ss.WriteJSON("FUNC_SwitchServer", cmd.M{"matchServer": matchServerId, "serverName": req.ServerName, "uid": uid})
+		ss.WriteJSON("FUNC_SwitchServer", cmd.M{"matchServerId": matchServerId, "serverName": req.ServerName, "uid": uid})
 	}
 
 	// 首次成功进入或者重连

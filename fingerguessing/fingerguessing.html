@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>石头剪刀布</title>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+		integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+	<script src="https://cdn.jsdelivr.net/npm/js-md5@0.8.3/src/md5.min.js"></script>
+</head>
+
+<body style="margin: 50px;">
+	<div class="card-body">
+		<h4 class="card-title">房间</h4>
+		<div class="row">
+			<div class="col-3">
+				<button type="button" class="btn btn-primary" id="roomLv1Card" onclick="enterRoom(1001)"
+					disabled>进入初级场</button>
+
+			</div>
+			<div class="col-3">
+				<button type="button" class="btn btn-primary" id="roomLv2Card" onclick="enterRoom(1002)"
+					disabled>进入中间场</button>
+
+			</div>
+			<div class="col-3">
+				<button type="button" class="btn btn-primary" id="roomLv3Card" onclick="enterRoom(1003)"
+					disabled>进入高级场</button>
+
+			</div>
+		</div>
+	</div>
+	<div class="card-body">
+		<h4 class="card-title">操作</h4>
+		<div class="row">
+			<!-- rock, scissor, paple -->
+			<div class="col-3">
+				<button type="button" class="btn btn-primary" id="rock" onclick="chooseGesture('rock')"
+					disabled>石头</button>
+			</div>
+			<div class="col-3">
+				<button type="button" class="btn btn-primary" id="scissor" onclick="chooseGesture('scissor')"
+					disabled>剪刀</button>
+			</div>
+			<div class="col-3">
+				<button type="button" class="btn btn-primary" id="paple" onclick="chooseGesture('paple')"
+					disabled>布</button>
+			</div>
+		</div>
+		<div class="card-body">
+			<h4 class="card-title">个人信息</h4>
+			<div class="row">
+				<label id='nickname'>昵称（空）</label>
+				<label id='gold'>金币（空）</label>
+			</div>
+		</div>
+		<div class="card-body">
+			<h4 class="card-title">座位</h4>
+			<div class="mb-3">
+				<label id="seat0">座位1（空）</label>
+				<label id="seat1">座位2（空）</label>
+				<label id="seat2">座位3（空）</label>
+			</div>
+			<div class="mb-3">
+				<label id="seat3">座位4（空）</label>
+				<label id="seat4">座位5（空）</label>
+				<label id="seat5">座位6（空）</label>
+			</div>
+			<div class="mb-3">
+				<label id="seat6">座位7（空）</label>
+				<label id="seat7">座位8（空）</label>
+			</div>
+		</div>
+</body>
+
+</html>
+<script>
+	function parseQuery() {
+		const search = location.search.slice(1)
+		const pairs = search ? search.split('&') : []
+		const query = {}
+		for (let i = 0; i < pairs.length; ++i) {
+			const [key, value] = pairs[i].split('=')
+			query[key] = query[key] || decodeURIComponent(value)
+		}
+		return query
+	}
+	function encode(msg_id, msg_obj) {
+		const default_sign = '12345678'
+		const pkg = {
+			"id": msg_id,
+			"data": msg_obj,
+			"sign": default_sign
+		}
+
+		const raw_body = JSON.stringify(pkg)
+		const md5_sum = md5("hellokitty" + raw_body)
+
+		let md5_part = ''
+		const md5_indexs = [0, 3, 4, 8, 10, 11, 13, 14]
+		md5_indexs.forEach(function (v) {
+			md5_part = md5_part + md5_sum[v]
+		})
+
+		const last_index = raw_body.lastIndexOf(default_sign)
+		const msg_body = raw_body.substring(0, last_index) + md5_part + raw_body.substring(last_index + md5_part.length)
+		return msg_body
+	}
+	function inArray(arr, target) {
+		for (i = 0; i < arr.length; i++) {
+			if (arr[i] == target) {
+				return true
+			}
+		}
+		return false
+	}
+
+	let user_info = {}
+	const messageHanders = {
+		"fingerguessing.enter": (data) => {
+			if (data.code != "ok") {
+				window.alert("enter game error: " + data.msg)
+			}
+		},
+		"fingerguessing.getUserInfo": (data) => {
+			document.getElementById("nickname").innerHTML = `昵称（${data.baseInfo.nickname}）`
+			data.baseInfo.forEach((item) => {
+				if (item.id == 1001) {
+					document.getElementById("gold").innerHTML = `金币（${item.num}）`
+				}
+			})
+			data.fingerGuessingRoom.seatPlayers.forEach((user) => {
+				let seat_id = `seat${user.seatIndex + 1}`
+
+				if (item.id == 1001) {
+					document.getElementById(seat_id).innerHTML = `金币（${item.num}）`
+				}
+			})
+			user_info = data
+		}
+	}
+
+	let user_token = ''
+	const url_args = parseQuery()
+
+	const login_addr = url_args['addr'] || "localhost:9501"
+	const open_id = url_args['open_id'] || "test001"
+	const ignore_msgs = ['heartbeat']
+	console.log('login addr', login_addr, 'open id', open_id)
+
+	let active_conn = null;
+	fetch('http://' + login_addr + "/api/v1/login", {
+		method: 'POST',
+		headers: {
+			'Accept': 'application/json',
+			'Content-Type': 'application/json'
+		},
+		body: encode('login', { 'openId': open_id, 'plate': 'test' }),
+	}).then(res => res.json())
+		.then(res => {
+			const ws_addr = "ws://" + res.data.addr + "/ws"
+			console.log("webscoket addr", ws_addr)
+			conn = new WebSocket(ws_addr);
+
+			// Connection opened
+			conn.addEventListener("open", function (event) {
+				active_conn = conn
+				console.log(ws_addr, "connect successfully")
+				sendMsg("hall.enter", { "token": user_token })
+
+				document.getElementById("roomLv1Card").disabled = false
+				document.getElementById("roomLv2Card").disabled = false
+				document.getElementById("roomLv3Card").disabled = false
+			});
+
+			// Listen for messages
+			conn.addEventListener("message", function (event) {
+				try {
+					const obj = JSON.parse(event.data)
+					if (!inArray(ignore_msgs, obj.id.toLowerCase())) {
+						console.log("recv msg", obj)
+					}
+				} catch (error) {
+					console.error('recv invalid data', error, event.data)
+				}
+			})
+
+			conn.addEventListener("error", function (event) {
+				active_conn = null
+				console.log("connect error");
+			})
+
+			user_token = res.data.token
+		})
+
+
+	function sendMsg(msg_id, msg_data) {
+		if (!active_conn) return
+
+		try {
+			const msg_obj = msg_data
+			const msg_body = encode(msg_id, msg_obj)
+			console.log("send msg", msg_id, msg_obj)
+			active_conn.send(msg_body)
+		} catch (error) {
+			console.error("invalid json data", error)
+		}
+	};
+	setInterval(() => {
+		if (!active_conn) return
+		active_conn.send(encode('heartbeat', {}))
+	}, 5000)
+</script>

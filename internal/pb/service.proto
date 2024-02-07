@@ -230,3 +230,4 @@ message SetUserInfoReq {
 	string email = 4;
 	string icon = 5;
 }
+
