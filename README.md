@@ -49,6 +49,7 @@ nohup ./router_server 1>/dev/null 2>>error.log &
 nohup ./gateway_server 1>/dev/null 2>>error.log &
 ```
 3、启动业务（调试模式）
+
 3.1 创建go.work
 ```go
 go 1.21.1
