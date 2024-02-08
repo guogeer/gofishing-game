@@ -41,7 +41,7 @@ func (ply *fingerGuessingPlayer) TryLeave() errcode.Error {
 
 func (ply *fingerGuessingPlayer) BeforeEnter() {
 	room := roomutils.GetRoomObj(ply.Player).CustomRoom().(*fingerGuessingRoom)
-	ply.SetClientValue("fingerGuessingRoom", room.GetClientInfo())
+	ply.SetClientValue("roomInfo", room.GetClientInfo())
 }
 
 func (ply *fingerGuessingPlayer) AfterEnter() {

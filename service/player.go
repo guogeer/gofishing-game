@@ -39,6 +39,10 @@ type UserInfo struct {
 	IsRobot bool `json:"-,omitempty"` // 机器人 true
 }
 
+type EnterChecker interface {
+	TryEnter() errcode.Error
+}
+
 type GameAction interface {
 	TryEnter() errcode.Error
 	TryLeave() errcode.Error
@@ -122,12 +126,19 @@ func (player *Player) Enter() errcode.Error {
 	player.tempValues = map[string]any{}
 	player.allNotify = map[string]any{}
 
-	if e := player.dataObj.Enter(); e != nil {
+	if e := player.dataObj.TryEnter(); e != nil {
 		return e
 	}
 
 	if e := player.GameAction.TryEnter(); e != nil {
 		return e
+	}
+	for _, action := range player.enterActions {
+		if h, ok := action.(EnterChecker); ok {
+			if e := h.TryEnter(); e != nil {
+				return e
+			}
+		}
 	}
 	return nil
 }

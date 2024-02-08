@@ -57,7 +57,7 @@ func newDataObj(player *Player) *dataObj {
 	return obj
 }
 
-func (obj *dataObj) Enter() errcode.Error {
+func (obj *dataObj) TryEnter() errcode.Error {
 	request := GetEnterQueue().GetRequest(obj.player.Id)
 	obj.loadAll(request.EnterGameResp.Bin)
 	obj.updateNewDay()

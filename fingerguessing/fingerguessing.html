@@ -12,21 +12,21 @@
 
 <body style="margin: 50px;">
 	<div class="card-body">
-		<h4 class="card-title">房间</h4>
+		<h4 class="card-title">入口</h4>
 		<div class="row">
 			<div class="col-3">
-				<button type="button" class="btn btn-primary" id="roomLv1Card" onclick="enterRoom(1001)"
-					disabled>进入初级场</button>
+				<button type="button" class="btn btn-primary" id="roomLv1Card"
+					onclick="current_user.requests.enterRoom(1001)" disabled>进入初级场</button>
 
 			</div>
 			<div class="col-3">
-				<button type="button" class="btn btn-primary" id="roomLv2Card" onclick="enterRoom(1002)"
-					disabled>进入中间场</button>
+				<button type="button" class="btn btn-primary" id="roomLv2Card"
+					onclick="current_user.requests.enterRoom(1002)" disabled>进入中间场</button>
 
 			</div>
 			<div class="col-3">
-				<button type="button" class="btn btn-primary" id="roomLv3Card" onclick="enterRoom(1003)"
-					disabled>进入高级场</button>
+				<button type="button" class="btn btn-primary" id="roomLv3Card"
+					onclick="current_user.requests.enterRoom(1003)" disabled>进入高级场</button>
 
 			</div>
 		</div>
@@ -56,7 +56,11 @@
 			</div>
 		</div>
 		<div class="card-body">
-			<h4 class="card-title">座位</h4>
+			<h4 class="card-title">房间信息</h4>
+			<div class="mb-3">
+				<label id='roomStatus'>状态（空）</label>
+				<label id='countdown'>倒计时（空）</label>
+			</div>
 			<div class="mb-3">
 				<label id="seat0">座位1（空）</label>
 				<label id="seat1">座位2（空）</label>
@@ -116,32 +120,146 @@
 		return false
 	}
 
-	let user_info = {}
-	const messageHanders = {
-		"fingerguessing.enter": (data) => {
-			if (data.code != "ok") {
-				window.alert("enter game error: " + data.msg)
-			}
+	const current_user = {
+		data: {},
+		requests: {
+			chooseGesture: (gesture) => {
+				sendMsg("fingerGuessing.chooseGesture", { "gesture": gesture })
+			},
+			enterRoom: (subId) => {
+				sendMsg("fingerGuessing.enter", { "token": current_user.token, "subId": subId })
+			},
 		},
-		"fingerguessing.getUserInfo": (data) => {
-			document.getElementById("nickname").innerHTML = `昵称（${data.baseInfo.nickname}）`
-			data.baseInfo.forEach((item) => {
-				if (item.id == 1001) {
-					document.getElementById("gold").innerHTML = `金币（${item.num}）`
-				}
-			})
-			data.fingerGuessingRoom.seatPlayers.forEach((user) => {
-				let seat_id = `seat${user.seatIndex + 1}`
+		updateRoomCountdown: () => {
+			current_date = new Date()
+			this.data.countdown = current_date.now() / 1000
 
-				if (item.id == 1001) {
-					document.getElementById(seat_id).innerHTML = `金币（${item.num}）`
+			document.getElementById("roomCountdown").innerHTML = `倒计时（${data.roomInfo.countdown - current_date.now() / 1000}）`
+		},
+		updateRoom: () => {
+			// this.updateRoomCountdown()
+
+			if (data.roomInfo.status == 0) {
+				document.getElementById("roomStatus").innerHTML = "状态（空闲）"
+			}
+			if (data.roomInfo.status == 1) {
+				document.getElementById("roomStatus").innerHTML = "状态（游戏中）"
+			}
+			document.getElementById("rock").disabled = (current_user.data.gameInfo.gesture != "" && data.roomInfo.status == 0)
+			document.getElementById("scissor").disabled = (current_user.data.gameInfo.gesture != "" && data.roomInfo.status == 0)
+			document.getElementById("paper").disabled = (current_user.data.gameInfo.gesture != "" && data.roomInfo.status == 0)
+		},
+		handlers: {
+			"fingerGuessing.enter": (data) => {
+				if (data.code != "ok") {
+					window.alert("enter game error: " + data.msg)
 				}
-			})
-			user_info = data
+			},
+			"fingerGuessing.getUserInfo": (data) => {
+				document.getElementById("nickname").innerHTML = `昵称（${data.baseInfo.nickname}）`
+				data.baseInfo.forEach((item) => {
+					if (item.id == 1001) {
+						document.getElementById("gold").innerHTML = `金币（${item.num}）`
+					}
+				})
+				let seatPlayers = []
+				for (let i = 0; i < 8; i++) {
+					seatPlayers.push(null)
+				}
+				data.roomInfo.seatPlayers.forEach((user) => {
+					seatPlayers[user.seatIndex] = user
+				})
+
+				data.roomInfo.seatPlayers = seatPlayers
+				data.roomInfo.seatPlayers.forEach((user) => {
+					if (!user) {
+						return
+					}
+
+					let gold = 0
+					user.items?.forEach((item) => {
+						if (item.id == 1001) gold = item.num
+					})
+
+					let seat_id = `seat${user.seatIndex + 1}`
+					document.getElementById(seat_id).innerHTML = `座位${user.seatIndex + 1} （昵称${user.nickname} 金币${gold} 手势${user.gesture}）`
+				})
+
+				current_user.updateRoomCountdown()
+				if (current_user.countdown_timer) {
+					clearInterval(current_user.countdown_timer)
+					current_user.countdown_timer = null
+				}
+				current_user.countdown_timer = window.setInterval(() => {
+					current_user.updateRoomCountdown()
+				}, 1000)
+
+				current_user.data = data
+			},
+			"fingerGuessing.startGame": (data) => {
+				current_user.data.roomInfo.status = 1
+				current_user.data.countdown = data.countdown
+				current_user.updateRoom()
+				current_user.updateRoomCountdown()
+			},
+			"fingerGuessing.gameOver": (data) => {
+				current_user.data.roomInfo.status = 1
+				current_user.data.countdown = data.countdown
+				data.roomInfo.seatPlayers.forEach((user) => {
+					if (user) {
+						user.gesture = ""
+					}
+				})
+
+				current_user.updateRoom()
+				current_user.updateRoomCountdown()
+			},
+			"fingerGuessing.otherEnter": (data) => {
+				current_user.data.roomInfo.seatPlayers[data.seatIndex] = data
+				current_user.updateRoom()
+			},
+			"fingerGuessing.otherLeave": (data) => {
+				current_user.data.roomInfo.seatPlayers[data.seatIndex] = null
+				current_user.updateRoom()
+			},
+			"fingerGuessing.chooseGuesture": (data) => {
+				let current_user = null
+				current_user.data.roomInfo.seatPlayers.forEach((user) => {
+					if (user.uid == data.uid) {
+						current_user = user
+					}
+				})
+				if (!current_user) return
+				user.gesture = data.gesture
+				current_user.updateRoom()
+			},
+			"fingerGuessing.addItems": (data) => {
+				let match_user = null
+				current_user.data.roomInfo.seatPlayers.forEach((user) => {
+					if (user.uid == data.uid) {
+						match_user = user
+					}
+				})
+				if (!match_user) return
+				match_user.items.forEach((item) => {
+					data.items.forEach((additem) => {
+						if (item.id == additem.id) {
+							item.num = item.num + additem.num
+							additem.num = 0
+						}
+					})
+				})
+				data.items.forEach((additem) => {
+					if (additem.num != 0) {
+						match_user.items.push(additem)
+					}
+				})
+				current_user.updateRoom()
+			},
+
 		}
 	}
 
-	let user_token = ''
 	const url_args = parseQuery()
 
 	const login_addr = url_args['addr'] || "localhost:9501"
@@ -167,7 +285,7 @@
 			conn.addEventListener("open", function (event) {
 				active_conn = conn
 				console.log(ws_addr, "connect successfully")
-				sendMsg("hall.enter", { "token": user_token })
+				sendMsg("hall.enter", { "token": current_user.token })
 
 				document.getElementById("roomLv1Card").disabled = false
 				document.getElementById("roomLv2Card").disabled = false
@@ -191,7 +309,7 @@
 				console.log("connect error");
 			})
 
-			user_token = res.data.token
+			current_user.token = res.data.token
 		})
 
 

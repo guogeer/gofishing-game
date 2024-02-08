@@ -81,8 +81,8 @@ func LoadGames(w RoomWorld) {
 		name := service.GetServerName()
 
 		if slices.Index(tags, name) >= 0 {
-			var subId, seatNum, roomNum int
-			config.Scan("Room", rowId, "RoomID,SeatNum,RoomNum", &subId, &seatNum, &roomNum)
+			var subId, seatNum int
+			config.Scan("Room", rowId, "id,seatNum", &subId, &seatNum)
 
 			log.Infof("load game:%d name:%s", subId, name)
 			gSubGames[subId] = &subGame{

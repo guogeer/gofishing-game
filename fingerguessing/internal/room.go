@@ -1,9 +1,9 @@
 package internal
 
 import (
+	"gofishing-game/internal/gameutils"
 	"gofishing-game/service/roomutils"
 	"math/rand"
-	"quasar/util"
 	"time"
 
 	"github.com/guogeer/quasar/cmd"
@@ -12,32 +12,34 @@ import (
 const gameDuration = time.Second * 10
 
 type clientFingerGuessingUser struct {
-	Gesture   string `json:"gesture,omitempty"`
-	SeatIndex int    `json:"seatIndex,omitempty"`
+	Uid       int              `json:"uid,omitempty"`
+	Gesture   string           `json:"gesture,omitempty"`
+	SeatIndex int              `json:"seatIndex,omitempty"`
+	Items     []gameutils.Item `json:"items,omitempty"`
+	Nickname  string           `json:"nickname,omitempty"`
 }
 
 type clientFingerGuessingRoom struct {
+	Status      int                        `json:"status,omitempty"`
 	SeatPlayers []clientFingerGuessingUser `json:"seatPlayers,omitempty"`
-	OverTs      int64                      `json:"overTs,omitempty"`
+	Coutdown    int64                      `json:"coutdown,omitempty"`
 }
 
 type fingerGuessingRoom struct {
 	*roomutils.Room
-
-	overTimer *util.Timer
 }
 
 func (room *fingerGuessingRoom) GetClientInfo() clientFingerGuessingRoom {
 	info := clientFingerGuessingRoom{
 		SeatPlayers: []clientFingerGuessingUser{},
 	}
-	if room.overTimer.IsValid() {
-		info.OverTs = room.overTimer.Expire().Unix()
-	}
+	info.Coutdown = room.Countdown()
 	for _, seatPlayer := range room.GetSeatPlayers() {
 		p := seatPlayer.GameAction.(*fingerGuessingPlayer)
-		seatIndex := roomutils.GetRoomObj(seatPlayer).GetSeat()
-		info.SeatPlayers = append(info.SeatPlayers, clientFingerGuessingUser{Gesture: p.gesture, SeatIndex: seatIndex})
+		seatIndex := roomutils.GetRoomObj(seatPlayer).GetSeatIndex()
+		user := clientFingerGuessingUser{Gesture: p.gesture, SeatIndex: seatIndex, Nickname: p.Nickname}
+		user.Items = append(user.Items, p.BagObj().GetItem(gameutils.ItemIdGold))
+		info.SeatPlayers = append(info.SeatPlayers, user)
 	}
 
 	return info
@@ -45,13 +47,11 @@ func (room *fingerGuessingRoom) GetClientInfo() clientFingerGuessingRoom {
 
 func (room *fingerGuessingRoom) StartGame() {
 	room.Room.StartGame()
-	util.StopTimer(room.overTimer)
 
-	room.overTimer = util.NewTimer(room.GameOver, gameDuration)
-	room.Broadcast("startGame", cmd.M{"ts": room.overTimer.Expire().Unix()})
+	room.Broadcast("startGame", cmd.M{"countdown": room.Countdown()})
 }
 
-type seatResult struct {
+type userResult struct {
 	WinGold int64  `json:"winGold,omitempty"`
 	Seat    int    `json:"seat,omitempty"`
 	Gesture string `json:"gesture,omitempty"`
@@ -59,22 +59,21 @@ type seatResult struct {
 }
 
 func (room *fingerGuessingRoom) GameOver() {
-	util.StopTimer(room.overTimer)
-
 	gesture := fingerGuessingGuestures[rand.Intn(len(fingerGuessingGuestures))]
-	seats := make([]seatResult, 0, 4)
+	users := make([]userResult, 0, 4)
 	for _, seatPlayer := range room.GetSeatPlayers() {
 		p := seatPlayer.GameAction.(*fingerGuessingPlayer)
 		if p.gesture != "" {
 			winGold, cmp := p.GameOver(gesture)
 			roomObj := roomutils.GetRoomObj(seatPlayer)
-			seats = append(seats, seatResult{WinGold: winGold, Cmp: cmp, Seat: roomObj.GetSeat(), Gesture: p.gesture})
+			users = append(users, userResult{WinGold: winGold, Cmp: cmp, Seat: roomObj.GetSeatIndex(), Gesture: p.gesture})
 		}
 	}
 
-	room.Broadcast("GameOver", cmd.M{
-		"gesture": gesture,
-		"Seats":   seats,
-	})
 	room.Room.GameOver()
+	room.Broadcast("GameOver", cmd.M{
+		"gesture":  gesture,
+		"result":   users,
+		"coundown": room.Countdown(),
+	})
 }

@@ -31,7 +31,7 @@ type roomEnterArgs struct {
 
 type RoomAction interface {
 	// ChangeRoom()
-	ChooseRoom() (*Room, errcode.Error)
+	ChooseRoom(subId int) (*Room, errcode.Error)
 }
 
 func init() {
@@ -54,7 +54,7 @@ func newRoomObj(player *service.Player) service.EnterAction {
 	return obj
 }
 
-func (obj *RoomObj) GetSeat() int {
+func (obj *RoomObj) GetSeatIndex() int {
 	return obj.seatIndex
 }
 
@@ -82,10 +82,10 @@ func (obj *RoomObj) TryEnter() errcode.Error {
 		}
 	}
 
-	// 比赛场先全部进入一个房间，比赛开始后再分配座位
+	// TODO 待修复
 	if roomAction, ok := obj.player.GameAction.(RoomAction); ok {
-		room, e := roomAction.ChooseRoom()
-		if e == nil {
+		room, e := roomAction.ChooseRoom(curSubId)
+		if e != nil {
 			return e
 		}
 		obj.room = room
@@ -164,7 +164,7 @@ func (obj *RoomObj) ChangeRoom() errcode.Error {
 	if !ok {
 		return errcode.Retry
 	}
-	room, e := roomAction.ChooseRoom()
+	room, e := roomAction.ChooseRoom(subId)
 	if e != nil {
 		return e
 	}

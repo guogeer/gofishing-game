@@ -10,6 +10,7 @@ import (
 	"gofishing-game/service"
 
 	"github.com/guogeer/quasar/config"
+	"github.com/guogeer/quasar/util"
 )
 
 // 定制的房间
@@ -19,11 +20,13 @@ type CustomRoom interface {
 }
 
 type Room struct {
-	SubId       int
-	Status      int
-	customRoom  CustomRoom
-	restartTime time.Duration
-	cardSet     *cardutils.CardSet // 牌堆
+	SubId          int
+	Status         int
+	customRoom     CustomRoom
+	freeDuration   time.Duration
+	playDuration   time.Duration
+	countdownTimer *util.Timer
+	cardSet        *cardutils.CardSet // 牌堆
 
 	seatPlayers []*service.Player
 	allPlayers  map[int]*service.Player
@@ -31,16 +34,25 @@ type Room struct {
 
 func NewRoom(subId int, CustomRoom CustomRoom) *Room {
 	var seatNum int
-	config.Scan("room", subId, "seatNum", &seatNum)
+	var freeDuration, playDuration time.Duration
+	config.Scan("room", subId, "seatNum,freeDuration,playDuration", &seatNum, &freeDuration, &playDuration)
 	return &Room{
-		SubId:       subId,
-		allPlayers:  make(map[int]*service.Player),
-		Status:      0,
-		customRoom:  CustomRoom,
-		restartTime: -1,
-		cardSet:     cardutils.NewCardSet(),
-		seatPlayers: make([]*service.Player, seatNum),
+		SubId:        subId,
+		allPlayers:   make(map[int]*service.Player),
+		Status:       0,
+		customRoom:   CustomRoom,
+		freeDuration: freeDuration,
+		playDuration: playDuration,
+		cardSet:      cardutils.NewCardSet(),
+		seatPlayers:  make([]*service.Player, seatNum),
 	}
+}
+
+func (room *Room) Countdown() int64 {
+	if room.countdownTimer != nil && room.countdownTimer.IsValid() {
+		return room.countdownTimer.Expire().Unix()
+	}
+	return 0
 }
 
 func (room *Room) GetAllPlayers() []*service.Player {
@@ -84,29 +96,33 @@ func (room *Room) Broadcast(name string, data any, blacklist ...int) {
 func (room *Room) StartGame() {
 	room.cardSet.Shuffle()
 	room.Status = RoomStatusPlaying
-	room.restartTime = -1
+	room.freeDuration = -1
+
+	util.StopTimer(room.countdownTimer)
+	room.countdownTimer = util.NewTimer(room.customRoom.GameOver, room.playDuration)
 }
 
-func (room *Room) RestartTime() time.Duration {
-	restartTime := room.restartTime
-	if restartTime >= 0 {
-		return restartTime
-	}
-	d, ok := config.Duration("Room", room.SubId, "FreeTime")
-	if ok {
-		return d
-	}
-
-	return restartTime
+func (room *Room) FreeDuration() time.Duration {
+	return room.freeDuration
 }
 
-func (room *Room) SetRestartTime(d time.Duration) {
-	room.restartTime = d
+func (room *Room) SetFreeDuration(d time.Duration) {
+	room.freeDuration = d
+}
+
+func (room *Room) PlayDuration() time.Duration {
+	return room.playDuration
+}
+
+func (room *Room) SetPlayDuration(d time.Duration) {
+	room.playDuration = d
 }
 
 func (room *Room) GameOver() {
 	room.Status = 0
 	room.CardSet().Shuffle()
+	util.StopTimer(room.countdownTimer)
+	room.countdownTimer = util.NewTimer(room.customRoom.StartGame, room.FreeDuration())
 }
 
 func (room *Room) GetEmptySeat() int {
