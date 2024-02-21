@@ -230,7 +230,7 @@ func (obj *mailObj) Draw(id int64) {
 			if pbMail == nil || pbMail.Id == 0 {
 				e = errcode.Retry
 			}
-			p.WriteJSON("drawMail", e)
+			p.WriteErr("drawMail", e)
 			if e != nil {
 				return
 			}

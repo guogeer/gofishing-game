@@ -76,22 +76,25 @@ func (obj *RoomObj) TryEnter() errcode.Error {
 		if GetRoomObj(old).room.SubId != args.SubId {
 			return &roomError{BaseError: errEnterOtherRoom, SubId: curSubId}
 		}
-	} else {
-		if curServerId != "" && !(curSubId == args.SubId && service.GetServerId() == curServerId) {
-			return &roomError{BaseError: errEnterOtherRoom, SubId: curSubId}
-		}
+		return nil
+	}
+	if curServerId != "" && !(curSubId == args.SubId && service.GetServerId() == curServerId) {
+		return &roomError{BaseError: errEnterOtherRoom, SubId: curSubId}
 	}
 
-	// TODO 待修复
-	if roomAction, ok := obj.player.GameAction.(RoomAction); ok {
-		room, e := roomAction.ChooseRoom(curSubId)
-		if e != nil {
-			return e
-		}
-		obj.room = room
+	room, e := obj.chooseRoom(args.SubId)
+	if e != nil {
+		return e
 	}
-
+	obj.room = room
 	return nil
+}
+
+func (obj *RoomObj) chooseRoom(subId int) (*Room, errcode.Error) {
+	if roomAction, ok := obj.player.GameAction.(RoomAction); ok {
+		return roomAction.ChooseRoom(subId)
+	}
+	return obj.Choose(subId)
 }
 
 func (obj *RoomObj) BeforeEnter() {
@@ -159,12 +162,7 @@ func (obj *RoomObj) ChangeRoom() errcode.Error {
 		return errcode.Retry
 	}
 
-	// 进入房间
-	roomAction, ok := obj.player.GameAction.(RoomAction)
-	if !ok {
-		return errcode.Retry
-	}
-	room, e := roomAction.ChooseRoom(subId)
+	room, e := obj.chooseRoom(subId)
 	if e != nil {
 		return e
 	}
@@ -184,7 +182,7 @@ func (obj *RoomObj) Choose(subId int) (*Room, errcode.Error) {
 
 	sub, ok := gSubGames[subId]
 	if !ok {
-		return nil, errcode.Retry
+		return nil, errcode.New("game_not_existed", "game not existed")
 	}
 	if maxRoomNum > 0 && len(sub.rooms) >= maxRoomNum {
 		log.Errorf("server %s sub_id %d room num %d limit %d error: %v", service.GetServerName(), subId, len(sub.rooms), maxRoomNum, errTooMuchRoom)
@@ -253,7 +251,7 @@ func (obj *RoomObj) SitUp() errcode.Error {
 		return errcode.Retry
 	}
 
-	obj.seatIndex = NoSeat
 	room.seatPlayers[obj.seatIndex] = nil
+	obj.seatIndex = NoSeat
 	return nil
 }

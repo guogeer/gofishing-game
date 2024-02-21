@@ -33,7 +33,7 @@ func (w *fingerGuessingWorld) NewPlayer() *service.Player {
 func (w *fingerGuessingWorld) NewRoom(subId int) *roomutils.Room {
 	room := &fingerGuessingRoom{}
 	room.Room = roomutils.NewRoom(subId, room)
-
+	room.StartGame()
 	return room.Room
 }
 

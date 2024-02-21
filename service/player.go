@@ -5,6 +5,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"gofishing-game/internal/errcode"
@@ -129,7 +130,6 @@ func (player *Player) Enter() errcode.Error {
 	if e := player.dataObj.TryEnter(); e != nil {
 		return e
 	}
-
 	if e := player.GameAction.TryEnter(); e != nil {
 		return e
 	}
@@ -150,15 +150,11 @@ func (player *Player) OnEnter() {
 	player.clientValues = map[string]any{}
 	player.LeaveErr = nil
 
-	if obj := player.dataObj; obj != nil {
-		obj.BeforeEnter()
-	}
-
-	player.BagObj().BeforeEnter()
+	player.dataObj.BeforeEnter()
+	player.bagObj.BeforeEnter()
 	for _, action := range player.enterActions {
 		action.BeforeEnter()
 	}
-
 	player.updateLevel("enter")
 	player.GameAction.BeforeEnter()
 	if !player.isBusy {
@@ -166,7 +162,7 @@ func (player *Player) OnEnter() {
 	}
 
 	player.IsSessionClose = false
-	player.WriteJSON("enter", nil)
+	player.WriteErr("enter", nil)
 	items := player.bagObj.GetItems()
 	//log.Debugf("player %v OnEnter items %v", player.Id, items)
 	player.SetClientValue("items", items)
@@ -344,9 +340,24 @@ func (player *Player) OnClose() {
 	player.TimerGroup.ResetTimer(&player.closeTimer, func() { player.Leave2(nil, errKickOut) }, 10*time.Minute)
 }
 
+var ok = errcode.New("ok", "success")
+
 func (player *Player) WriteJSON(name string, data any) {
-	if data == nil {
-		data = json.RawMessage(`{"code":"ok","msg":"success"}`)
+	if !player.IsSessionClose {
+		WriteMessage(player.session, name, data)
+	}
+}
+
+func (player *Player) WriteErr(name string, e errcode.Error, args ...any) {
+	if len(args)%2 != 0 {
+		panic("length of args mod 2 not zero")
+	}
+	if e == nil {
+		e = ok
+	}
+	data := cmd.M{"code": e.GetCode(), "msg": e.Error()}
+	for i := 0; i+1 < len(args); i += 2 {
+		data[fmt.Sprintf("%v", args[i])] = args[i+1]
 	}
 	if !player.IsSessionClose {
 		WriteMessage(player.session, name, data)

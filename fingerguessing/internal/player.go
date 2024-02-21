@@ -23,13 +23,7 @@ type fingerGuessingPlayer struct {
 	totalPlay int
 }
 
-var _ service.EnterAction = (*fingerGuessingPlayer)(nil)
-
-func newFingerGuessingPlayer(player *service.Player) service.EnterAction {
-	return &fingerGuessingPlayer{
-		Player: player,
-	}
-}
+var _ service.GameAction = (*fingerGuessingPlayer)(nil)
 
 func (ply *fingerGuessingPlayer) TryEnter() errcode.Error {
 	return nil
@@ -42,6 +36,7 @@ func (ply *fingerGuessingPlayer) TryLeave() errcode.Error {
 func (ply *fingerGuessingPlayer) BeforeEnter() {
 	room := roomutils.GetRoomObj(ply.Player).CustomRoom().(*fingerGuessingRoom)
 	ply.SetClientValue("roomInfo", room.GetClientInfo())
+	ply.SetClientValue("gesture", ply.gesture)
 }
 
 func (ply *fingerGuessingPlayer) AfterEnter() {
@@ -61,6 +56,9 @@ func (ply *fingerGuessingPlayer) Load(data interface{}) {
 
 func (ply *fingerGuessingPlayer) Save(data interface{}) {
 	bin := data.(*pb.UserBin)
+	if bin.Room == nil {
+		bin.Room = &pb.RoomBin{}
+	}
 	bin.Room.FingerGuessing = &pb.FingerGuessingRoom{
 		WinPlay:   int32(ply.winPlay),
 		LosePlay:  int32(ply.losePlay),
@@ -68,17 +66,34 @@ func (ply *fingerGuessingPlayer) Save(data interface{}) {
 	}
 }
 
-func (ply *fingerGuessingPlayer) ChooseGesture(guesture string) errcode.Error {
-	if slices.Index(fingerGuessingGuestures, guesture) < 0 {
+func (ply *fingerGuessingPlayer) ChooseGesture(gesture string) errcode.Error {
+	if slices.Index(fingerGuessingGuestures, gesture) < 0 {
 		return errInvalidGesture
 	}
+	if ply.gesture != "" {
+		return errcode.New("choose_gesture_already", "choose gesture already")
+	}
+	ply.gesture = gesture
 
 	room := roomutils.GetRoomObj(ply.Player).Room()
+	if room.Status == 0 {
+		return errcode.New("room_not_playing", "room not playing")
+	}
+	cost, _ := config.String("room", room.SubId, "cost")
+
+	costItems := gameutils.ParseNumbericItems(cost)
+	for _, item := range costItems {
+		if !ply.BagObj().IsEnough(item.GetId(), item.GetNum()) {
+			return errcode.MoreItem(item.GetId())
+		}
+	}
+
+	ply.BagObj().CostSomeItems(costItems, "choose_guesture")
 
 	var isAllChoose bool
 	for _, roomp := range room.GetAllPlayers() {
-		p := getFingerGuessingPlayer(roomp)
-		if p.gesture == "" {
+		other := getFingerGuessingPlayer(roomp)
+		if other.gesture == "" {
 			isAllChoose = false
 			break
 		}
@@ -90,11 +105,11 @@ func (ply *fingerGuessingPlayer) ChooseGesture(guesture string) errcode.Error {
 	return nil
 }
 
-func (ply *fingerGuessingPlayer) Compare(guesture string) int {
-	if ply.gesture == guesture {
+func (ply *fingerGuessingPlayer) Compare(gesture string) int {
+	if ply.gesture == gesture {
 		return 0
 	}
-	index := slices.Index(fingerGuessingGuestures, ply.gesture)
+	index := slices.Index(fingerGuessingGuestures, gesture)
 	if (index+1)%3 == slices.Index(fingerGuessingGuestures, ply.gesture) {
 		return 1
 	}
@@ -103,12 +118,12 @@ func (ply *fingerGuessingPlayer) Compare(guesture string) int {
 
 func (ply *fingerGuessingPlayer) GameOver(guesture string) (int64, int) {
 	cmp := ply.Compare(guesture)
-	if cmp == 0 {
-		return 0, 0
+	if cmp <= 0 {
+		return 0, cmp
 	}
 
 	roomObj := roomutils.GetRoomObj(ply.Player)
-	awardStr, _ := config.String("room", roomObj.Room().SubId, "Award")
+	awardStr, _ := config.String("room", roomObj.Room().SubId, "award")
 	items := gameutils.ParseNumbericItems(awardStr)
 	ply.BagObj().AddSomeItems(items, "finger_guessing_award")
 
@@ -121,10 +136,7 @@ func (ply *fingerGuessingPlayer) GameOver(guesture string) (int64, int) {
 	return winGold * int64(cmp), cmp
 }
 
-const enterActionFingerGuessingPlayer = "fingerGuessingPlayer"
-
 func init() {
-	service.AddAction(enterActionFingerGuessingPlayer, newFingerGuessingPlayer)
 	cmd.Bind("chooseGesture", funcChooseGesture, (*fingerGuessingArgs)(nil))
 }
 
@@ -135,7 +147,7 @@ type fingerGuessingArgs struct {
 }
 
 func getFingerGuessingPlayer(player *service.Player) *fingerGuessingPlayer {
-	return player.GetAction(enterActionFingerGuessingPlayer).(*fingerGuessingPlayer)
+	return player.GameAction.(*fingerGuessingPlayer)
 }
 
 func funcChooseGesture(ctx *cmd.Context, data any) {
@@ -146,5 +158,5 @@ func funcChooseGesture(ctx *cmd.Context, data any) {
 	}
 
 	e := getFingerGuessingPlayer(ply).ChooseGesture(args.Guesture)
-	ply.WriteJSON("chooseGesture", e)
+	ply.WriteErr("chooseGesture", e, "gesture", args.Guesture, "uid", ply.Id)
 }

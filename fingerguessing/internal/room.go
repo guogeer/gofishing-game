@@ -4,25 +4,22 @@ import (
 	"gofishing-game/internal/gameutils"
 	"gofishing-game/service/roomutils"
 	"math/rand"
-	"time"
 
 	"github.com/guogeer/quasar/cmd"
 )
 
-const gameDuration = time.Second * 10
-
 type clientFingerGuessingUser struct {
-	Uid       int              `json:"uid,omitempty"`
-	Gesture   string           `json:"gesture,omitempty"`
-	SeatIndex int              `json:"seatIndex,omitempty"`
-	Items     []gameutils.Item `json:"items,omitempty"`
-	Nickname  string           `json:"nickname,omitempty"`
+	Uid       int    `json:"uid"`
+	Gesture   string `json:"gesture"`
+	SeatIndex int    `json:"seatIndex"`
+	Gold      int64  `json:"gold"`
+	Nickname  string `json:"nickname"`
 }
 
 type clientFingerGuessingRoom struct {
-	Status      int                        `json:"status,omitempty"`
-	SeatPlayers []clientFingerGuessingUser `json:"seatPlayers,omitempty"`
-	Coutdown    int64                      `json:"coutdown,omitempty"`
+	Status      int                        `json:"status"`
+	SeatPlayers []clientFingerGuessingUser `json:"seatPlayers"`
+	Countdown   int64                      `json:"countdown"`
 }
 
 type fingerGuessingRoom struct {
@@ -31,14 +28,15 @@ type fingerGuessingRoom struct {
 
 func (room *fingerGuessingRoom) GetClientInfo() clientFingerGuessingRoom {
 	info := clientFingerGuessingRoom{
+		Status:      room.Status,
 		SeatPlayers: []clientFingerGuessingUser{},
 	}
-	info.Coutdown = room.Countdown()
+	info.Countdown = room.Countdown()
 	for _, seatPlayer := range room.GetSeatPlayers() {
 		p := seatPlayer.GameAction.(*fingerGuessingPlayer)
 		seatIndex := roomutils.GetRoomObj(seatPlayer).GetSeatIndex()
-		user := clientFingerGuessingUser{Gesture: p.gesture, SeatIndex: seatIndex, Nickname: p.Nickname}
-		user.Items = append(user.Items, p.BagObj().GetItem(gameutils.ItemIdGold))
+		user := clientFingerGuessingUser{Uid: p.Id, Gesture: p.gesture, SeatIndex: seatIndex, Nickname: p.Nickname}
+		user.Gold = p.BagObj().NumItem(gameutils.ItemIdGold)
 		info.SeatPlayers = append(info.SeatPlayers, user)
 	}
 
@@ -52,10 +50,10 @@ func (room *fingerGuessingRoom) StartGame() {
 }
 
 type userResult struct {
-	WinGold int64  `json:"winGold,omitempty"`
-	Seat    int    `json:"seat,omitempty"`
-	Gesture string `json:"gesture,omitempty"`
-	Cmp     int    `json:"cmp,omitempty"`
+	WinGold int64  `json:"winGold"`
+	Seat    int    `json:"seat"`
+	Gesture string `json:"gesture"`
+	Cmp     int    `json:"cmp"`
 }
 
 func (room *fingerGuessingRoom) GameOver() {
@@ -70,10 +68,15 @@ func (room *fingerGuessingRoom) GameOver() {
 		}
 	}
 
+	for _, seatPlayer := range room.GetSeatPlayers() {
+		p := seatPlayer.GameAction.(*fingerGuessingPlayer)
+		p.gesture = ""
+	}
+
 	room.Room.GameOver()
-	room.Broadcast("GameOver", cmd.M{
-		"gesture":  gesture,
-		"result":   users,
-		"coundown": room.Countdown(),
+	room.Broadcast("gameOver", cmd.M{
+		"gesture":   gesture,
+		"result":    users,
+		"countdown": room.Countdown(),
 	})
 }

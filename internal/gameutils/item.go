@@ -6,14 +6,15 @@ import (
 )
 
 const (
-	ItemIdGold = 1000
-	ItemIdExp  = 1001
+	ItemIdGold = 1001
+	ItemIdExp  = 1002
 )
 
 type Item interface {
 	GetId() int
 	GetNum() int64
 	Merge(Item) bool
+	Multi(n int)
 }
 
 type NumericItem struct {
@@ -35,6 +36,10 @@ func (item *NumericItem) GetId() int {
 
 func (item *NumericItem) GetNum() int64 {
 	return item.Num
+}
+
+func (item *NumericItem) Multi(n int) {
+	item.Num *= int64(n)
 }
 
 // 格式：[[1000,1],[1001,2]]

@@ -67,7 +67,7 @@ func (room *Room) GetSeatPlayers() []*service.Player {
 	var seats []*service.Player
 	for _, player := range room.seatPlayers {
 		if player != nil {
-			seats = append(seats, room.seatPlayers...)
+			seats = append(seats, player)
 		}
 	}
 	return seats
@@ -96,7 +96,6 @@ func (room *Room) Broadcast(name string, data any, blacklist ...int) {
 func (room *Room) StartGame() {
 	room.cardSet.Shuffle()
 	room.Status = RoomStatusPlaying
-	room.freeDuration = -1
 
 	util.StopTimer(room.countdownTimer)
 	room.countdownTimer = util.NewTimer(room.customRoom.GameOver, room.playDuration)

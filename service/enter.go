@@ -170,7 +170,7 @@ func (eq *enterQueue) PushBack(ctx *cmd.Context, token, leaveServer string, data
 		eq.removeUser(uid)
 	}
 	if _, ok := eq.m[uid]; ok {
-		return enterReq.session, errcode.Retry
+		return enterReq.session, errcode.New("in_login_queue", "user is in login queue")
 	}
 
 	// 保存或替换登陆请求
@@ -253,18 +253,18 @@ func (eq *enterQueue) pop(req *enterRequest) {
 func (eq *enterQueue) TryEnter(args *enterRequest) errcode.Error {
 	// 游戏正在关闭存档
 	if eq.isQuit {
-		return errcode.Retry
+		return errcode.New("sys_quit", "server is maintaining")
 	}
 	// 玩家已在游戏中
 	if player, ok := gAllPlayers[args.Uid]; ok {
 		if player.IsBusy() {
-			return errcode.Retry
+			return errcode.New("busy_user", "user is busy")
 		}
 		return nil
 	}
 	// 无效的玩家
 	if args.EnterGameResp == nil || args.EnterGameResp.UserInfo == nil {
-		return errcode.Retry
+		return errcode.New("invalid_user", "user data is invalid")
 	}
 
 	comer := createPlayer(args.Uid)

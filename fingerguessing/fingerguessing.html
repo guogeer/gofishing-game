@@ -16,17 +16,12 @@
 		<div class="row">
 			<div class="col-3">
 				<button type="button" class="btn btn-primary" id="roomLv1Card"
-					onclick="current_user.requests.enterRoom(1001)" disabled>进入初级场</button>
+					onclick="current_user.requests.enterRoom('fingerGuessing',1001)" disabled>房间</button>
 
 			</div>
 			<div class="col-3">
 				<button type="button" class="btn btn-primary" id="roomLv2Card"
-					onclick="current_user.requests.enterRoom(1002)" disabled>进入中间场</button>
-
-			</div>
-			<div class="col-3">
-				<button type="button" class="btn btn-primary" id="roomLv3Card"
-					onclick="current_user.requests.enterRoom(1003)" disabled>进入高级场</button>
+					onclick="current_user.requests.enterRoom('hall',0)" disabled>大厅</button>
 
 			</div>
 		</div>
@@ -36,16 +31,16 @@
 		<div class="row">
 			<!-- rock, scissor, paple -->
 			<div class="col-3">
-				<button type="button" class="btn btn-primary" id="rock" onclick="chooseGesture('rock')"
-					disabled>石头</button>
+				<button type="button" class="btn btn-primary" id="rock"
+					onclick="current_user.requests.chooseGesture('rock')" disabled>石头</button>
 			</div>
 			<div class="col-3">
-				<button type="button" class="btn btn-primary" id="scissor" onclick="chooseGesture('scissor')"
-					disabled>剪刀</button>
+				<button type="button" class="btn btn-primary" id="scissor"
+					onclick="current_user.requests.chooseGesture('scissor')" disabled>剪刀</button>
 			</div>
 			<div class="col-3">
-				<button type="button" class="btn btn-primary" id="paple" onclick="chooseGesture('paple')"
-					disabled>布</button>
+				<button type="button" class="btn btn-primary" id="paper"
+					onclick="current_user.requests.chooseGesture('paper')" disabled>布</button>
 			</div>
 		</div>
 		<div class="card-body">
@@ -59,7 +54,8 @@
 			<h4 class="card-title">房间信息</h4>
 			<div class="mb-3">
 				<label id='roomStatus'>状态（空）</label>
-				<label id='countdown'>倒计时（空）</label>
+				<label id='roomCountdown'>倒计时（空）</label>
+				<label id='roomGesture'>手势（空）</label>
 			</div>
 			<div class="mb-3">
 				<label id="seat0">座位1（空）</label>
@@ -121,70 +117,84 @@
 	}
 
 	const current_user = {
+		serverId: '',
 		data: {},
 		requests: {
 			chooseGesture: (gesture) => {
 				sendMsg("fingerGuessing.chooseGesture", { "gesture": gesture })
 			},
-			enterRoom: (subId) => {
-				sendMsg("fingerGuessing.enter", { "token": current_user.token, "subId": subId })
+			enterRoom: (name, subId) => {
+				sendMsg(`${name}.enter`, { "token": current_user.token, "subId": subId, "leaveServer": current_user.serverId })
 			},
 		},
 		updateRoomCountdown: () => {
-			current_date = new Date()
-			this.data.countdown = current_date.now() / 1000
-
-			document.getElementById("roomCountdown").innerHTML = `倒计时（${data.roomInfo.countdown - current_date.now() / 1000}）`
+			const current_date = new Date()
+			const sec = current_user.data.roomInfo.countdown - current_date.getTime() / 1000
+			document.getElementById("roomCountdown").innerHTML = `倒计时（${Math.floor(sec + 0.5)}）`
 		},
 		updateRoom: () => {
 			// this.updateRoomCountdown()
-
+			const data = current_user.data
 			if (data.roomInfo.status == 0) {
 				document.getElementById("roomStatus").innerHTML = "状态（空闲）"
 			}
 			if (data.roomInfo.status == 1) {
 				document.getElementById("roomStatus").innerHTML = "状态（游戏中）"
 			}
-			document.getElementById("rock").disabled = (current_user.data.gameInfo.gesture != "" && data.roomInfo.status == 0)
-			document.getElementById("scissor").disabled = (current_user.data.gameInfo.gesture != "" && data.roomInfo.status == 0)
-			document.getElementById("paper").disabled = (current_user.data.gameInfo.gesture != "" && data.roomInfo.status == 0)
+			document.getElementById("roomGesture").innerHTML = `手势（${data.roomInfo.gesture || '空'}）`
+			document.getElementById("gold").innerHTML = `金币（${data.gold}）`
+
+			document.getElementById("rock").disabled = (data.gesture != "" || data.roomInfo.status == 0)
+			document.getElementById("scissor").disabled = (data.gesture != "" || data.roomInfo.status == 0)
+			document.getElementById("paper").disabled = (data.gesture != "" || data.roomInfo.status == 0)
+
+			data.roomInfo.seatPlayers.forEach((user) => {
+				if (!user) {
+					return
+				}
+
+				const gold = user.gold
+				const seat_id = `seat${user.seatIndex}`
+				document.getElementById(seat_id).innerHTML = `座位${user.seatIndex + 1} （昵称${user.nickname} 金币${gold} 手势${user.gesture}）`
+			})
 		},
 		handlers: {
+			"hall.enter": (args) => {
+				if (args.code != "ok") {
+					window.alert("enter game error: " + args.msg)
+					return
+				}
+				current_user.serverId = "hall"
+			},
 			"fingerGuessing.enter": (data) => {
 				if (data.code != "ok") {
 					window.alert("enter game error: " + data.msg)
+					return
 				}
+				current_user.serverId = "fingerGuessing"
 			},
-			"fingerGuessing.getUserInfo": (data) => {
-				document.getElementById("nickname").innerHTML = `昵称（${data.baseInfo.nickname}）`
-				data.baseInfo.forEach((item) => {
+			"fingerGuessing.getUserInfo": (args) => {
+				document.getElementById("nickname").innerHTML = `昵称（${args.baseInfo.nickname}）`
+
+				args.gold = 0
+				args.items.forEach((item) => {
 					if (item.id == 1001) {
-						document.getElementById("gold").innerHTML = `金币（${item.num}）`
+						args.gold = item.num
 					}
 				})
 				let seatPlayers = []
 				for (let i = 0; i < 8; i++) {
 					seatPlayers.push(null)
 				}
-				data.roomInfo.seatPlayers.forEach((user) => {
+				args.roomInfo.seatPlayers.forEach((user) => {
 					seatPlayers[user.seatIndex] = user
 				})
 
-				data.roomInfo.seatPlayers = seatPlayers
-				data.roomInfo.seatPlayers.forEach((user) => {
-					if (!user) {
-						return
-					}
+				args.roomInfo.seatPlayers = seatPlayers
+				current_user.data = args
+				current_user.data.roomInfo.gesture = ''
 
-					let gold = 0
-					user.items?.forEach((item) => {
-						if (item.id == 1001) gold = item.num
-					})
-
-					let seat_id = `seat${user.seatIndex + 1}`
-					document.getElementById(seat_id).innerHTML = `座位${user.seatIndex + 1} （昵称${user.nickname} 金币${gold} 手势${user.gesture}）`
-				})
-
+				current_user.updateRoom()
 				current_user.updateRoomCountdown()
 				if (current_user.countdown_timer) {
 					clearInterval(current_user.countdown_timer)
@@ -193,67 +203,63 @@
 				current_user.countdown_timer = window.setInterval(() => {
 					current_user.updateRoomCountdown()
 				}, 1000)
-
-				current_user.data = data
 			},
-			"fingerGuessing.startGame": (data) => {
+			"fingerGuessing.startGame": (args) => {
+				current_user.data.roomInfo.gesture = ''
 				current_user.data.roomInfo.status = 1
-				current_user.data.countdown = data.countdown
+				current_user.data.roomInfo.countdown = args.countdown
 				current_user.updateRoom()
 				current_user.updateRoomCountdown()
 			},
-			"fingerGuessing.gameOver": (data) => {
-				current_user.data.roomInfo.status = 1
-				current_user.data.countdown = data.countdown
-				data.roomInfo.seatPlayers.forEach((user) => {
+			"fingerGuessing.gameOver": (args) => {
+				current_user.data.roomInfo.status = 0
+				current_user.data.roomInfo.countdown = args.countdown
+				current_user.data.roomInfo.seatPlayers.forEach((user) => {
 					if (user) {
 						user.gesture = ""
 					}
 				})
-
+				current_user.data.gesture = ""
+				current_user.data.roomInfo.gesture = args.gesture
 				current_user.updateRoom()
 				current_user.updateRoomCountdown()
 			},
-			"fingerGuessing.otherEnter": (data) => {
-				current_user.data.roomInfo.seatPlayers[data.seatIndex] = data
+			"fingerGuessing.otherEnter": (args) => {
+				current_user.data.roomInfo.seatPlayers[args.seatIndex] = args
 				current_user.updateRoom()
 			},
-			"fingerGuessing.otherLeave": (data) => {
-				current_user.data.roomInfo.seatPlayers[data.seatIndex] = null
+			"fingerGuessing.otherLeave": (args) => {
+				current_user.data.roomInfo.seatPlayers[args.seatIndex] = null
 				current_user.updateRoom()
 			},
-			"fingerGuessing.chooseGuesture": (data) => {
-				let current_user = null
+			"fingerGuessing.chooseGesture": (args) => {
 				current_user.data.roomInfo.seatPlayers.forEach((user) => {
-					if (user.uid == data.uid) {
-						current_user = user
+					if (user && user.uid == args.uid) {
+						user.gesture = args.gesture
 					}
 				})
-				if (!current_user) return
-				user.gesture = data.gesture
+				if (args.uid == current_user.data.baseInfo.uid) {
+					current_user.data.gesture = args.gesture
+				}
 				current_user.updateRoom()
 			},
-			"fingerGuessing.addItems": (data) => {
+			"fingerGuessing.addItems": (args) => {
 				let match_user = null
 				current_user.data.roomInfo.seatPlayers.forEach((user) => {
-					if (user.uid == data.uid) {
+					if (user && user.uid == args.uid) {
 						match_user = user
 					}
 				})
 				if (!match_user) return
-				match_user.items.forEach((item) => {
-					data.items.forEach((additem) => {
-						if (item.id == additem.id) {
-							item.num = item.num + additem.num
-							additem.num = 0
+				args.items.forEach((item) => {
+					if (item.id == 1001) {
+						match_user.gold = match_user.gold + item.num
+						if (args.uid == current_user.data.baseInfo.uid) {
+							current_user.data.gold += item.num
 						}
-					})
-				})
-				data.items.forEach((additem) => {
-					if (additem.num != 0) {
-						match_user.items.push(additem)
 					}
 				})
+
 				current_user.updateRoom()
 			},
 
@@ -274,7 +280,7 @@
 			'Accept': 'application/json',
 			'Content-Type': 'application/json'
 		},
-		body: encode('login', { 'openId': open_id, 'plate': 'test' }),
+		body: encode('login', { 'openId': open_id, 'plate': 'test', 'nickname': 'n_' + open_id }),
 	}).then(res => res.json())
 		.then(res => {
 			const ws_addr = "ws://" + res.data.addr + "/ws"
@@ -299,6 +305,8 @@
 					if (!inArray(ignore_msgs, obj.id.toLowerCase())) {
 						console.log("recv msg", obj)
 					}
+					const h = current_user.handlers[obj.id]
+					if (h) h(obj.data)
 				} catch (error) {
 					console.error('recv invalid data', error, event.data)
 				}
