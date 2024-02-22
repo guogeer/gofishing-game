@@ -72,3 +72,13 @@ func MergeItems(items []Item) []Item {
 
 	return mergeItems
 }
+
+func CountItems(items []Item, itemId int) int64 {
+	var num int64
+	for _, item := range items {
+		if item.GetId() == itemId {
+			num += item.GetNum()
+		}
+	}
+	return num
+}

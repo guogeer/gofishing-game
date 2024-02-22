@@ -49,30 +49,30 @@
 		<div class="card-body">
 			<h4 class="card-title">个人信息</h4>
 			<div class="row">
-				<label id='nickname'>昵称（空）</label>
-				<label id='gold'>金币（空）</label>
+				<label id='nickname'>昵称-空</label>
+				<label id='gold'>金币-空</label>
 			</div>
 		</div>
 		<div class="card-body">
 			<h4 class="card-title">房间信息</h4>
 			<div class="mb-3">
-				<label id='roomStatus'>状态（空）</label>
-				<label id='roomCountdown'>倒计时（空）</label>
-				<label id='roomGesture'>手势（空）</label>
+				<label id='roomStatus'>状态-空</label>
+				<label id='roomCountdown'>倒计时-空</label>
+				<label id='roomGesture'>手势-空</label>
 			</div>
 			<div class="mb-3">
-				<label id="seat0">座位1（空）</label>
-				<label id="seat1">座位2（空）</label>
-				<label id="seat2">座位3（空）</label>
+				<label id="seat0">座位1-空</label>
+				<label id="seat1">座位2-空</label>
+				<label id="seat2">座位3-空</label>
 			</div>
 			<div class="mb-3">
-				<label id="seat3">座位4（空）</label>
-				<label id="seat4">座位5（空）</label>
-				<label id="seat5">座位6（空）</label>
+				<label id="seat3">座位4-空</label>
+				<label id="seat4">座位5-空</label>
+				<label id="seat5">座位6-空</label>
 			</div>
 			<div class="mb-3">
-				<label id="seat6">座位7（空）</label>
-				<label id="seat7">座位8（空）</label>
+				<label id="seat6">座位7-空</label>
+				<label id="seat7">座位8-空</label>
 			</div>
 		</div>
 </body>
@@ -136,19 +136,19 @@
 		updateRoomCountdown: () => {
 			const current_date = new Date()
 			const sec = current_user.data.roomInfo.countdown - current_date.getTime() / 1000
-			document.getElementById("roomCountdown").innerHTML = `倒计时（${Math.floor(sec + 0.5)}）`
+			document.getElementById("roomCountdown").innerHTML = `倒计时-${Math.floor(sec + 0.5)}`
 		},
 		updateRoom: () => {
 			// this.updateRoomCountdown()
 			const data = current_user.data
 			if (data.roomInfo.status == 0) {
-				document.getElementById("roomStatus").innerHTML = "状态（空闲）"
+				document.getElementById("roomStatus").innerHTML = "状态-空闲"
 			}
 			if (data.roomInfo.status == 1) {
-				document.getElementById("roomStatus").innerHTML = "状态（游戏中）"
+				document.getElementById("roomStatus").innerHTML = "状态-游戏中"
 			}
-			document.getElementById("roomGesture").innerHTML = `手势（${data.roomInfo.gesture || '空'}）`
-			document.getElementById("gold").innerHTML = `金币（${data.gold}）`
+			document.getElementById("roomGesture").innerHTML = `手势-${data.roomInfo.gesture || '空'}`
+			document.getElementById("gold").innerHTML = `金币-${data.gold}`
 
 			document.getElementById("rock").disabled = (data.gesture != "" || data.roomInfo.status == 0)
 			document.getElementById("scissor").disabled = (data.gesture != "" || data.roomInfo.status == 0)
@@ -160,8 +160,12 @@
 				}
 
 				const gold = user.gold
+				const result = {
+					"1": '赢', "0": '平', "-1": '输', "99": "空",
+				}
 				const seat_id = `seat${user.seatIndex}`
-				document.getElementById(seat_id).innerHTML = `座位${user.seatIndex + 1} （昵称${user.nickname} 金币${gold} 手势${user.gesture}）`
+				console.log("xxxxxxxxxxxxx", user.cmp.toString())
+				document.getElementById(seat_id).innerHTML = `座位${user.seatIndex + 1} [昵称-${user.nickname} 金币-${gold} 手势-${user.gesture} 结果-${result[user.cmp.toString()]}]`
 			})
 		},
 		handlers: {
@@ -191,7 +195,7 @@
 				document.getElementById("entryLeave").disabled = false
 			},
 			"fingerGuessing.getUserInfo": (args) => {
-				document.getElementById("nickname").innerHTML = `昵称（${args.baseInfo.nickname}）`
+				document.getElementById("nickname").innerHTML = `昵称-${args.baseInfo.nickname}`
 
 				args.gold = 0
 				args.items.forEach((item) => {
@@ -204,6 +208,7 @@
 					seatPlayers.push(null)
 				}
 				args.roomInfo.seatPlayers.forEach((user) => {
+					user.cmp = 99
 					seatPlayers[user.seatIndex] = user
 				})
 
@@ -226,17 +231,26 @@
 				current_user.data.roomInfo.gesture = ''
 				current_user.data.roomInfo.status = 1
 				current_user.data.roomInfo.countdown = args.countdown
+				current_user.data.roomInfo.seatPlayers.forEach((user) => {
+					if (!user) return
+					user.cmp = 99
+					user.gesture = ""
+				})
+
 				current_user.updateRoom()
 				current_user.updateRoomCountdown()
 			},
 			"fingerGuessing.gameOver": (args) => {
 				current_user.data.roomInfo.status = 0
 				current_user.data.roomInfo.countdown = args.countdown
-				current_user.data.roomInfo.seatPlayers.forEach((user) => {
+
+				args.result.forEach((item) => {
+					let user = current_user.data.roomInfo.seatPlayers[item.seatIndex]
 					if (user) {
-						user.gesture = ""
+						user.cmp = item.cmp
 					}
 				})
+
 				current_user.data.gesture = ""
 				current_user.data.roomInfo.gesture = args.gesture
 				current_user.updateRoom()

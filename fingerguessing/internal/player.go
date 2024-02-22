@@ -118,22 +118,24 @@ func (ply *fingerGuessingPlayer) Compare(gesture string) int {
 
 func (ply *fingerGuessingPlayer) GameOver(guesture string) (int64, int) {
 	cmp := ply.Compare(guesture)
+	room := roomutils.GetRoomObj(ply.Player).Room()
+
+	cost, _ := config.String("room", room.SubId, "cost")
+	costItems := gameutils.ParseNumbericItems(cost)
+
+	if cmp == 0 {
+		ply.BagObj().AddSomeItems(costItems, "finger_guessing_back")
+	}
 	if cmp <= 0 {
-		return 0, cmp
+		return gameutils.CountItems(costItems, gameutils.ItemIdGold), cmp
 	}
 
-	roomObj := roomutils.GetRoomObj(ply.Player)
-	awardStr, _ := config.String("room", roomObj.Room().SubId, "award")
-	items := gameutils.ParseNumbericItems(awardStr)
-	ply.BagObj().AddSomeItems(items, "finger_guessing_award")
+	awardStr, _ := config.String("room", room.SubId, "award")
+	awardItems := gameutils.ParseNumbericItems(awardStr)
+	ply.BagObj().AddSomeItems(awardItems, "finger_guessing_award")
 
-	var winGold int64
-	for _, item := range items {
-		if item.GetId() == gameutils.ItemIdGold {
-			winGold += item.GetNum()
-		}
-	}
-	return winGold * int64(cmp), cmp
+	return gameutils.CountItems(awardItems, gameutils.ItemIdGold) * int64(cmp), cmp
+
 }
 
 func init() {
