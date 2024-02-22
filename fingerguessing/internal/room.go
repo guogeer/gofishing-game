@@ -12,7 +12,7 @@ type clientFingerGuessingUser struct {
 	Uid       int    `json:"uid"`
 	Gesture   string `json:"gesture"`
 	SeatIndex int    `json:"seatIndex"`
-	Gold      int64  `json:"gold"`
+	Chip      int64  `json:"chip"`
 	Nickname  string `json:"nickname"`
 }
 
@@ -36,7 +36,7 @@ func (room *fingerGuessingRoom) GetClientInfo() clientFingerGuessingRoom {
 		p := seatPlayer.GameAction.(*fingerGuessingPlayer)
 		seatIndex := roomutils.GetRoomObj(seatPlayer).GetSeatIndex()
 		user := clientFingerGuessingUser{Uid: p.Id, Gesture: p.gesture, SeatIndex: seatIndex, Nickname: p.Nickname}
-		user.Gold = p.BagObj().NumItem(gameutils.ItemIdGold)
+		user.Chip = p.BagObj().NumItem(gameutils.ItemIdGold)
 		info.SeatPlayers = append(info.SeatPlayers, user)
 	}
 
@@ -50,7 +50,7 @@ func (room *fingerGuessingRoom) StartGame() {
 }
 
 type userResult struct {
-	WinGold   int64  `json:"winGold"`
+	WinChip   int64  `json:"winChip"`
 	SeatIndex int    `json:"seatIndex"`
 	Gesture   string `json:"gesture"`
 	Cmp       int    `json:"cmp"`
@@ -62,9 +62,9 @@ func (room *fingerGuessingRoom) GameOver() {
 	for _, seatPlayer := range room.GetSeatPlayers() {
 		p := seatPlayer.GameAction.(*fingerGuessingPlayer)
 		if p.gesture != "" {
-			winGold, cmp := p.GameOver(gesture)
+			winChip, cmp := p.GameOver(gesture)
 			roomObj := roomutils.GetRoomObj(seatPlayer)
-			users = append(users, userResult{WinGold: winGold, Cmp: cmp, SeatIndex: roomObj.GetSeatIndex(), Gesture: p.gesture})
+			users = append(users, userResult{WinChip: winChip, Cmp: cmp, SeatIndex: roomObj.GetSeatIndex(), Gesture: p.gesture})
 		}
 	}
 

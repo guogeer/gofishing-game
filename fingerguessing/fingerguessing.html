@@ -50,7 +50,7 @@
 			<h4 class="card-title">个人信息</h4>
 			<div class="row">
 				<label id='nickname'>昵称-空</label>
-				<label id='gold'>金币-空</label>
+				<label id='chip'>金币-空</label>
 			</div>
 		</div>
 		<div class="card-body">
@@ -148,7 +148,7 @@
 				document.getElementById("roomStatus").innerHTML = "状态-游戏中"
 			}
 			document.getElementById("roomGesture").innerHTML = `手势-${data.roomInfo.gesture || '空'}`
-			document.getElementById("gold").innerHTML = `金币-${data.gold}`
+			document.getElementById("chip").innerHTML = `金币-${data.chip}`
 
 			document.getElementById("rock").disabled = (data.gesture != "" || data.roomInfo.status == 0)
 			document.getElementById("scissor").disabled = (data.gesture != "" || data.roomInfo.status == 0)
@@ -159,12 +159,12 @@
 					return
 				}
 
-				const gold = user.gold
+				const chip = user.chip
 				const result = {
 					"1": '赢', "0": '平', "-1": '输', "99": "空",
 				}
 				const seat_id = `seat${user.seatIndex}`
-				document.getElementById(seat_id).innerHTML = `座位${user.seatIndex + 1} [昵称-${user.nickname} 金币-${gold} 手势-${user.gesture} 结果-${result[user.cmp.toString()]}]`
+				document.getElementById(seat_id).innerHTML = `座位${user.seatIndex + 1} [昵称-${user.nickname} 金币-${chip} 手势-${user.gesture} 结果-${result[user.cmp.toString()]}]`
 			})
 		},
 		handlers: {
@@ -196,10 +196,10 @@
 			"fingerGuessing.getUserInfo": (args) => {
 				document.getElementById("nickname").innerHTML = `昵称-${args.baseInfo.nickname}`
 
-				args.gold = 0
+				args.chip = 0
 				args.items.forEach((item) => {
 					if (item.id == 1001) {
-						args.gold = item.num
+						args.chip = item.num
 					}
 				})
 				let seatPlayers = []
@@ -255,11 +255,17 @@
 				current_user.updateRoom()
 				current_user.updateRoomCountdown()
 			},
-			"fingerGuessing.otherEnter": (args) => {
-				current_user.data.roomInfo.seatPlayers[args.seatIndex] = args
+			"fingerGuessing.sitDown": (args) => {
+				current_user.data.roomInfo.seatPlayers[args.seatIndex] = {
+					seatIndex: args.seatIndex,
+					nickname: args.userInfo.nickname,
+					chip: args.userInfo.chip,
+					gesture: "",
+					cmp: 99,
+				}
 				current_user.updateRoom()
 			},
-			"fingerGuessing.otherLeave": (args) => {
+			"fingerGuessing.sitUp": (args) => {
 				current_user.data.roomInfo.seatPlayers[args.seatIndex] = null
 				current_user.updateRoom()
 			},
@@ -281,12 +287,14 @@
 						match_user = user
 					}
 				})
-				if (!match_user) return
 				args.items.forEach((item) => {
 					if (item.id == 1001) {
-						match_user.gold = match_user.gold + item.num
+						if (match_user) {
+							match_user.chip = match_user.chip + item.num
+
+						}
 						if (args.uid == current_user.data.baseInfo.uid) {
-							current_user.data.gold += item.num
+							current_user.data.chip += item.num
 						}
 					}
 				})

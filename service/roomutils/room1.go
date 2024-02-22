@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"gofishing-game/internal/cardutils"
+	"gofishing-game/internal/gameutils"
 	"gofishing-game/service"
 
 	"github.com/guogeer/quasar/config"
@@ -30,6 +31,7 @@ type Room struct {
 
 	seatPlayers []*service.Player
 	allPlayers  map[int]*service.Player
+	chipItemId  int
 }
 
 func NewRoom(subId int, CustomRoom CustomRoom) *Room {
@@ -45,7 +47,12 @@ func NewRoom(subId int, CustomRoom CustomRoom) *Room {
 		playDuration: playDuration,
 		cardSet:      cardutils.NewCardSet(),
 		seatPlayers:  make([]*service.Player, seatNum),
+		chipItemId:   gameutils.ItemIdGold,
 	}
+}
+
+func (room *Room) SetChip(itemId int) {
+	room.chipItemId = itemId
 }
 
 func (room *Room) Countdown() int64 {

@@ -213,7 +213,7 @@ func (obj *RoomObj) Choose(subId int) (*Room, errcode.Error) {
 	// 重复利用已有的房间
 	var freeRoom *Room
 	for _, room := range sub.rooms {
-		if len(room.GetAllPlayers()) == 0 {
+		if len(room.GetAllPlayers()) < maxPlayerNum {
 			freeRoom = room
 			break
 		}
@@ -224,6 +224,25 @@ func (obj *RoomObj) Choose(subId int) (*Room, errcode.Error) {
 		sub.rooms = append(sub.rooms, freeRoom)
 	}
 	return freeRoom, nil
+}
+
+type BaseUserInfo struct {
+	Uid      int    `json:"uid"`
+	Nickname string `json:"nickname"`
+	Sex      int    `json:"sex"`
+	Icon     string `json:"icon"`
+	Chip     int64  `json:"chip"`
+}
+
+func (obj *RoomObj) GetBaseInfo() BaseUserInfo {
+	player := obj.player
+	return BaseUserInfo{
+		Uid:      player.Id,
+		Nickname: player.Nickname,
+		Sex:      player.Sex,
+		Icon:     player.Icon,
+		Chip:     player.BagObj().NumItem(obj.room.chipItemId),
+	}
 }
 
 func (obj *RoomObj) SitDown(seatIndex int) errcode.Error {
@@ -237,6 +256,11 @@ func (obj *RoomObj) SitDown(seatIndex int) errcode.Error {
 	if room.seatPlayers[seatIndex] != nil {
 		return errcode.New("seat_had_player", "seat had player already")
 	}
+	room.Broadcast("sitDown", map[string]any{
+		"seatIndex": seatIndex,
+		"userInfo":  obj.GetBaseInfo(),
+	})
+
 	obj.seatIndex = seatIndex
 	room.seatPlayers[seatIndex] = obj.player
 	return nil
@@ -251,7 +275,21 @@ func (obj *RoomObj) SitUp() errcode.Error {
 		return errcode.Retry
 	}
 
+	seatIndex := obj.seatIndex
 	room.seatPlayers[obj.seatIndex] = nil
 	obj.seatIndex = NoSeat
+	room.Broadcast("sitUp", map[string]any{
+		"seatIndex": seatIndex,
+	})
 	return nil
+}
+
+func (obj *RoomObj) OnAddItems(items []gameutils.Item, way string) {
+	chip := gameutils.CountItems(items, obj.room.chipItemId)
+	if chip != 0 {
+		obj.room.Broadcast("addItems", map[string]any{
+			"uid":   obj.player.Id,
+			"items": []gameutils.Item{&gameutils.NumericItem{Id: obj.room.chipItemId, Num: chip}},
+		}, obj.player.Id)
+	}
 }

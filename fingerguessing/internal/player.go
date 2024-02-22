@@ -145,7 +145,7 @@ func init() {
 var fingerGuessingGuestures = []string{"rock", "scissor", "paple"}
 
 type fingerGuessingArgs struct {
-	Guesture string `json:"gesture"`
+	Gesture string `json:"gesture"`
 }
 
 func getFingerGuessingPlayer(player *service.Player) *fingerGuessingPlayer {
@@ -159,6 +159,13 @@ func funcChooseGesture(ctx *cmd.Context, data any) {
 		return
 	}
 
-	e := getFingerGuessingPlayer(ply).ChooseGesture(args.Guesture)
-	ply.WriteErr("chooseGesture", e, "gesture", args.Guesture, "uid", ply.Id)
+	e := getFingerGuessingPlayer(ply).ChooseGesture(args.Gesture)
+	ply.WriteErr("chooseGesture", e, "gesture", args.Gesture, "uid", ply.Id)
+	roomObj := roomutils.GetRoomObj(ply)
+	if roomObj.GetSeatIndex() != roomutils.NoSeat {
+		roomObj.Room().Broadcast("chooseGesture", map[string]any{
+			"code": "ok", "uid": ply.Id, "gesture": args.Gesture, "seatIndex": roomObj.GetSeatIndex(),
+		}, ply.Id)
+
+	}
 }
