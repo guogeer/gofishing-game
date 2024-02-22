@@ -272,8 +272,8 @@ func (cc *Cache) CreateAccount(ctx context.Context, req *pb.CreateAccountReq) (*
 		}
 		if rowNum > 0 {
 			createTime := time.Now().Format(internal.LongDateFmt)
-			rs, err = tx.Exec("insert into user_info(nickname,sex,icon,email,ip,chan_id,client_version,mac,imei,imsi,create_time) values(?,?,?,?,?,?,?,?,?,?,?)",
-				newInfo.Nickname, newInfo.Sex, newInfo.Icon, newInfo.Email, newInfo.Ip,
+			rs, err = tx.Exec("insert into user_info(nickname,sex,icon,plate_icon,email,ip,chan_id,client_version,mac,imei,imsi,create_time) values(?,?,?,?,?,?,?,?,?,?,?,?)",
+				newInfo.Nickname, newInfo.Sex, newInfo.Icon, newInfo.Icon, newInfo.Email, newInfo.Ip,
 				newInfo.ChanId, newInfo.ClientVersion, newInfo.Mac, newInfo.Imei, newInfo.Imsi, createTime,
 			)
 			if err != nil {
