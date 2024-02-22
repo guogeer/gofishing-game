@@ -3,14 +3,15 @@
 过往棋牌、休闲项目代码总结，按如下计划更新
 - 移除了相关的业务（√）
 - 项目可以在本地正常运行（√）
-- 添加可体验的小游戏demo（×）。进度60%
+- 添加可体验的小游戏demo-石头剪刀布fingerguessing/fingerguessing.html（√）
+- 开放管理后台。增加付费到账demo（×）
 - 开放斗地主（×）
 - 开放各种地方麻将（×）
 - 开放牛牛（×）
 - 开放跑得快（×）
 - 开放十三水demo（×）
 - 开放压大小（×）
-- 开放管理后台等仓库（×）
+
 
 ### 命名风格
 
@@ -67,6 +68,8 @@ use (
 ```
 3.2 启动服务
 ```sh
+# go run ./quasar/gateway
+# go run ./quasar/router
 go run ./gofishing-game/cache
 go run ./gofishing-game/hall
 go run ./gofishing-game/login
@@ -77,4 +80,4 @@ go run ./gofishing-game/login
 - 打开控制台可以看到消息历史
 - 可以模拟消息请求
 - 支持url自定义参数open_id（默认test001）、addr（默认localhost:9501）
-新增了fingerguessing/fingerguessing.html体验页面，开发中
+新增了fingerguessing/fingerguessing.html体验页面，可体验石头剪刀布
