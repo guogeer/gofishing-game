@@ -164,7 +164,6 @@
 					"1": '赢', "0": '平', "-1": '输', "99": "空",
 				}
 				const seat_id = `seat${user.seatIndex}`
-				console.log("xxxxxxxxxxxxx", user.cmp.toString())
 				document.getElementById(seat_id).innerHTML = `座位${user.seatIndex + 1} [昵称-${user.nickname} 金币-${gold} 手势-${user.gesture} 结果-${result[user.cmp.toString()]}]`
 			})
 		},

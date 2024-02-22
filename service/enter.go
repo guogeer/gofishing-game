@@ -267,6 +267,11 @@ func (eq *enterQueue) TryEnter(args *enterRequest) errcode.Error {
 		return errcode.New("invalid_user", "user data is invalid")
 	}
 
+	values := strings.Split(args.EnterGameResp.UserInfo.ServerLocation, ":")
+	if values[0] != GetServerId() {
+		return errEnterOtherGame
+	}
+
 	comer := createPlayer(args.Uid)
 	gAllPlayers[args.Uid] = comer
 	return comer.Enter()
