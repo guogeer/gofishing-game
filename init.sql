@@ -27,6 +27,7 @@ CREATE TABLE item_log (
     id INT AUTO_INCREMENT PRIMARY KEY,
 	`uid` INT NOT NULL,
     item_id INT NOT NULL,
+    way varchar(64) not null,
 	num INT NOT NULL,
 	balance INT NOT NULL,
 	uuid varchar(64) NOT NULL,

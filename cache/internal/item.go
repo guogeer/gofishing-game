@@ -34,7 +34,7 @@ func (cc *Cache) AddSomeItemLog(ctx context.Context, req *pb.AddSomeItemLogReq) 
 
 	createTime := time.Unix(req.CreateTs, 0).Format(internal.LongDateFmt)
 	for _, item := range req.Items {
-		db.Exec("insert item_log(uid,way,guid,item_id,num,balance,create_time) values(?,?,?,?,?,?,?)",
+		db.Exec("insert item_log(uid,way,uuid,item_id,num,balance,create_time) values(?,?,?,?,?,?,?)",
 			uid, way, uuid, item.Id, item.Num, item.Balance, createTime)
 	}
 	return &pb.EmptyResp{}, nil

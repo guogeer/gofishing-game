@@ -73,12 +73,8 @@ func (obj *bagObj) NumItem(id int) int64 {
 func (obj *bagObj) CostSomeItems(items []gameutils.Item, way string) {
 	for _, item := range items {
 		item.Multi(-1)
-		obj.addItem(item)
 	}
-	obj.items = gameutils.MergeItems(obj.items)
-
-	obj.player.GameAction.OnAddItems(items, way)
-	AddSomeItemLog(obj.player.Id, obj.items, way)
+	obj.AddSomeItems(items, way)
 }
 
 func (obj *bagObj) AddSomeItems(items []gameutils.Item, way string) {
@@ -88,7 +84,7 @@ func (obj *bagObj) AddSomeItems(items []gameutils.Item, way string) {
 	obj.items = gameutils.MergeItems(obj.items)
 
 	obj.player.GameAction.OnAddItems(items, way)
-	AddSomeItemLog(obj.player.Id, obj.items, way)
+	AddSomeItemLog(obj.player.Id, items, way)
 }
 
 func (obj *bagObj) GetItem(id int) gameutils.Item {
