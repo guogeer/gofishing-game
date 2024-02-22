@@ -1,4 +1,4 @@
-module gofishing-game/fingerguessing
+module gofishing-game/demo/fingerguessing
 
 go 1.21.1
 

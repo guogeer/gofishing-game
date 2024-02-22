@@ -13,6 +13,8 @@ require (
 	layeh.com/gopher-luar v1.0.11
 )
 
+require github.com/golang-jwt/jwt/v4 v4.5.0
+
 require (
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
