@@ -15,14 +15,17 @@
 		<h4 class="card-title">入口</h4>
 		<div class="row">
 			<div class="col-3">
-				<button type="button" class="btn btn-primary" id="roomLv1Card"
+				<button type="button" class="btn btn-primary" id="entryRoom"
 					onclick="current_user.requests.enterRoom('fingerGuessing',1001)" disabled>房间</button>
 
 			</div>
 			<div class="col-3">
-				<button type="button" class="btn btn-primary" id="roomLv2Card"
+				<button type="button" class="btn btn-primary" id="entryHall"
 					onclick="current_user.requests.enterRoom('hall',0)" disabled>大厅</button>
-
+			</div>
+			<div class="col-3">
+				<button type="button" class="btn btn-primary" id="entryLeave" onclick="current_user.requests.leave()"
+					disabled>离开</button>
 			</div>
 		</div>
 	</div>
@@ -126,6 +129,9 @@
 			enterRoom: (name, subId) => {
 				sendMsg(`${name}.enter`, { "token": current_user.token, "subId": subId, "leaveServer": current_user.serverId })
 			},
+			leave: () => {
+				sendMsg(`${current_user.serverId}.leave`, {})
+			},
 		},
 		updateRoomCountdown: () => {
 			const current_date = new Date()
@@ -166,12 +172,23 @@
 				}
 				current_user.serverId = "hall"
 			},
+			"hall.leave": (args) => {
+				current_user.serverId = ""
+				document.getElementById("entryLeave").disabled = true
+			},
+			"fingerGuessing.leave": (args) => {
+				current_user.serverId = ""
+				document.getElementById("entryLeave").disabled = true
+			},
 			"fingerGuessing.enter": (data) => {
 				if (data.code != "ok") {
 					window.alert("enter game error: " + data.msg)
 					return
 				}
 				current_user.serverId = "fingerGuessing"
+			},
+			"hall.getUserInfo": (args) => {
+				document.getElementById("entryLeave").disabled = false
 			},
 			"fingerGuessing.getUserInfo": (args) => {
 				document.getElementById("nickname").innerHTML = `昵称（${args.baseInfo.nickname}）`
@@ -203,6 +220,7 @@
 				current_user.countdown_timer = window.setInterval(() => {
 					current_user.updateRoomCountdown()
 				}, 1000)
+				document.getElementById("entryLeave").disabled = false
 			},
 			"fingerGuessing.startGame": (args) => {
 				current_user.data.roomInfo.gesture = ''
@@ -293,9 +311,8 @@
 				console.log(ws_addr, "connect successfully")
 				sendMsg("hall.enter", { "token": current_user.token })
 
-				document.getElementById("roomLv1Card").disabled = false
-				document.getElementById("roomLv2Card").disabled = false
-				document.getElementById("roomLv3Card").disabled = false
+				document.getElementById("entryRoom").disabled = false
+				document.getElementById("entryHall").disabled = false
 			});
 
 			// Listen for messages

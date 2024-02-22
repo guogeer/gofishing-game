@@ -62,7 +62,7 @@ func funcClose(ctx *cmd.Context, iArgs any) {
 	ply.GameAction.OnClose()
 }
 
-func funcSysLeave(ctx *cmd.Context, iArgs any) {
+func funcLeave(ctx *cmd.Context, iArgs any) {
 	ply := GetGatewayPlayer(ctx.Ssid)
 	if ply == nil {
 		return
@@ -93,6 +93,9 @@ func funcEnter(ctx *cmd.Context, data any) {
 	if args.Token == "" {
 		return
 	}
+	if args.LeaveServer == GetServerId() {
+		args.LeaveServer = ""
+	}
 
 	ss, e := GetEnterQueue().PushBack(ctx, args.Token, args.LeaveServer, rawData)
 	if e != nil && ss != nil {
@@ -105,12 +108,12 @@ type enterArgs struct {
 	LeaveServer string `json:"leaveServer,omitempty"`
 }
 
-func funcLeave(ctx *cmd.Context, data any) {
+func funcSysLeave(ctx *cmd.Context, data any) {
 	args := data.(*leaveArgs)
 
 	uid := args.Uid
 	ply := GetPlayer(uid)
-	// log.Debugf("player %d auto leave", uid)
+	log.Debugf("player %d auto leave", uid)
 
 	if ply == nil {
 		ctx.Out.WriteJSON("FUNC_Leave", cmd.M{"uid": uid})
