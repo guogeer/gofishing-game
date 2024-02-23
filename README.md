@@ -3,10 +3,10 @@
 过往棋牌、休闲项目代码总结，按如下计划更新
 - 移除了相关的业务（√）
 - 项目可以在本地正常运行（√）
-- 添加可体验的小游戏demo（√）
+- 添加可体验的小游戏demo/fingerGuessing（√）
 - 开放管理后台。增加付费到账demo（×）
-- 开放斗地主（×）
-- 开放各种地方麻将（×）
+- 开放斗地主demo/doudizhu。旧线上生产项目代码，合并到新项目中。因缺少前端配合测试，完成度95%（√）
+- 开放各种地方麻将demo/mahjong。旧线上生产项目代码，合并到新项目中。因缺少前端配合测试，完成度90%（√）
 - 开放牛牛（×）
 - 开放跑得快（×）
 - 开放十三水demo（×）
@@ -73,6 +73,9 @@ use (
 go run ./gofishing-game/cache
 go run ./gofishing-game/hall
 go run ./gofishing-game/login
+go run ./gofishing-game/demo/fingerGuessing
+go run ./gofishing-game/demo/mahjong
+go run ./gofishing-game/demo/doudizhu
 ```
 4、调试工具
 新增了client.html调试工具
