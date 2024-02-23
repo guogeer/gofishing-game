@@ -60,11 +60,15 @@ use (
 	./gofishing-game/cache
 	./gofishing-game/hall
 	./gofishing-game/login
+	./gofishing-game/demo/fingerguessing
+	./gofishing-game/demo/doudizhu
+	./gofishing-game/demo/mahjong
 	./gofishing-plate
 	./quasar
 	./quasar/gateway
 	./quasar/router
 )
+
 ```
 3.2 启动服务
 ```sh
