@@ -187,8 +187,8 @@ const (
 */
 
 type ReadyHandOption struct {
-	DiscardCard int
-	WinOptions  []WinOption
+	DiscardCard int         `json:"discardCard"`
+	WinOptions  []WinOption `json:"winOptions"`
 }
 
 func PrintCards(cards []int) {

@@ -189,8 +189,8 @@ func GetChipHistory(ctx *cmd.Context, iArgs any) {
 		return
 	}
 
-	ply.WriteJSON("GetChipHistory", map[string]any{
-		"Detail": ply.chipHistory,
+	ply.WriteJSON("getChipHistory", map[string]any{
+		"detail": ply.chipHistory,
 	})
 }
 

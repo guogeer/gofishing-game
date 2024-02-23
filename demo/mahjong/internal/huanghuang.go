@@ -50,7 +50,7 @@ func (mj *HuanghuangMahjong) OnEnter(comer *MahjongPlayer) {
 		data["PiaoList"] = all
 	}
 
-	comer.WriteJSON("GetLocalMahjong", data)
+	comer.SetClientValue("localMahjong", data)
 }
 
 func (mj *HuanghuangMahjong) OnReady() {

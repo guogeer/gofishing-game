@@ -112,9 +112,9 @@ func (gd *GuangdongMahjong) OnCreateRoom() {
 func (gd *GuangdongMahjong) OnEnter(comer *MahjongPlayer) {
 	data := map[string]any{
 		"card":  gd.ghostCard,
-		"Ghost": gd.getAnyCards(),
+		"ghost": gd.getAnyCards(),
 	}
-	comer.WriteJSON("GetLocalMahjong", data)
+	comer.SetClientValue("localMahjong", data)
 }
 
 func (gd *GuangdongMahjong) OnReady() {

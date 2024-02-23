@@ -57,7 +57,7 @@ func (mj *chaoshanMahjong) OnCreateRoom() {
 }
 
 func (mj *chaoshanMahjong) OnEnter(comer *MahjongPlayer) {
-	comer.WriteJSON("GetLocalMahjong", map[string]any{"Maima": len(mj.maima[0]), "Fama": len(mj.fama)})
+	comer.SetClientValue("localMahjong", map[string]any{"maima": len(mj.maima[0]), "fama": len(mj.fama)})
 }
 
 func (mj *chaoshanMahjong) OnReady() {
@@ -357,8 +357,8 @@ func (mj *chaoshanMahjong) Award() {
 	if boom := room.boomPlayer(); room.CanPlay(OptShiBeiBuJiFen) && boom != nil {
 		score := PingHu
 		for _, opt := range boom.CheckWin() {
-			if chaoshanScoreList[score] < chaoshanScoreList[opt.Score] {
-				score = opt.Score
+			if chaoshanScoreList[score] < chaoshanScoreList[opt.Chip] {
+				score = opt.Chip
 			}
 		}
 		if chaoshanScoreList[score] >= 10 {

@@ -149,9 +149,9 @@ func (sc *SichuanMahjong) OnEnter(comer *MahjongPlayer) {
 	room := sc.room
 	// 正在游戏中
 	if room.Status == roomStatusExchangeTriCards {
-		data := map[string]any{"ts": room.deadline.Unix(), "TriCards": comer.defaultTriCards}
+		data := map[string]any{"ts": room.deadline.Unix(), "triCards": comer.defaultTriCards}
 		if comer.triCards[0] > 0 {
-			data["MyTriCards"] = comer.triCards
+			data["myTriCards"] = comer.triCards
 		}
 		var others []int
 		for i := 0; i < room.NumSeat(); i++ {
@@ -160,14 +160,14 @@ func (sc *SichuanMahjong) OnEnter(comer *MahjongPlayer) {
 			}
 		}
 		if len(others) > 0 {
-			data["Others"] = others
+			data["others"] = others
 		}
-		comer.WriteJSON("StartExchangeTriCards", data)
+		comer.WriteJSON("startExchangeTriCards", data)
 	}
 	if room.Status == roomStatusChooseColor {
-		data := map[string]any{"ts": room.deadline.Unix(), "Color": comer.defaultColor, "MyColor": comer.discardColor}
+		data := map[string]any{"ts": room.deadline.Unix(), "color": comer.defaultColor, "myColor": comer.discardColor}
 		if comer.discardColor != -1 {
-			data["MyColor"] = comer.discardColor
+			data["myColor"] = comer.discardColor
 		}
 		var others []int
 		for i := 0; i < room.NumSeat(); i++ {
@@ -176,10 +176,10 @@ func (sc *SichuanMahjong) OnEnter(comer *MahjongPlayer) {
 			}
 		}
 		if len(others) > 0 {
-			data["Others"] = others
+			data["others"] = others
 		}
 
-		comer.WriteJSON("StartChooseColor", data)
+		comer.WriteJSON("startChooseColor", data)
 	}
 }
 

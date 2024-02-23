@@ -54,9 +54,9 @@ func IsValueSame(c int, some ...int) bool {
 }
 
 type WinOption struct {
-	WinCard int
-	Score   int `json:",omitempty"`
-	Points  int `json:",omitempty"`
+	WinCard int `json:"winCard"`
+	Chip    int `json:"chip"`
+	Points  int `json:"points"`
 
 	Qidui      bool `json:"-"` // 七对
 	Shisanyao  bool `json:"-"` // 十三幺

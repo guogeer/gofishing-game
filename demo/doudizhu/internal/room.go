@@ -508,7 +508,7 @@ func (room *DoudizhuRoom) StartDealCard() {
 	for i := 0; i < room.NumSeat(); i++ {
 		p := room.GetPlayer(i)
 		data["Cards"] = p.GetSortedCards()
-		p.WriteJSON("StartDealCard", data)
+		p.WriteJSON("startDealCard", data)
 	}
 }
 

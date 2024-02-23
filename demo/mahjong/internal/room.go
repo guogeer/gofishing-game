@@ -130,14 +130,14 @@ func (room *MahjongRoom) OnEnter(player *service.Player) {
 		dealerId = room.dealer.Id
 	}
 	data["dealerId"] = dealerId
-	comer.WriteJSON("getRoomInfo", data)
+	comer.SetClientValue("roomInfo", data)
 
 	// 正在游戏中
 	if room.Status == roomutils.RoomStatusPlaying {
 		// 金币场破产提示充值
 		for i := 0; i < room.NumSeat(); i++ {
 			if p := room.GetPlayer(i); p != nil && p.isBustOrNot {
-				comer.WriteJSON("bustOrNot", map[string]any{
+				comer.SetClientValue("bustOrNot", map[string]any{
 					"uid": p.Id,
 					// "Bust":    p.BaseObj().GetBustInfo(),
 					"ts": room.deadline.Unix(),
@@ -251,7 +251,7 @@ func (room *MahjongRoom) StartDealCard() {
 	}
 	for i := 0; i < room.NumSeat(); i++ {
 		p := room.GetPlayer(i)
-		p.WriteJSON("DealCard", map[string]any{"Cards": SortCards(p.handCards)})
+		p.WriteJSON("dealCard", map[string]any{"cards": SortCards(p.handCards)})
 	}
 	room.helper.AnyCards = room.GetAnyCards()
 
@@ -260,8 +260,8 @@ func (room *MahjongRoom) StartDealCard() {
 	c := room.dealer.TryDraw()
 	dealer.drawCard = c
 	dealer.handCards[c]++
-	dealer.WriteJSON("Draw", map[string]any{"card": c, "uid": dealer.Id})
-	room.Broadcast("Draw", map[string]any{"card": 0, "uid": dealer.Id}, dealer.Id)
+	dealer.WriteJSON("draw", map[string]any{"card": c, "uid": dealer.Id})
+	room.Broadcast("draw", map[string]any{"card": 0, "uid": dealer.Id}, dealer.Id)
 }
 
 func (room *MahjongRoom) StartExchangeTriCards() {
@@ -289,7 +289,7 @@ func (room *MahjongRoom) StartExchangeTriCards() {
 				num++
 			}
 		}
-		p.WriteJSON("StartExchangeTriCards", map[string]any{"ts": room.deadline.UTC(), "TriCards": p.defaultTriCards})
+		p.WriteJSON("startExchangeTriCards", map[string]any{"ts": room.deadline.UTC(), "triCards": p.defaultTriCards})
 	}
 
 	room.exchangeTriCardsTimer = utils.NewTimer(func() {
@@ -329,7 +329,7 @@ func (room *MahjongRoom) OnExchangeTriCards() {
 		if dealer := room.dealer; dealer.handCards[dealer.drawCard] == 0 {
 			p.drawCard = other.triCards[0]
 		}
-		p.WriteJSON("FinishExchangeTriCards", map[string]any{"TriCards": p.triCards, "OtherTriCards": other.triCards, "Dict": dict})
+		p.WriteJSON("finishExchangeTriCards", map[string]any{"triCards": p.triCards, "otherTriCards": other.triCards, "dict": dict})
 	}
 
 	room.StartChooseColor()
@@ -358,7 +358,7 @@ func (room *MahjongRoom) StartChooseColor() {
 	for i := 0; i < room.NumSeat(); i++ {
 		p := room.GetPlayer(i)
 		color := p.defaultColor
-		p.WriteJSON("StartChooseColor", map[string]any{"ts": room.deadline.Unix(), "Color": color})
+		p.WriteJSON("startChooseColor", map[string]any{"ts": room.deadline.Unix(), "color": color})
 	}
 
 	room.chooseColorTimer = utils.NewTimer(func() {

@@ -36,7 +36,7 @@ func (hz *HongzhongMahjong) OnEnter(comer *MahjongPlayer) {
 		"card":  hz.ghostCard,
 		"Ghost": hz.getAnyCards(),
 	}
-	comer.WriteJSON("GetLocalMahjong", data)
+	comer.SetClientValue("localMahjong", data)
 
 }
 

@@ -42,7 +42,7 @@ func (mj *ZhengzhouMahjong) OnEnter(comer *MahjongPlayer) {
 
 	data := map[string]any{
 		"card":  mj.ghostCard,
-		"Ghost": mj.getAnyCards(),
+		"ghost": mj.getAnyCards(),
 	}
 	if room.CanPlay(OptDaiPao) && room.Status != 0 {
 		all := make([]int, room.NumSeat())
@@ -55,9 +55,9 @@ func (mj *ZhengzhouMahjong) OnEnter(comer *MahjongPlayer) {
 				}
 			}
 		}
-		data["PaoList"] = all
+		data["paoList"] = all
 	}
-	comer.WriteJSON("GetLocalMahjong", data)
+	comer.SetClientValue("localMahjong", data)
 }
 
 func (mj *ZhengzhouMahjong) OnReady() {

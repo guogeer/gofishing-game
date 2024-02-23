@@ -419,13 +419,13 @@ func (ply *MahjongPlayer) Prompt() {
 	}
 
 	data := map[string]any{
-		"Operate":   tips,
-		"ReadyHand": ply.readyHandTips,
+		"operate":   tips,
+		"readyHand": ply.readyHandTips,
 	}
 	if ply.forceReadyHand {
-		data["IsReadyHand"] = true
+		data["isReadyHand"] = true
 	}
-	ply.WriteJSON("OperateTip", data)
+	ply.WriteJSON("operateTip", data)
 }
 
 func (ply *MahjongPlayer) IsCheat() bool {
@@ -555,7 +555,7 @@ func (ply *MahjongPlayer) OnDraw() {
 			if ply == other || other.isAbleLookOthers {
 				tempCard = c
 			}
-			other.WriteJSON("Draw", map[string]any{"card": tempCard, "uid": ply.Id})
+			other.WriteJSON("draw", map[string]any{"card": tempCard, "uid": ply.Id})
 		}
 	}
 
@@ -1064,7 +1064,7 @@ func (ply *MahjongPlayer) Win() {
 
 	ply.operateTips = nil
 	ply.readyHandTips = nil
-	ply.WriteJSON("Win", map[string]any{"code": errcode.CodeOk})
+	ply.WriteErr("Win", nil)
 
 	// OK
 	utils.StopTimer(ply.operateTimer)
@@ -1275,7 +1275,7 @@ func (ply *MahjongPlayer) Pass() {
 	log.Debugf("player %d pass", ply.Id)
 	// OK
 	utils.StopTimer(ply.operateTimer)
-	ply.WriteJSON("Pass", map[string]any{"code": errcode.CodeOk})
+	ply.WriteErr("pass", nil)
 
 	ply.delayChow = false
 	ply.delayPong = false
@@ -1513,8 +1513,8 @@ func (ply *MahjongPlayer) ExchangeTriCards(tri [3]int) {
 		return
 	}
 	ply.triCards = tri
-	ply.WriteJSON("ExchangeTriCards", map[string]any{"code": errcode.CodeOk, "TriCards": tri})
-	room.Broadcast("OtherExchangeTriCards", map[string]any{"uid": ply.Id}, ply.Id)
+	ply.WriteJSON("exchangeTriCards", map[string]any{"code": errcode.CodeOk, "triCards": tri, "uid": ply.Id})
+	room.Broadcast("exchangeTriCards", map[string]any{"code": errcode.CodeOk, "triCards": [3]int{}, "uid": ply.Id}, ply.Id)
 	room.OnExchangeTriCards()
 }
 
@@ -1531,8 +1531,8 @@ func (ply *MahjongPlayer) ChooseColor(color int) {
 		return
 	}
 	ply.discardColor = color
-	ply.WriteJSON("ChooseColor", map[string]any{"code": errcode.CodeOk, "Color": color})
-	room.Broadcast("OtherChooseColor", map[string]any{"uid": ply.Id}, ply.Id)
+	ply.WriteJSON("chooseColor", map[string]any{"code": errcode.CodeOk, "color": color, "uid": ply.Id})
+	room.Broadcast("chooseColor", map[string]any{"code": errcode.CodeOk, "color": -1, "uid": ply.Id}, ply.Id)
 	room.OnChooseColor()
 }
 
@@ -1560,7 +1560,7 @@ func (ply *MahjongPlayer) CheckReadyHand() []ReadyHandOption {
 						tempOpt.WinCard = add
 
 						if scorer, ok := room.localMahjong.(MahjongScorer); ok {
-							tempOpt.Score, tempOpt.Points = scorer.Score(cards, ply.melds)
+							tempOpt.Chip, tempOpt.Points = scorer.Score(cards, ply.melds)
 						}
 						opt.WinOptions = append(opt.WinOptions, tempOpt)
 					}
@@ -1842,7 +1842,7 @@ func (ply *MahjongPlayer) notifyClock() {
 	if p := room.GetActivePlayer(); p != nil {
 		seatId = p.GetSeatIndex()
 	}
-	ply.WriteJSON("Timing", map[string]any{"SeatId": seatId, "ts": room.deadline.Unix()})
+	ply.WriteJSON("timing", map[string]any{"seatIndex": seatId, "ts": room.deadline.Unix()})
 }
 
 // TODO 加倍当前仅考虑二人
@@ -1951,14 +1951,14 @@ func (ply *MahjongPlayer) ReadyHandOk() {
 	response := map[string]any{
 		"uid": ply.Id,
 	}
-	room.Broadcast("ReadyHand", response, ply.Id)
+	room.Broadcast("readyHand", response, ply.Id)
 
-	response["WinOpts"] = opts
+	response["winOpts"] = opts
 	if room.CanPlay(OptAbleLookOthersAfterReadyHand) {
 		ply.isAbleLookOthers = true
-		response["Others"] = ply.GetOthers()
+		response["others"] = ply.GetOthers()
 	}
 	ply.isReadyHand = true
 	ply.expectReadyHand = false
-	ply.WriteJSON("ReadyHand", response)
+	ply.WriteJSON("readyHand", response)
 }

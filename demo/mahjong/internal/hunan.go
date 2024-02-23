@@ -40,13 +40,13 @@ func (h *HunanMahjong) OnEnter(comer *MahjongPlayer) {
 		for _, p := range room.winPlayers {
 			uid = p.Id
 		}
-		comer.WriteJSON("StartBuyHorse", map[string]any{"ts": room.deadline.Unix(), "Num": 4, "uid": uid})
+		comer.WriteJSON("startBuyHorse", map[string]any{"ts": room.deadline.Unix(), "num": 4, "uid": uid})
 	}
 	data := map[string]any{
 		"card":  h.ghostCard,
-		"Ghost": h.getAnyCards(),
+		"ghost": h.getAnyCards(),
 	}
-	comer.WriteJSON("GetLocalMahjong", data)
+	comer.SetClientValue("localMahjong", data)
 }
 
 func (h *HunanMahjong) getAnyCards() []int {

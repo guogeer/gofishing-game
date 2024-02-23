@@ -72,14 +72,14 @@ func (mj *NeimengguMahjong) OnReady() {
 				}
 
 				p.flowers = append(p.flowers, flowers...)
-				p.WriteJSON("DealFlower", map[string]any{
+				p.WriteJSON("dealFlower", map[string]any{
 					"uid":     p.Id,
-					"Cards":   cards,
-					"Flowers": flowers,
+					"cards":   cards,
+					"flowers": flowers,
 				})
-				room.Broadcast("DealFlower", map[string]any{
+				room.Broadcast("dealFlower", map[string]any{
 					"uid":     p.Id,
-					"Flowers": flowers,
+					"flowers": flowers,
 				}, p.Id)
 			}
 		}
