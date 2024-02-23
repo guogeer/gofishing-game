@@ -4,6 +4,7 @@ package system
 
 import (
 	"gofishing-game/service"
+	"slices"
 )
 
 const actionKeyLogin = "login"
@@ -30,13 +31,19 @@ func (obj *loginObj) Load(data any) {
 func (obj *loginObj) Save(data any) {
 }
 
+var sysPlates = []string{"robot", "guest"}
+
 func (obj *loginObj) IsBindPlate() bool {
 	for _, plate := range obj.LoginPlates {
-		if plate == "google" || plate == "facebook" {
+		if slices.Index(sysPlates, plate) < 0 {
 			return true
 		}
 	}
 	return false
+}
+
+func (obj *loginObj) IsRobot() bool {
+	return slices.Index(obj.LoginPlates, "robot") >= 0
 }
 
 func GetLoginObj(player *service.Player) *loginObj {

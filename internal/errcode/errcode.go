@@ -48,6 +48,8 @@ func TooMuchItem(itemId int) Error {
 	return &itemError{ItemId: itemId, BaseError: e}
 }
 
+const CodeOk = "ok"
+
 var Retry = New("retry", "catch error, please retry")
 var moreItem = New("more_item", "more item {itemName}")
 var tooMuchItem = New("too_much_item", "too much item {itemName}")

@@ -1,0 +1,882 @@
+package mahjong
+
+// 2017-6-8 Guogeer
+// 红中赖子杠麻将
+import (
+	"service"
+	"third/cardutil"
+	"third/log"
+	"third/util"
+	"time"
+)
+
+var (
+	hongzhonglaizigangPiaoOptions = []int{0, 5, 10, 20}
+)
+
+// 红中赖子杠麻将
+type HongzhonglaizigangMahjong struct {
+	room *MahjongRoom
+
+	ghostCard int
+}
+
+func (mj *HongzhonglaizigangMahjong) OnCreateRoom() {
+	room := mj.room
+	if room.CanPlay(service.OptZeroSeat + 3) {
+		// 没有万
+		for i := 1; i < 10; i++ {
+			room.CardSet().Remove(i)
+		}
+		// 去掉东风
+		room.CardSet().Remove(60)
+	}
+	if room.CanPlay(service.OptZeroSeat + 2) {
+		// 没有筒、条
+		for i := 1; i < 10; i++ {
+			room.CardSet().Remove(20+i, 40+i)
+		}
+	}
+}
+
+func (mj *HongzhonglaizigangMahjong) OnEnter(comer *MahjongPlayer) {
+	room := mj.room
+
+	data := map[string]interface{}{
+		"Card":  mj.ghostCard,
+		"Ghost": mj.getAnyCards(),
+	}
+	if room.Status == service.RoomStatusChoosePiao {
+		data["Piao"] = hongzhonglaizigangPiaoOptions
+	}
+	if room.CanPlay(OptZiYouXuanPiao) && room.Status != service.RoomStatusFree {
+		all := make([]int, room.SeatNum())
+		for i := 0; i < room.SeatNum(); i++ {
+			if p := room.GetPlayer(i); p != nil {
+				obj := p.localObj.(*HongzhonglaizigangObj)
+				all[i] = obj.piao
+				if room.Status == service.RoomStatusChoosePiao && all[i] != -1 {
+					all[i] = 0
+				}
+			}
+		}
+		data["PiaoList"] = all
+	}
+
+	comer.WriteJSON("GetLocalMahjong", data)
+}
+
+func (mj *HongzhonglaizigangMahjong) OnReady() {
+	room := mj.room
+
+	// 选漂
+	if room.CanPlay(OptZiYouXuanPiao) {
+		mj.startChoosePiao()
+	} else {
+		mj.startPlaying()
+	}
+}
+
+// 流程改动，先选漂
+func (mj *HongzhonglaizigangMahjong) startPlaying() {
+	room := mj.room
+
+	room.Status = service.RoomStatusPlaying
+	room.StartDealCard()
+	mj.ghostCard = room.CardSet().Deal()
+	room.Broadcast("ChooseGhostCard", map[string]interface{}{
+		"Card":  mj.ghostCard,
+		"Ghost": mj.getAnyCards(),
+	})
+
+	log.Debug("ready go")
+	room.dealer.OnDraw()
+}
+
+func (mj *HongzhonglaizigangMahjong) startChoosePiao() {
+	room := mj.room
+	room.Status = service.RoomStatusChoosePiao
+	room.deadline = time.Now().Add(MaxOperateTime)
+	room.Broadcast("StartChoosePiao", map[string]interface{}{
+		"Index": hongzhonglaizigangPiaoOptions,
+		"Sec":   room.GetShowTime(room.deadline),
+	})
+	for i := 0; i < room.SeatNum(); i++ {
+		p := room.GetPlayer(i)
+		obj := p.localObj.(*HongzhonglaizigangObj)
+		obj.piao = -1
+		if room.IsTypeScore() == false {
+			p.AddTimer(service.TimerEventOperate, func() { obj.ChoosePiao(0) }, MaxOperateTime)
+		}
+	}
+}
+
+func (mj *HongzhonglaizigangMahjong) OnChoosePiao() {
+	room := mj.room
+
+	for i := 0; i < room.SeatNum(); i++ {
+		p := room.GetPlayer(i)
+		obj := p.localObj.(*HongzhonglaizigangObj)
+		if obj.piao == -1 {
+			return
+		}
+	}
+	all := make([]int, room.SeatNum())
+	for i := 0; i < room.SeatNum(); i++ {
+		p := room.GetPlayer(i)
+		obj := p.localObj.(*HongzhonglaizigangObj)
+		all[i] = obj.piao
+	}
+
+	room.Broadcast("FinishChoosePiao", map[string]interface{}{
+		"PiaoList": all,
+	})
+	mj.startPlaying()
+}
+
+func (mj *HongzhonglaizigangMahjong) Score(copyCards []int, melds []cardutil.Meld) (int, int) {
+	room := mj.room
+	// 清一色
+	var color = 0
+	var all = CountAllCards(copyCards, melds)
+	for _, c := range cardutil.GetAllCards() {
+		if all[c] > 0 && c != NoneCard {
+			color = color | int(1<<uint(c/10))
+		}
+	}
+
+	if color&(color-1) == 0 {
+		return QingYiSe, 15
+	}
+	// 将一色
+	jiangyise := true
+	for _, m := range melds {
+		if m.Type == cardutil.MeldSequence ||
+			IsSameValue(m.Card, 2, 5, 8) == false {
+			jiangyise = false
+			break
+		}
+	}
+
+	for _, c := range cardutil.GetAllCards() {
+		if copyCards[c] > 0 && IsSameValue(c, 2, 5, 8) == false && room.IsAnyCard(c) == false {
+			jiangyise = false
+			break
+		}
+	}
+	if jiangyise {
+		return JiangYiSe, 15
+	}
+	// 碰碰胡
+	winOpt := room.helper.Win(copyCards, melds)
+	if winOpt != nil && winOpt.Duiduihu {
+		return DuiDuiHu, 15
+	}
+	// 平胡
+	return PingHu, 5
+}
+
+// 包牌
+func (mj *HongzhonglaizigangMahjong) IsAllIncluded(score int) bool {
+	switch score {
+	case QingYiSe, JiangYiSe:
+		return true
+	}
+	return false
+}
+
+func (mj *HongzhonglaizigangMahjong) IsBigScore(score int) bool {
+	switch score {
+	case QingYiSe, JiangYiSe, DuiDuiHu:
+		return true
+	}
+	return false
+}
+
+func (mj *HongzhonglaizigangMahjong) baopai() int {
+	room := mj.room
+
+	var n = 1
+	if room.CanPlay(OptBaoPai2) {
+		return 2
+	} else if room.CanPlay(OptBaoPai3) {
+		return 3
+	}
+	return n
+}
+
+func (mj *HongzhonglaizigangMahjong) multiple() int {
+	room := mj.room
+
+	var n = 1
+	if room.CanPlay(OptMultiple5) {
+		n = 5
+	} else if room.CanPlay(OptMultiple10) {
+		n = 10
+	}
+	return n
+}
+
+func (mj *HongzhonglaizigangMahjong) OnWin() {
+	room := mj.room
+
+	room.Award()
+}
+
+func (mj *HongzhonglaizigangMahjong) Award() {
+	room := mj.room
+	unit := room.Unit()
+
+	extraTimes := 1
+	switch room.LimitPoints {
+	case 30:
+		extraTimes = 20
+	case 50:
+		extraTimes = 10
+	case 100:
+		extraTimes = 5
+	}
+
+	// 胡牌
+	// 不允许一炮多响，所以最多只有一个人胡牌
+	bills := make([]Bill, room.SeatNum())
+	for i := 0; i < room.SeatNum(); i++ {
+		p := room.GetPlayer(i)
+		detail := GoldDetail{
+			Seats:   1 << uint(p.SeatId()),
+			Operate: cardutil.OperateWin,
+		}
+
+		obj := p.localObj.(*HongzhonglaizigangObj)
+		addition2 := obj.getAddition(obj.isWin)
+
+		// 胡牌
+		if p.isWin {
+			if obj.drawCard != -1 {
+				addition2["ZM"] = 1
+			} else {
+				addition2["JP"] = 1
+			}
+		}
+
+		bill := &bills[i]
+		detail.Addition2 = addition2
+		bill.Details = append(bill.Details, detail)
+	}
+
+	for _, p := range room.winPlayers {
+		obj := p.localObj.(*HongzhonglaizigangObj)
+		boom := room.boomPlayer()
+		addition2 := bills[p.SeatId()].Details[0].Addition2
+
+		var winTimes = 1
+		for _, t := range addition2 {
+			winTimes *= t
+		}
+
+		// 包牌玩家
+		bad := p
+		copyCards := p.copyCards()
+
+		score, points := mj.Score(copyCards, p.melds)
+
+		if mj.IsAllIncluded(score) {
+			// 放三浦
+			var counter int
+			for _, m := range p.melds {
+				if m.Type != cardutil.MeldInvisibleKong {
+					counter++
+				}
+				if counter == 3 {
+					// TODO
+					// bad = m.other
+					bad = room.GetPlayer(m.SeatId)
+					addition2["FSP"] = mj.baopai()
+				}
+			}
+		}
+		// 抢杠胡
+		if bad == p && room.kongPlayer != nil && room.kongPlayer != p && room.discardPlayer == nil {
+			addition2["QJH"] = mj.baopai()
+			bad = boom
+		}
+
+		// 全求人
+		if bad == p &&
+			p.drawCard == -1 &&
+			len(p.melds) == 4 &&
+			IsSameValue(room.lastCard, 2, 5, 8) &&
+			CountMeldsByType(p.melds, cardutil.MeldInvisibleKong) == 0 {
+			addition2["QQR"] = mj.baopai()
+			bad = boom
+		}
+
+		bills[p.SeatId()].Details[0].Score = score
+		// log.Debug("test", score, points, p.drawCard)
+		// 包牌
+		if bad != p {
+			detail := &bills[bad.SeatId()].Details[0]
+			detail.Seats = 1 << uint(p.SeatId())
+			detail.Times = 2 * room.piao()
+
+			if room.CanPlay(OptZiYouXuanPiao) {
+				badObj := bad.localObj.(*HongzhonglaizigangObj)
+				detail.Times = badObj.piao + obj.piao
+			}
+			detail.Times += mj.baopai() * room.LimitPoints
+			/*if piao := room.piao(); piao > 0 {
+				detail.Times += piao * mj.baopai()
+				detail.Addition2["PIAO"] = piao * mj.baopai()
+			}
+			*/
+			detail.Addition2["BP"] = mj.baopai()
+			detail.Gold = -unit * int64(detail.Times)
+		} else {
+			if p.drawCard == -1 {
+				bills[boom.SeatId()].Details[0].Addition2["FP"] = 1
+			}
+			effect := make([]*MahjongPlayer, 0, 4)
+			// 大胡陪冲
+			if p.drawCard == -1 && mj.IsBigScore(score) == false {
+				effect = append(effect, boom)
+			} else {
+				// 自摸
+				for i := 0; i < room.SeatNum(); i++ {
+					if other := room.GetPlayer(i); p != other {
+						effect = append(effect, other)
+					}
+				}
+			}
+
+			var counter int
+			for _, other := range effect {
+				var loseTimes = 1
+				for _, t := range bills[other.SeatId()].Details[0].Addition2 {
+					loseTimes *= t
+				}
+
+				// 陪冲
+				losePoints := points
+				if mj.IsBigScore(score) && p.drawCard == -1 && boom != other {
+					losePoints = 10
+				}
+				log.Debug("test", winTimes, loseTimes, losePoints, extraTimes)
+				detail := &bills[other.SeatId()].Details[0]
+				detail.Seats = 1 << uint(p.SeatId())
+
+				times := winTimes * loseTimes * losePoints / extraTimes
+				times = times / mj.multiple() * mj.multiple()
+				if times >= room.LimitPoints && room.LimitPoints > 0 {
+					times = room.LimitPoints
+					counter++
+				}
+
+				detail.Times = 2 * room.piao()
+				if room.CanPlay(OptZiYouXuanPiao) {
+					otherObj := other.localObj.(*HongzhonglaizigangObj)
+					detail.Times = otherObj.piao + obj.piao
+				}
+
+				detail.Times += times
+				detail.Gold = -unit * int64(detail.Times)
+				// log.Debug("test XX ", times, detail.Gold)
+			}
+			// 漂
+			/*if piao := room.piao(); piao > 0 && counter == room.SeatNum()-1 {
+				addition2["PIAO"] = piao * counter
+				for i := 0; i < room.SeatNum(); i++ {
+					if other := room.GetPlayer(i); other != p {
+						bill := &bills[other.SeatId]
+						detail := &bill.Details[0]
+						detail.Addition2["PIAO"] = piao
+						detail.Times += room.piao()
+						detail.Gold = -int64(detail.Times) * unit
+					}
+				}
+			}
+			*/
+		}
+	}
+	// 漂
+	for i := 0; i < room.SeatNum(); i++ {
+		addition2 := bills[i].Details[0].Addition2
+		// 对漂
+		if piao := room.piao(); piao > 0 {
+			addition2["PIAO"] = piao
+		}
+	}
+
+	room.Billing(bills[:])
+}
+
+func (mj *HongzhonglaizigangMahjong) GameOver() {
+	room := mj.room
+	mj.ghostCard = -1
+	for i := 0; i < room.SeatNum(); i++ {
+		obj := room.GetPlayer(i).localObj.(*HongzhonglaizigangObj)
+		obj.history = obj.history[:0]
+	}
+}
+
+func (mj *HongzhonglaizigangMahjong) PiAndLai() []int {
+	cards := make([]int, 0, 8)
+	cards = append(cards, mj.uselessCards()...)
+	cards = append(cards, mj.getAnyCards()...)
+	return cards
+}
+
+// 多余的牌
+func (mj *HongzhonglaizigangMahjong) uselessCards() []int {
+	room := mj.room
+	if room.CanPlay(OptSiPiSiLai) {
+		// 四痞四赖
+		return []int{100}
+	}
+	if room.CanPlay(OptBaPiSiLai) {
+		// 八痞四赖
+		return []int{100, 110}
+	}
+	return nil
+}
+
+// 癞子牌
+func (mj *HongzhonglaizigangMahjong) getAnyCards() []int {
+	room := mj.room
+	next := mj.ghostCard
+	for next > 0 {
+		for _, next = range GetNextCards(next, 1) {
+			// pass
+		}
+		if room.CardSet().IsCardValid(next) && util.InArray(mj.uselessCards(), next) == 0 {
+			return []int{next}
+		}
+	}
+	return nil
+}
+
+type HongzhonglaizigangWorld struct{}
+
+func NewHongzhonglaizigangWorld() *HongzhonglaizigangWorld {
+	return &HongzhonglaizigangWorld{}
+}
+
+func (w *HongzhonglaizigangWorld) GetName() string {
+	return "hzlzg"
+}
+
+func (w *HongzhonglaizigangWorld) NewRoom(id, subId int) *service.Room {
+	r := NewMahjongRoom(id, subId)
+
+	r.SetNoPlay(service.OptZeroSeat + 2)
+	r.SetNoPlay(service.OptZeroSeat + 3)
+	r.SetPlay(service.OptZeroSeat + 4)
+
+	r.SetNoPlay(OptBaoPai2)
+	r.SetPlay(OptBaoPai3)
+
+	r.SetNoPlay(OptMultiple5)
+	r.SetPlay(OptMultiple10)
+
+	r.SetNoPlay(OptPiao10)
+	r.SetNoPlay(OptPiao20)
+	r.SetNoPlay(OptPiao30)
+
+	r.SetPlay(OptSiPiSiLai)
+	r.SetNoPlay(OptBaPiSiLai)
+
+	r.SetNoPlay(OptZiYouXuanPiao)
+
+	for _, v := range []int{1, 2, 5} {
+		r.SetNoPlay(service.OptDiFen + v)
+	}
+
+	for i := 0; i < 100; i++ {
+		r.SetNoPlay(service.OptPiao + i)
+	}
+	r.SetMainPlay(OptAbleChow)
+	r.SetMainPlay(OptBoom)
+	r.SetMainPlay(OptAbleRobKong)
+	r.SetMainPlay(OptFangPaoJiuJinHu)
+	r.SetMainPlay(OptJiangYiSe)
+	r.SetMainPlay(OptAbleKongAfterChowOrPong)
+	r.localMahjong = &HongzhonglaizigangMahjong{room: r, ghostCard: -1}
+	return r.Room
+}
+
+func (w *HongzhonglaizigangWorld) NewPlayer() *service.Player {
+	p := NewMahjongPlayer()
+	p.Player = service.NewPlayer(p)
+	p.localObj = &HongzhonglaizigangObj{
+		MahjongPlayer: p,
+		limit:         1,
+		history:       make([]int, 0, 8),
+	}
+	return p.Player
+}
+
+// HongzhonglaizigangObj 广东麻将玩家逻辑
+type HongzhonglaizigangObj struct {
+	*MahjongPlayer
+
+	history []int
+	limit   int // 杠上花允许多个癞子
+	piao    int
+}
+
+func (obj *HongzhonglaizigangObj) getAddition(ableWin bool) map[string]int {
+	addition := make(map[string]int)
+	// 暗杠
+	if n := CountMeldsByType(obj.melds, cardutil.MeldInvisibleKong); n > 0 {
+		addition["AG"] = 1 << uint(2*n)
+	}
+	// 开口
+	if n := CountMeldsByType(obj.melds, cardutil.MeldInvisibleKong); n != len(obj.melds) {
+		addition["KK"] = 2
+	}
+	if n := CountMeldsByType(obj.melds, cardutil.MeldStraightKong) +
+		CountMeldsByType(obj.melds, cardutil.MeldBentKong); n > 0 {
+		addition["MG"] = 1 << uint(n)
+	}
+	mj := obj.Room().localMahjong.(*HongzhonglaizigangMahjong)
+	if n := util.InArray(obj.history, mj.uselessCards()); n > 0 {
+		addition["PZG"] = 1 << uint(n)
+	}
+	if n := util.InArray(obj.history, mj.getAnyCards()); n > 0 {
+		addition["LZG"] = 1 << uint(2*n)
+	}
+
+	room := obj.Room()
+	p := obj.MahjongPlayer
+	if room.dealer == p {
+		// addition["ZJ"] = 2
+	}
+	// 抢杠胡
+	/*if obj.drawCard == -1 && room.kongPlayer != nil &&
+		room.kongPlayer != p && room.discardPlayer == nil && ableWin {
+		addition["QGH"] = 1
+	}
+	*/
+	// 杠上花
+	if obj.drawCard != -1 && room.kongPlayer == p && ableWin {
+		addition["GSH"] = 2
+	}
+	// 硬胡，忽略癞子牌
+	ghost := mj.ghostCard
+	mj.ghostCard = -1
+	if ableWin && p.IsAbleWin() {
+		addition["YH"] = 2
+	}
+	mj.ghostCard = ghost
+
+	return addition
+}
+
+func (obj *HongzhonglaizigangObj) IsAbleChow(start int) bool {
+	room := obj.Room()
+	mj := room.localMahjong.(*HongzhonglaizigangMahjong)
+	if util.InArray(mj.PiAndLai(), []int{start, start + 1, start + 2}) > 0 {
+		return false
+	}
+	return obj.MahjongPlayer.IsAbleChow(start)
+}
+
+func (obj *HongzhonglaizigangObj) IsAblePong() bool {
+	room := obj.Room()
+	mj := room.localMahjong.(*HongzhonglaizigangMahjong)
+	if util.InArray(mj.PiAndLai(), room.lastCard) > 0 {
+		return false
+	}
+	return obj.MahjongPlayer.IsAblePong()
+}
+
+func (obj *HongzhonglaizigangObj) IsAbleWin() bool {
+	// 没出牌之前，手牌中有多张癞子牌
+	room := obj.Room()
+	p := obj.MahjongPlayer
+	mj := room.localMahjong.(*HongzhonglaizigangMahjong)
+	// 必须开口
+	if CountMeldsByType(obj.melds, cardutil.MeldInvisibleKong) == len(obj.melds) {
+		return false
+	}
+	// 不能有痞子牌
+	if CountSomeCards(obj.handCards, nil, mj.uselessCards()...) > 0 {
+		return false
+	}
+	if obj.drawCard != -1 && room.kongPlayer == p {
+		obj.limit = 1 << 10
+	}
+	// 抢杠胡
+	if room.kongPlayer != nil && room.kongPlayer != p && room.discardPlayer == nil {
+		obj.limit = 1 << 10
+	}
+	log.Debug("test", obj.limit)
+	defer func() {
+		obj.limit = 1
+	}()
+
+	if p.IsAbleWin() == false {
+		return false
+	}
+
+	copyCards := obj.copyCards()
+	// PrintCards(copyCards)
+	score, points := mj.Score(copyCards, obj.melds)
+	// 包牌
+	// 放三浦
+	if mj.IsAllIncluded(score) {
+		var counter int
+		for _, m := range p.melds {
+			if m.Type != cardutil.MeldInvisibleKong {
+				counter++
+			}
+			if counter == 3 {
+				return true
+			}
+		}
+	}
+	if room.kongPlayer != nil && room.kongPlayer != p && room.discardPlayer == nil {
+		return true
+	}
+	// 全求人
+	if p.drawCard == -1 && len(obj.melds) == 4 &&
+		CountMeldsByType(obj.melds, cardutil.MeldInvisibleKong) == 0 &&
+		IsSameValue(room.lastCard, 2, 5, 8) {
+		return true
+	}
+
+	if mj.IsBigScore(score) == false {
+		// log.Debug("test score", score)
+		// 杠上花才允许多个癞子
+		if copyCards[NoneCard] > obj.limit {
+			return false
+		}
+
+		piaoJiang := false     // 漂将
+		danZiShuaPiao := false // 单子耍漂
+		// log.Debug("test winXX", obj.CheckWin())
+		for _, opt := range obj.CheckWin() {
+			// log.Debug("test check win", opt)
+			if opt.piaoLai && len(obj.melds) < 4 {
+				piaoJiang = true
+			}
+			if opt.piaoDan {
+				danZiShuaPiao = true
+			}
+		}
+
+		yinghu := false
+		// 单子耍漂，漂将必须自摸，硬胡除外
+		// 忽略癞子牌
+		// 2017-7-27 单子耍漂，漂将必须自摸
+		// 忽略癞子牌
+		/*ghost := mj.ghostCard
+		mj.ghostCard = -1
+		yinghu = p.IsAbleWin()
+		mj.ghostCard = ghost
+		*/
+
+		log.Debug("test check win Z", yinghu, piaoJiang, danZiShuaPiao)
+		if !yinghu && obj.drawCard == -1 && (piaoJiang || danZiShuaPiao) {
+			return false
+		}
+	}
+	// 小胡2、5、8将对
+	/*if mj.IsBigScore(score) == false {
+		jiangdui := false
+		for _, opt := range Split(copyCards, 2) {
+			if len(opt.Extra) == 2 &&
+				(opt.Extra[0] == opt.Extra[1] || opt.Extra[1] == NoneCard) &&
+				(opt.Extra[0] == NoneCard || IsSameValue(opt.Extra[0], 2, 5, 8)) {
+				jiangdui = true
+			}
+		}
+		if jiangdui == false {
+			return false
+		}
+	}
+	*/
+
+	var loseTimes = 1
+	if p.drawCard == -1 && mj.IsBigScore(score) == false {
+		boom := obj.Room().boomPlayer()
+		boomObj := boom.localObj.(*HongzhonglaizigangObj)
+		for _, t := range boomObj.getAddition(false) {
+			loseTimes *= t
+		}
+	} else {
+		// 自摸最高的
+		for i := 0; i < room.SeatNum(); i++ {
+			var otherTimes = 1
+			if other := room.GetPlayer(i); i != obj.SeatId() {
+				otherObj := other.localObj.(*HongzhonglaizigangObj)
+				for _, t := range otherObj.getAddition(false) {
+					otherTimes *= t
+				}
+				if loseTimes < otherTimes {
+					loseTimes = otherTimes
+				}
+			}
+		}
+	}
+	var winTimes = 1
+	for _, t := range obj.getAddition(true) {
+		winTimes *= t
+	}
+	log.Debug("test win", winTimes, loseTimes, points)
+	if winTimes*loseTimes*points < 160 {
+		return false
+	}
+
+	return true
+}
+
+func (obj *HongzhonglaizigangObj) ReadyHand() []ReadyHandOption {
+	// 没出牌之前，手牌中有多张癞子牌
+	room := obj.Room()
+	p := obj.MahjongPlayer
+	mj := room.localMahjong.(*HongzhonglaizigangMahjong)
+	// 必须开口
+	if CountMeldsByType(obj.melds, cardutil.MeldInvisibleKong) == len(obj.melds) {
+		return nil
+	}
+
+	var copyCards = obj.copyCards()
+	var wins [MaxCard][MaxCard]*WinOption
+	for _, opt := range p.ReadyHand() {
+		dc := opt.DiscardCard
+		for _, winOpt := range opt.WinOptions {
+			wc := winOpt.WinCard
+			score := winOpt.Score
+
+			tempCard := NoneCard
+			if util.InArray(mj.getAnyCards(), dc) == 0 {
+				tempCard = dc
+			}
+			copyCards[wc]++
+			copyCards[tempCard]--
+			// 不能有痞子牌
+			if CountSomeCards(copyCards, nil, mj.uselessCards()...) == 0 {
+				// log.Debug("test ready hand", dc, wc, score, winOpt.jiangDui)
+				if mj.IsBigScore(score) {
+					if wc == NoneCard {
+						for _, c := range cardutil.GetAllCards() {
+							if !room.IsAnyCard(c) && room.CardSet().IsCardValid(c) {
+								copyCards[wc]--
+								copyCards[c]++
+								score1, _ := mj.Score(copyCards, p.melds)
+								if mj.IsBigScore(score1) {
+									w := winOpt
+									w.WinCard = c
+									wins[dc][c] = &w
+								}
+								copyCards[wc]++
+								copyCards[c]--
+							}
+						}
+					} else {
+						w := winOpt
+						wins[dc][wc] = &w
+					}
+					for _, c := range mj.getAnyCards() {
+						w := winOpt
+						w.WinCard = c
+						wins[dc][c] = &w
+					}
+				}
+				// 小胡不能多于1个癞子
+				// 小胡必须有2、5、8做对
+				if n := copyCards[NoneCard]; wc != NoneCard && n <= obj.limit && winOpt.jiangDui {
+					w := winOpt
+					wins[dc][wc] = &w
+					if n == 0 {
+						for _, c := range mj.getAnyCards() {
+							w := winOpt
+							w.WinCard = c
+							wins[dc][c] = &w
+						}
+					}
+
+				}
+
+				// 单调任意牌
+				if wc == NoneCard && copyCards[NoneCard] <= obj.limit+1 {
+					for _, c := range cardutil.GetAllCards() {
+						if room.CardSet().IsCardValid(c) &&
+							IsSameValue(c, 2, 5, 8) &&
+							util.InArray(mj.getAnyCards(), c) == 0 {
+							w := winOpt
+							w.WinCard = c
+							wins[dc][c] = &w
+						}
+					}
+				}
+			}
+
+			copyCards[tempCard]++
+			copyCards[wc]--
+		}
+	}
+	var opts []ReadyHandOption
+	for _, dc := range cardutil.GetAllCards() {
+		opt := ReadyHandOption{}
+		opt.DiscardCard = dc
+
+		for _, wc := range cardutil.GetAllCards() {
+			if win := wins[dc][wc]; win != nil {
+				opt.WinOptions = append(opt.WinOptions, *win)
+			}
+		}
+		if win := wins[dc][NoneCard]; win != nil {
+			opt.WinOptions = []WinOption{*win}
+		}
+
+		if len(opt.WinOptions) > 0 {
+			opts = append(opts, opt)
+		}
+	}
+	// PrintCards(copyCards)
+	return opts
+}
+
+func (obj *HongzhonglaizigangObj) OnDiscard() {
+	room := obj.Room()
+	mj := room.localMahjong.(*HongzhonglaizigangMahjong)
+	// 癞子杠、痞子杠
+	if dc := room.lastCard; util.InArray(mj.PiAndLai(), dc) > 0 {
+		obj.history = append(obj.history, dc)
+
+		obj.discardNum--
+		obj.discardHistory = obj.discardHistory[:len(obj.discardHistory)-1]
+		room.kongPlayer = obj.MahjongPlayer
+		obj.Draw()
+	}
+}
+
+func (obj *HongzhonglaizigangObj) GetKongType(c int) int {
+	room := obj.Room()
+	p := obj.MahjongPlayer
+	mj := room.localMahjong.(*HongzhonglaizigangMahjong)
+	if util.InArray(mj.PiAndLai(), c) > 0 {
+		return -1
+	}
+	return p.GetKongType(c)
+}
+
+func (obj *HongzhonglaizigangObj) ChoosePiao(piao int) {
+	p := obj.MahjongPlayer
+	room := p.Room()
+	if obj.piao != -1 {
+		return
+	}
+	if room.Status != service.RoomStatusChoosePiao {
+		return
+	}
+	if util.InArray(hongzhonglaizigangPiaoOptions, piao) == 0 {
+		return
+	}
+	obj.piao = piao
+	room.Broadcast("ChoosePiao", map[string]interface{}{"UId": p.Id, "Index": piao})
+
+	mj := room.localMahjong.(*HongzhonglaizigangMahjong)
+	mj.OnChoosePiao()
+}

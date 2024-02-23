@@ -9,34 +9,91 @@
 package cardutils
 
 import (
+	"fmt"
+	"quasar/log"
+	"strconv"
+	"strings"
+
 	"github.com/guogeer/quasar/randutil"
 )
 
 var (
 	defaultCardSystem = &CardSystem{}
+	defaultTest       = &Test{}
 )
+
+/*****************************************************************
+ * 测试样例
+ *****************************************************************/
+type Sample []int
+
+type Test struct {
+	sample Sample
+}
+
+func (t *Test) Reset() {
+	t.sample = nil
+}
+
+func (t *Test) GetSample() []int {
+	return t.sample
+}
+
+func (t *Test) LoadSample(s string) {
+	t.Reset()
+
+	log.Debug("load sample", s)
+	ss := strings.Split(s, ",")
+	for _, v := range ss {
+		n, _ := strconv.Atoi(v)
+		t.sample = append(t.sample, n)
+	}
+}
+
+func GetSample() []int {
+	return defaultTest.GetSample()
+}
+
+func LoadSample(s string) {
+	defaultTest.LoadSample(s)
+}
 
 /*****************************************************************
  * 发牌
  *****************************************************************/
 type CardSystem struct {
-	index, allCards []int
-	reserve         int // 留下多少张牌不摸
+	table, allCards []int
+	reserve         int  // 留下多少张牌不摸
+	isHide          bool // 隐藏保留的牌
+}
+
+func (sys *CardSystem) Table() []int {
+	return sys.table
 }
 
 func (sys *CardSystem) Init(cards []int) {
 	sys.allCards = nil
-	sys.index = make([]int, 512)
+	sys.table = make([]int, 512)
 	for _, c := range cards {
-		sys.index[c]++
+		sys.table[c]++
 	}
-	for c, n := range sys.index {
+	for c, n := range sys.table {
 		if n > 0 {
 			sys.allCards = append(sys.allCards, c)
 		}
 	}
 }
 
+func (sys *CardSystem) GetAllCards() []int {
+	return sys.allCards
+}
+
+func (sys *CardSystem) IsCardValid(c int) bool {
+	if idx := sys.table; c > 0 && c < len(idx) && idx[c] > 0 {
+		return true
+	}
+	return false
+}
 func GetCardSystem() *CardSystem {
 	return defaultCardSystem
 }
@@ -57,12 +114,26 @@ func NewCardSet() *CardSet {
 	return cs
 }
 
+func (cs *CardSet) Total() int {
+	sys := GetCardSystem()
+	n := len(cs.randCards)
+	if sys.isHide {
+		n = n - sys.reserve
+	}
+	return n
+}
+
+// 剩余牌数
+func (cs *CardSet) Count() int {
+	return cs.Total() - cs.dealNum
+}
+
 // 洗牌
 func (cs *CardSet) Shuffle() {
 	if len(cs.randCards) > 0 {
 		cs.randCards = cs.randCards[:0]
 	}
-	for c, n := range defaultCardSystem.index {
+	for c, n := range defaultCardSystem.table {
 		if _, ok := cs.blackList[c]; ok {
 			continue
 		}
@@ -102,4 +173,99 @@ func (cs *CardSet) Cheat(some ...int) int {
 		}
 	}
 	return counter
+}
+
+func (cs *CardSet) IsCardValid(c int) bool {
+	if _, ok := cs.blackList[c]; ok {
+		return false
+	}
+	return GetCardSystem().IsCardValid(c)
+}
+
+func (cs *CardSet) Recover(some ...int) {
+	for _, c := range some {
+		delete(cs.blackList, c)
+	}
+	cs.Shuffle()
+}
+
+// 鬼
+func IsCardGhost(c int) bool {
+	return c == 0xf0 || c == 0xf1
+}
+
+func GetAllCards() []int {
+	return defaultCardSystem.GetAllCards()
+}
+
+// 格式化扑克
+func Format(cards []int) string {
+	output := "[]int{"
+	for i, c := range cards {
+		if i == 0 {
+			output += fmt.Sprintf("0x%02x", c)
+		} else {
+			output += fmt.Sprintf(",0x%02x", c)
+		}
+	}
+	output += "}"
+	return output
+}
+
+// 移动到末尾去
+func (cs *CardSet) MoveBack(someCards []int) {
+	if GetSample() != nil {
+		return
+	}
+
+	counter := 0
+	cards := cs.randCards[cs.dealNum:]
+	for _, c := range someCards {
+		for i := range cards {
+			if c == cards[i] && i+counter < len(cards) {
+				k := len(cards) - 1 - counter
+				cards[i], cards[k] = cards[k], cards[i]
+				counter++
+				break
+			}
+		}
+	}
+}
+
+// 移动到头部去
+func (cs *CardSet) MoveFront(someCards ...int) {
+	if GetSample() != nil {
+		return
+	}
+
+	counter := 0
+	cards := cs.randCards[cs.dealNum:]
+	for _, c := range someCards {
+		back := len(cards) - 1
+		if counter < len(cards) && c == cards[back] {
+			for i := back; i > counter; i-- {
+				cards[i] = cards[i-1]
+			}
+			cards[counter] = c
+			counter++
+		}
+	}
+}
+
+func (cs *CardSet) Remove(some ...int) {
+	for _, c := range some {
+		cs.blackList[c] = true
+	}
+	cs.Shuffle()
+}
+
+func IsCardValid(c int) bool {
+	return defaultCardSystem.IsCardValid(c)
+}
+
+func IsColorValid(color int) bool {
+	return defaultCardSystem.IsColorValid(color)
+}
+func (sys *CardSystem) IsColorValid(color int) bool {
+	return sys.IsCardValid(10*color + 1)
 }

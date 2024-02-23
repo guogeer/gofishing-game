@@ -45,7 +45,7 @@ func (ply *fingerGuessingPlayer) AfterEnter() {
 func (ply *fingerGuessingPlayer) BeforeLeave() {
 }
 
-func (ply *fingerGuessingPlayer) Load(data interface{}) {
+func (ply *fingerGuessingPlayer) Load(data any) {
 	bin := data.(*pb.UserBin)
 	if bin.Room.FingerGuessing != nil {
 		ply.winPlay = int(bin.Room.FingerGuessing.WinPlay)
@@ -54,7 +54,7 @@ func (ply *fingerGuessingPlayer) Load(data interface{}) {
 	}
 }
 
-func (ply *fingerGuessingPlayer) Save(data interface{}) {
+func (ply *fingerGuessingPlayer) Save(data any) {
 	bin := data.(*pb.UserBin)
 	if bin.Room == nil {
 		bin.Room = &pb.RoomBin{}

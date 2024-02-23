@@ -21,6 +21,7 @@ type CustomRoom interface {
 }
 
 type Room struct {
+	Id             int
 	SubId          int
 	Status         int
 	customRoom     CustomRoom
@@ -32,6 +33,11 @@ type Room struct {
 	seatPlayers []*service.Player
 	allPlayers  map[int]*service.Player
 	chipItemId  int
+
+	// TODO 积分场逻辑。待实现
+	hostSeatIndex int // 房主
+	ExistTimes    int
+	LimitTimes    int
 }
 
 func NewRoom(subId int, CustomRoom CustomRoom) *Room {
@@ -51,8 +57,12 @@ func NewRoom(subId int, CustomRoom CustomRoom) *Room {
 	}
 }
 
-func (room *Room) SetChip(itemId int) {
+func (room *Room) SetChipItem(itemId int) {
 	room.chipItemId = itemId
+}
+
+func (room *Room) GetChipItem() int {
+	return room.chipItemId
 }
 
 func (room *Room) Countdown() int64 {
@@ -60,6 +70,11 @@ func (room *Room) Countdown() int64 {
 		return room.countdownTimer.Expire().Unix()
 	}
 	return 0
+}
+
+func (room *Room) Unit() int64 {
+	unit, _ := config.Int("room", room.SubId, "cost")
+	return unit
 }
 
 func (room *Room) GetAllPlayers() []*service.Player {
@@ -78,6 +93,10 @@ func (room *Room) GetSeatPlayers() []*service.Player {
 		}
 	}
 	return seats
+}
+
+func (room *Room) FindPlayer(seatIndex int) *service.Player {
+	return room.seatPlayers[seatIndex]
 }
 
 func (room *Room) CardSet() *cardutils.CardSet {
@@ -138,4 +157,38 @@ func (room *Room) GetEmptySeat() int {
 		}
 	}
 	return NoSeat
+}
+
+func (room *Room) IsTypeNormal() bool {
+	return room.chipItemId == gameutils.ItemIdGold
+}
+
+// TODO 待实现
+func (room *Room) IsTypeScore() bool {
+	return room.chipItemId != gameutils.ItemIdGold
+}
+
+// TODO 积分场逻辑。待实现
+func (room *Room) CanPlay(opt string) bool {
+	return false
+}
+
+func (room *Room) NumSeat() int {
+	return len(room.seatPlayers)
+}
+
+func (room *Room) HostSeatIndex() int {
+	return room.hostSeatIndex
+}
+
+// TODO 积分场逻辑。待实现
+func (room *Room) SetPlay(opt string) {
+}
+
+// TODO 积分场逻辑。待实现
+func (room *Room) SetNoPlay(opt string) {
+}
+
+func (room *Room) GetPlayValue(prefix string) int {
+	return 0
 }

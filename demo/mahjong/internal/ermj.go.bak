@@ -1,0 +1,1317 @@
+package ermj_server
+
+import (
+	"math"
+	"math/rand"
+	mahjong "third/cardgame"
+	"third/log"
+)
+
+func IsFlowerCard(c int) bool {
+	switch c {
+	case 130, 140, 150, 160, 170, 180, 190, 200:
+		return true
+	}
+	return false
+}
+
+const (
+	//////////////////////////////////////////
+	// 0~9 88 番
+	//////////////////////////////////////////
+	DaSiXi         = iota // 大四喜
+	DaSanYuan             // 大三元
+	JiuLianBaoDeng        // 九莲宝灯
+	DaYuWu                // 大于五
+	XiaoYuWu              // 小于五
+	DaQiXing              // 大七星
+	SiGang                // 四杠
+	LianQiDui             // 连七对
+	TianHu                // 天胡
+	DiHu                  // 地胡
+	//////////////////////////////////////////
+	// 10~15 64 番
+	//////////////////////////////////////////
+	XiaoSiXi          // 小四喜
+	XiaoSanYuan       // 小三元
+	SiAnKe            // 四暗刻
+	YiSeShuangLongHui // 一色双龙会
+	ZiYiSe            // 字一色
+	RenHu             // 人胡
+	//////////////////////////////////////////
+	// 16~19 48番
+	//////////////////////////////////////////
+	YiSeSiTongShun // 一色四同顺
+	SanYuanQiDui   // 三元七对
+	SiXiQiDui      // 四喜七对
+	SiLianKe       // 四连刻
+	//////////////////////////////////////////
+	// 20~23 32番
+	//////////////////////////////////////////
+	YiSeSiBuGao // 一色四步高
+	HunYaoJiu   // 混幺九
+	SanGang     // 三杠
+	TianTing    // 天听
+	//////////////////////////////////////////
+	// 24~28 24番
+	//////////////////////////////////////////
+	SiZiKe          // 四字刻
+	DaSanFeng       // 大三风
+	YiSeSanTongShun // 一色三同顺
+	QiDui           // 七对
+	SanLianKe       // 三连刻
+	//////////////////////////////////////////
+	// 29~33 16番
+	//////////////////////////////////////////
+	QingLong     // 清龙
+	YiSeSanBuGao // 一色三步高
+	QuanHua      // 全花
+	SanAnKe      // 三暗刻
+	QingYiSe     // 清一色
+	//////////////////////////////////////////
+	// 34~37 8番
+	//////////////////////////////////////////
+	MiaoShouHuiChun // 妙手回春
+	HaiDiLaoYue     // 海底捞月
+	GangShangKaiHua // 杠上开花
+	QiangGangHu     // 抢杠胡
+	//////////////////////////////////////////
+	// 38~43 6番
+	//////////////////////////////////////////
+	XiaoSanFeng  // 小三风
+	ShuangJianKe // 双箭刻
+	PengPengHu   // 碰碰胡
+	ShuangAnGang // 双暗杠
+	HunYiSe      // 混一色
+	QuanQiuRen   // 全求人
+	//////////////////////////////////////////
+	// 44~51 4番
+	//////////////////////////////////////////
+	ChunXiaQiuDong // 春夏秋冬
+	MeiLanZhuJu    // 梅兰竹菊
+	WuHuaPai       // 无花牌
+	QuanDaiYao     // 全带么
+	ShuangMingGang // 双明杠
+	BuQiuRen       // 不求人
+	BaoTing        // 报听
+	JueZhang       // 绝张
+	//////////////////////////////////////////
+	// 52~58 2番
+	//////////////////////////////////////////
+	JianKe      // 箭刻
+	PingHu      // 平胡
+	SiGuiYi     // 四归一
+	DuanYaoJiu  // 断幺九
+	ShuangAnKe  // 双暗刻
+	AnGang      // 暗杠
+	MenQianQing // 门前清
+	//////////////////////////////////////////
+	// 59~68 1番
+	//////////////////////////////////////////
+	YiBanGao     // 一般高
+	LianLiu      // 连六
+	LaoShaoFu    // 老少副
+	YaoJiuKe     // 幺九刻
+	MingGang     // 明杠
+	BianZhang    // 边张
+	KanZhang     // 坎张
+	DanDiaoJiang // 单钓将
+	HuaPai       // 花牌
+	ZiMo         // 自摸
+	MaxScoreNum
+)
+
+const (
+	InvalidPoints = math.MinInt32 // 无效的番数
+)
+
+var ignorePointsTable = [][]int{
+	//////////////////////////////////////////
+	// 0~9 88 番
+	//////////////////////////////////////////
+	{PengPengHu, DaSanFeng, XiaoSanFeng, SiZiKe, YaoJiuKe}, /*大四喜*/
+	{JianKe, ShuangJianKe, YaoJiuKe},                       /*大三元*/
+	{MenQianQing, QingYiSe, BuQiuRen, ZiMo, YaoJiuKe},      /*九莲宝灯*/
+	{}, /*大于五*/
+	{}, /*小于五*/
+	{ZiYiSe, QiDui, SanYuanQiDui, SiXiQiDui, MenQianQing, DanDiaoJiang, ZiMo}, /*大七星*/
+	{SanGang, ShuangMingGang, MingGang, AnGang, DanDiaoJiang},                 /*四杠*/
+	{QingYiSe, BuQiuRen, DanDiaoJiang, MenQianQing, QiDui, ZiMo},              /*连七对*/
+	{DanDiaoJiang, BianZhang, KanZhang, BuQiuRen, JueZhang, ZiMo},             /*天胡*/
+	{DanDiaoJiang, BianZhang, KanZhang, ZiMo},                                 /*地胡*/
+	//////////////////////////////////////////
+	// 10~15 64 番
+	//////////////////////////////////////////
+	{DaSanFeng, XiaoSanFeng, HunYiSe, YaoJiuKe},                    /*小四喜*/
+	{JianKe, ShuangJianKe, YaoJiuKe},                               /*小三元*/
+	{MenQianQing, PengPengHu, SanAnKe, ShuangAnKe, ZiMo, BuQiuRen}, /*四暗刻*/
+	{PingHu, QiDui, QingYiSe, YiBanGao, LaoShaoFu},                 /*一色双龙会*/
+	{PengPengHu, HunYaoJiu, QuanDaiYao, YaoJiuKe, SiZiKe},          /*字一色*/
+	{MenQianQing}, /*人胡*/
+	//////////////////////////////////////////
+	// 16~19 48番
+	//////////////////////////////////////////
+	{SanLianKe, YiSeSanTongShun, QiDui, SiGuiYi, YiBanGao}, /*一色四同顺*/
+	{QiDui, MenQianQing, DanDiaoJiang, ZiMo},               /*三元七对*/
+	{QiDui, MenQianQing, DanDiaoJiang, ZiMo},               /*四喜七对*/
+	{SanLianKe, YiSeSanTongShun, PengPengHu, YiBanGao},     /*四连刻*/
+	//////////////////////////////////////////
+	// 20~23 32番
+	//////////////////////////////////////////
+	{YiSeSanBuGao, LianLiu, LaoShaoFu},               /*一色四步高*/
+	{PengPengHu, YaoJiuKe, QuanDaiYao},               /*混幺九*/
+	{ShuangMingGang, ShuangAnGang, MingGang, AnGang}, /*三杠*/
+	{BaoTing}, /*天听*/
+	//////////////////////////////////////////
+	// 24~28 24番
+	//////////////////////////////////////////
+	{YaoJiuKe, PengPengHu, HunYiSe},   /*四字刻*/
+	{YaoJiuKe, XiaoSanFeng},           /*大三风*/
+	{YiBanGao, SanLianKe},             /*一色三同顺*/
+	{MenQianQing, DanDiaoJiang, ZiMo}, /*七对*/
+	{YiSeSanTongShun, YiBanGao},       /*三连刻*/
+	//////////////////////////////////////////
+	// 29~33 16番
+	//////////////////////////////////////////
+	{LianLiu, LaoShaoFu}, /*清龙*/
+	{},                   /*一色三步高*/
+	{ChunXiaQiuDong, MeiLanZhuJu}, /*全花*/
+	{}, /*三暗刻*/
+	{}, /*清一色*/
+	//////////////////////////////////////////
+	// 34~37 8番
+	//////////////////////////////////////////
+	{ZiMo},     /*妙手回春*/
+	{},         /*海底捞月*/
+	{ZiMo},     /*杠上开花*/
+	{JueZhang}, /*抢杠胡*/
+	//////////////////////////////////////////
+	// 38~43 6番
+	//////////////////////////////////////////
+	{},                   /*小三风*/
+	{JianKe, YaoJiuKe},   /*双箭刻*/
+	{},                   /*碰碰胡*/
+	{ShuangAnKe, AnGang}, /*双暗刻*/
+	{},                   /*混一色*/
+	{DanDiaoJiang},       /*全求人*/
+	//////////////////////////////////////////
+	// 44~51 4番
+	//////////////////////////////////////////
+	{},                  /*春夏秋冬*/
+	{},                  /*梅兰竹菊*/
+	{},                  /*无花牌*/
+	{},                  /*全带么*/
+	{MingGang},          /*双明杠*/
+	{ZiMo, MenQianQing}, /*不求人*/
+	{},                  /*报听*/
+	{},                  /*绝张*/
+	//////////////////////////////////////////
+	// 52~58 2番
+	//////////////////////////////////////////
+	{YaoJiuKe}, /*箭刻*/
+	{},         /*平胡*/
+	{},         /*四归一*/
+	{},         /*断幺九*/
+	{},         /*双暗刻*/
+	{},         /*暗杠*/
+	{},         /*门前清*/
+	//////////////////////////////////////////
+	// 59~68 1番
+	//////////////////////////////////////////
+	{},             /*一般高*/
+	{},             /*连六*/
+	{},             /*老少副*/
+	{},             /*幺九刻*/
+	{},             /*明杠*/
+	{},             /*边张*/
+	{DanDiaoJiang}, /*坎张*/
+	{},             /*单钓将*/
+	{},             /*花牌*/
+	{},             /*自摸*/
+}
+
+func ScoreAndIgnore(t, points int, pointsList []int) {
+	if pointsList[t] == InvalidPoints {
+		return
+	}
+	pointsList[t] = points
+	lst := ignorePointsTable[t]
+	for _, k := range lst {
+		pointsList[k] = InvalidPoints
+	}
+}
+
+type WinOption struct {
+	WinCard    int              // 胡的牌
+	PointsList [MaxScoreNum]int // 自摸胡牌
+}
+
+func (w *WinOption) Total() int {
+	total := 0
+	for _, points := range w.PointsList {
+		if points > 0 {
+			total += points
+		}
+	}
+	return total
+}
+
+func (w *WinOption) Detail() []int {
+	var detail []int
+	for k, points := range w.PointsList {
+		if points > 0 {
+			detail = append(detail, k, points)
+		}
+	}
+	return detail
+}
+
+type ReadyHandOption struct {
+	DiscardedCard int         // 出的牌
+	Wins          []WinOption // 胡牌
+}
+
+func (r *ReadyHandOption) Total(c int) int {
+	for _, win := range r.Wins {
+		if win.WinCard == c {
+			return win.Total()
+		}
+	}
+	return 0
+}
+
+func (r *ReadyHandOption) Detail(c int) []int {
+	for _, win := range r.Wins {
+		if win.WinCard == c {
+			return win.Detail()
+		}
+	}
+	return nil
+
+}
+
+func (r *ReadyHandOption) CheckWin(c int) bool {
+	for _, w := range r.Wins {
+		if w.WinCard == c {
+			return true
+		}
+	}
+	return false
+}
+
+func (r *ReadyHandOption) Equal(other *ReadyHandOption) bool {
+	if r.DiscardedCard != other.DiscardedCard {
+		return false
+	}
+	var b [255]int
+	for _, w := range r.Wins {
+		b[w.WinCard]++
+	}
+	for _, w := range other.Wins {
+		b[w.WinCard]++
+	}
+	allCards := mahjong.GetAllCards()
+	for _, c := range allCards {
+		if b[c]%2 != 0 {
+			return false
+		}
+	}
+	return true
+}
+
+// 一局游戏
+type Round struct {
+	HandCards         []int          // 玩家手牌
+	Melds             []mahjong.Meld // 玩家碰杠吃的牌
+	WinCard           int            // 胡的牌
+	WinPair           int            // 将对
+	WinMelds          []mahjong.Meld // 玩家的胡牌组合
+	Flowers           []int          // 玩家摸到的花牌
+	IsKong            bool           // 杠后摸到的牌
+	IsRenHu           bool           // 人胡
+	IsTianHu          bool           // 天胡
+	IsDiHu            bool           // 地胡
+	IsTianTing        bool           // 天听
+	IsReadyHand       bool           // 报听
+	IsMiaoShouHuiChun bool           // 妙手回春
+	IsHaiDiLaoYue     bool           // 海底捞月
+	IsGangShangKaiHua bool           // 刚上开花
+	IsQiangGangHu     bool           // 抢杠胡
+	IsJueZhang        bool           // 绝张
+	IsKanZhang        bool           // 坎张
+	IsDanDiaoJiang    bool           // 单钓
+	IsBianZhang       bool           // 边张
+	IsQiDui           bool           // 七对
+	IsJiuLianBaoDeng  bool           // 九莲宝灯
+	IsHu              bool           // 胡牌
+	IsZiMo            bool           // 自摸
+}
+
+// 拆牌
+// 二人麻将是最开始开发的玩法，后来开发其他麻将玩法时，某些定义出现分歧
+// 1、吃。Meld.Card表示中间的牌
+// 顺子、明刻等定义也不一样
+// 普通麻将玩法也是不区别明刻、暗刻的
+func Split(cards []int, n int) []mahjong.SplitOption {
+	opts := mahjong.Split(cards, n)
+	for i, _ := range opts {
+		opt := &opts[i]
+		for j, _ := range opt.Melds {
+			m := &opt.Melds[j]
+			if m.Type == mahjong.MeldSequence {
+				m.Card++
+			}
+
+			switch m.Type {
+			case mahjong.MeldSequence:
+				m.Type = mahjong.OldSequence
+			case mahjong.MeldTriplet:
+				m.Type = mahjong.OldInvisibleTriplet
+			}
+		}
+	}
+	return opts
+}
+
+// 判断听牌，按照放炮计算番形
+// argument round 当前回合
+// return 听牌的所有选择
+func CheckReadyHand(round *Round) []ReadyHandOption {
+	type Option struct {
+		DiscardedCard    int            // 出的牌
+		WinCard          int            // 胡的牌
+		Pair             int            // 对子
+		Melds            []mahjong.Meld // 一个组
+		IsKanZhang       bool           // 坎张
+		IsDanDiaoJiang   bool           // 单钓
+		IsBianZhang      bool           // 边张
+		IsQiDui          bool           // 七对
+		IsJiuLianBaoDeng bool           // 九莲宝灯
+		IsZiMo           bool           // 自摸
+	}
+
+	var opts []*Option
+	allCards := mahjong.GetAllCards()
+	cards := round.HandCards
+	// 七对
+	var singleCards []int
+	var t int
+	for _, c := range allCards {
+		if cards[c] > 1 {
+			t += cards[c] / 2
+		}
+		for i := 0; i < cards[c]%2; i++ {
+			singleCards = append(singleCards, c)
+		}
+	}
+	// log.Info("==========", singleCards)
+	if t == 7 {
+		for _, c := range allCards {
+			if cards[c] > 0 {
+				opt := &Option{
+					DiscardedCard: c,
+					WinCard:       c,
+					Pair:          c,
+					IsQiDui:       true,
+				}
+				opts = append(opts, opt)
+			}
+		}
+	} else if t == 6 && len(singleCards) == 2 {
+		c1 := singleCards[0]
+		c2 := singleCards[1]
+		opt := &Option{
+			DiscardedCard: c1,
+			WinCard:       c2,
+			Pair:          c2,
+			IsQiDui:       true,
+		}
+		opts = append(opts, opt)
+
+		c1 = singleCards[1]
+		c2 = singleCards[0]
+		opt = &Option{
+			DiscardedCard: c1,
+			WinCard:       c2,
+			Pair:          c2,
+			IsQiDui:       true,
+		}
+		opts = append(opts, opt)
+	}
+
+	res := Split(cards, 5)
+	for _, r := range res {
+		one := r.Extra
+		n := len(one)
+		if n == 2 {
+			c1, c2 := one[0], one[1]
+			opt := &Option{
+				DiscardedCard:  c1,
+				WinCard:        c2,
+				Pair:           c2,
+				IsDanDiaoJiang: true,
+			}
+			opt.Melds = append(opt.Melds, r.Melds...)
+			opts = append(opts, opt)
+
+			c1, c2 = one[1], one[0]
+			opt = &Option{
+				DiscardedCard:  c1,
+				WinCard:        c2,
+				Pair:           c2,
+				IsDanDiaoJiang: true,
+			}
+			opt.Melds = append(opt.Melds, r.Melds...)
+			opts = append(opts, opt)
+		} else if n == 5 {
+			t := 0
+			// 两个对子的情况
+			for _, v := range one {
+				if t != v {
+					t = v
+					continue
+				}
+				k := 0
+				a := make([]int, 3)
+				cnt := 0
+				for _, v := range one {
+					if t == v && cnt < 2 {
+						cnt++
+						continue
+					}
+					a[k] = v
+					k++
+				}
+				f := func(c1, c2, c3 int) {
+					if c2 == c3 {
+						opt := &Option{ // 明刻
+							DiscardedCard: c1,
+							WinCard:       c2,
+							Pair:          t,
+							IsZiMo:        true,
+						}
+						opt.Melds = append(opt.Melds, r.Melds...)
+						type_ := mahjong.OldVisibleTriplet
+						if round.IsZiMo {
+							type_ = mahjong.OldInvisibleTriplet
+						}
+						opt.Melds = append(opt.Melds, mahjong.Meld{Type: type_, Card: c2})
+						opts = append(opts, opt)
+					} else if c2+1 == c3 {
+						if c2-1 > 0 {
+							opt := &Option{
+								DiscardedCard: c1,
+								WinCard:       c2 - 1,
+								Pair:          t,
+							}
+							opt.Melds = append(opt.Melds, r.Melds...)
+							opt.Melds = append(opt.Melds, mahjong.Meld{Type: mahjong.OldSequence, Card: c2})
+							if c2 == 8 {
+								opt.IsBianZhang = true
+							}
+							opts = append(opts, opt)
+						}
+						if mahjong.IsValidCard(c3 + 1) {
+							opt := &Option{
+								DiscardedCard: c1,
+								WinCard:       c3 + 1,
+								Pair:          t,
+							}
+							opt.Melds = append(opt.Melds, r.Melds...)
+							opt.Melds = append(opt.Melds, mahjong.Meld{Type: mahjong.OldSequence, Card: c3})
+							if c3 == 2 {
+								opt.IsBianZhang = true
+							}
+							opts = append(opts, opt)
+						}
+					} else if c2+2 == c3 {
+						if mahjong.IsValidCard(c2 + 1) {
+							opt := &Option{
+								DiscardedCard: c1,
+								WinCard:       c2 + 1,
+								Pair:          t,
+							}
+							opt.Melds = append(opt.Melds, r.Melds...)
+							opt.Melds = append(opt.Melds, mahjong.Meld{Type: mahjong.OldSequence, Card: c2 + 1})
+							opt.IsKanZhang = true
+							opts = append(opts, opt)
+						}
+					}
+				}
+				f(a[0], a[1], a[2])
+				f(a[1], a[0], a[2])
+				f(a[2], a[0], a[1])
+			}
+		}
+	}
+	var able [255][255]bool // 玩家胡牌的可能
+	for _, opt := range opts {
+		able[opt.DiscardedCard][opt.WinCard] = true
+	}
+	var winNum [255]int // winNum[x] 表示玩家出x，可以胡牌的可能
+	for _, c1 := range allCards {
+		for _, c2 := range allCards {
+			if able[c1][c2] == true {
+				winNum[c1]++
+			}
+		}
+	}
+
+	var winRes [255][255]*WinOption // 听牌结果
+	var allMelds [16]mahjong.Meld
+	for _, opt := range opts {
+		melds := allMelds[:0]
+		melds = append(melds, round.Melds...)
+		melds = append(melds, opt.Melds...)
+		c1, c2 := opt.DiscardedCard, opt.WinCard
+		wins := winNum[c1]
+		if wins > 1 { // 可以胡多个牌
+			opt.IsDanDiaoJiang = false
+			opt.IsKanZhang = false
+			opt.IsBianZhang = false
+		}
+		// log.Info(c1, c2, opt.IsDanDiaoJiang, opt.IsKanZhang, opt.IsBianZhang)
+		if wins == 9 {
+			opt.IsJiuLianBaoDeng = true
+		}
+		if winRes[c1][c2] == nil {
+			winRes[c1][c2] = &WinOption{WinCard: c2}
+		}
+		round.IsDanDiaoJiang = opt.IsDanDiaoJiang
+		round.IsKanZhang = opt.IsKanZhang
+		round.IsBianZhang = opt.IsBianZhang
+		round.IsJiuLianBaoDeng = opt.IsJiuLianBaoDeng
+		round.IsQiDui = opt.IsQiDui
+		round.WinPair = opt.Pair
+		round.WinMelds = melds
+		round.HandCards[c1]--
+		round.HandCards[c2]++
+		Score(round, winRes[c1][c2])
+		round.HandCards[c1]++
+		round.HandCards[c2]--
+	}
+	var ret []ReadyHandOption
+	for _, c1 := range allCards {
+		var wins []WinOption
+		for _, c2 := range allCards {
+			if w := winRes[c1][c2]; w != nil {
+				wins = append(wins, *w)
+			}
+		}
+		if len(wins) > 0 {
+			ret = append(ret, ReadyHandOption{DiscardedCard: c1, Wins: wins})
+		}
+	}
+	return ret
+}
+
+func CheckWin(round *Round) *WinOption {
+	// var t int
+	// var winOpt *WinOption
+	// round.IsHu = true
+	allRes := CheckReadyHand(round)
+	for _, res := range allRes {
+		if res.DiscardedCard != round.WinCard {
+			continue
+		}
+		for _, win := range res.Wins {
+			if win.WinCard == round.WinCard {
+				return &win
+			}
+
+		}
+	}
+	return nil
+}
+
+// pair 表示对子
+func Score(round *Round, win *WinOption) {
+	var all [256]int
+	var t, best int
+	var isOk bool
+	pointsList := win.PointsList[:] // 自摸胡牌
+	cards := round.HandCards
+	melds := round.WinMelds
+	// log.Infof("%#v", melds)
+	allCards := mahjong.GetAllCards()
+	for _, c := range allCards {
+		all[c] += cards[c]
+	}
+	for _, m := range round.Melds {
+		c := m.Card
+		switch m.Type {
+		case mahjong.OldSequence:
+			all[c-1]++
+			all[c]++
+			all[c+1]++
+		case mahjong.OldTriplet, mahjong.OldVisibleTriplet, mahjong.OldInvisibleTriplet:
+			all[c] += 3
+		case mahjong.OldVisibleKong, mahjong.OldInvisibleKong:
+			all[c] += 4
+		}
+	}
+
+	var mid [256]int
+	for _, m := range melds {
+		if m.Type == mahjong.OldSequence {
+			mid[m.Card]++
+		}
+	}
+
+	// 大四喜、小四喜
+	{
+		t2, t3 := 0, 0
+		for _, c := range allCards {
+			if c == 60 || c == 70 || c == 80 || c == 90 {
+				if all[c] > 2 {
+					t3++
+				}
+				if all[c] == 2 {
+					t2++
+				}
+			}
+		}
+		if t3 == 4 {
+			ScoreAndIgnore(DaSiXi, 88, pointsList)
+		}
+		if t2 == 1 && t3 == 3 {
+			ScoreAndIgnore(XiaoSiXi, 64, pointsList)
+		}
+	}
+
+	// 小三元、大三元
+	{
+		t2, t3 := 0, 0
+		for _, c := range allCards {
+			if c == 100 || c == 110 || c == 120 {
+				if all[c] > 2 {
+					t3++
+				}
+				if all[c] == 2 {
+					t2++
+				}
+			}
+		}
+		if t3 == 3 { // 大三元
+			ScoreAndIgnore(DaSanYuan, 88, pointsList)
+		}
+		if t2 == 1 && t3 == 2 { // 小三元
+			ScoreAndIgnore(XiaoSanYuan, 64, pointsList)
+		}
+	}
+
+	// 九连宝灯
+	if round.IsJiuLianBaoDeng == true {
+		ScoreAndIgnore(JiuLianBaoDeng, 88, pointsList)
+	}
+	// 大于五
+	isOk = true
+	for _, k := range allCards {
+		if all[k] > 0 && (k < 6 || k > 9) {
+			isOk = false
+			break
+		}
+	}
+	if isOk {
+		ScoreAndIgnore(DaYuWu, 88, pointsList)
+	}
+	// 小于五
+	isOk = true
+	for _, k := range allCards {
+		if all[k] > 0 && k >= 5 {
+			isOk = false
+			break
+		}
+	}
+	if isOk {
+		ScoreAndIgnore(XiaoYuWu, 88, pointsList)
+	}
+	// 大七星、连七对、三元七对子、四喜七对子、七对
+	if round.IsQiDui {
+		isOk = true
+		wind := 0  // 风牌
+		arrow := 0 // 箭牌
+		for i := 60; i <= 90; i += 10 {
+			if cards[i] > 1 {
+				wind++
+			}
+		}
+		for i := 100; i <= 120; i += 10 {
+			if cards[i] > 1 {
+				arrow++
+			}
+		}
+
+		if wind+arrow == 7 { // 大七星
+			ScoreAndIgnore(DaQiXing, 88, pointsList)
+		} else if wind == 4 { // 四喜七对
+			ScoreAndIgnore(SiXiQiDui, 48, pointsList)
+		} else if arrow == 3 { // 三元七对
+			ScoreAndIgnore(SanYuanQiDui, 48, pointsList)
+		}
+		isOk = true
+		t = -1
+		for _, c := range allCards {
+			if cards[c] == 0 {
+				continue
+			}
+			if cards[c] == 4 || (t > 0 && t+1 != c) {
+				isOk = false
+				break
+			}
+			t = c
+		}
+		if isOk { // 连七对
+			ScoreAndIgnore(LianQiDui, 88, pointsList)
+		}
+		ScoreAndIgnore(QiDui, 24, pointsList) // 七对
+	}
+	// 四杠
+	t = 0
+	ckong := 0
+	ekong := 0
+	for _, m := range round.Melds {
+		if m.Type == mahjong.OldInvisibleKong {
+			ckong++
+		}
+		if m.Type == mahjong.OldVisibleKong {
+			ekong++
+		}
+	}
+	if ckong+ekong == 4 { // 四杠
+		ScoreAndIgnore(SiGang, 88, pointsList)
+	}
+	if ckong+ekong == 3 { // 三杠
+		ScoreAndIgnore(SanGang, 32, pointsList)
+	}
+	if ekong == 2 { // 双明杠
+		ScoreAndIgnore(ShuangMingGang, 4, pointsList)
+	}
+	if ckong == 2 { // 双暗杠
+		ScoreAndIgnore(ShuangAnGang, 6, pointsList)
+	}
+	if ekong == 1 { // 明杠
+		ScoreAndIgnore(MingGang, 1, pointsList)
+	}
+	if ckong == 1 { // 暗杠
+		ScoreAndIgnore(AnGang, 2, pointsList)
+	}
+	// 双暗刻、三暗刻、四暗刻
+	t = 0
+	for _, m := range melds {
+		if m.Type == mahjong.OldInvisibleKong || (m.Type == mahjong.OldInvisibleTriplet && !(m.Card == win.WinCard && round.IsHu == false)) {
+			t++
+		}
+	}
+	if t == 4 {
+		ScoreAndIgnore(SiAnKe, 64, pointsList)
+	} else if t == 3 {
+		ScoreAndIgnore(SanAnKe, 16, pointsList)
+	} else if t == 2 {
+		ScoreAndIgnore(ShuangAnKe, 2, pointsList)
+	}
+	// 一色双龙会
+	isOk = true
+	for _, c := range []int{1, 2, 3, 5, 7, 8, 9} {
+		if all[c] != 2 {
+			isOk = false
+			break
+		}
+	}
+	if isOk {
+		ScoreAndIgnore(YiSeShuangLongHui, 64, pointsList)
+	}
+	// 字一色
+	isOk = true
+	for c := 1; c <= 9; c++ {
+		if all[c] > 0 {
+			isOk = false
+			break
+		}
+	}
+	if isOk {
+		ScoreAndIgnore(ZiYiSe, 64, pointsList)
+	}
+	//  一色三同顺
+	isOk = false
+	best = 0
+	for _, c := range allCards {
+		if mid[c] > best {
+			best = mid[c]
+		}
+	}
+	if best == 4 { // 一色四同顺
+		ScoreAndIgnore(YiSeSiTongShun, 48, pointsList)
+	} else if best == 3 { // 一色三同顺
+		ScoreAndIgnore(YiSeSanTongShun, 24, pointsList)
+	}
+	// 三连刻、四连刻
+	t, best = 0, 0
+	var b [255]bool
+	for _, m := range melds {
+		if m.Type == mahjong.OldInvisibleKong || m.Type == mahjong.OldVisibleKong || m.Type == mahjong.OldVisibleTriplet || m.Type == mahjong.OldInvisibleTriplet {
+			b[m.Card] = true
+		}
+	}
+	for _, c := range allCards {
+		if !b[c] {
+			if t > best {
+				t = best
+			}
+			t = 0
+			continue
+		}
+		t++
+	}
+	if best == 4 {
+		ScoreAndIgnore(SiLianKe, 48, pointsList)
+	} else if best == 3 {
+		ScoreAndIgnore(SanLianKe, 24, pointsList)
+	}
+	// 一色四步高、一色三步高
+	{
+		best := 0
+		f := func(t int) {
+			var ans [255]int
+			for _, c := range allCards {
+				if mid[c] == 0 {
+					continue
+				}
+				ans[c] = 1
+				if c-t > 0 && ans[c-t]+1 > ans[c] {
+					ans[c] = ans[c-t] + 1
+				}
+			}
+			for _, c := range allCards {
+				if best < ans[c] {
+					best = ans[c]
+				}
+			}
+		}
+		// 递增一位
+		f(1)
+		// 递增两位
+		f(2)
+
+		// log.Info("zzzzzzzzzzzzzzz", best)
+		if best == 4 {
+			ScoreAndIgnore(YiSeSiBuGao, 32, pointsList)
+		} else if best == 3 {
+			ScoreAndIgnore(YiSeSanBuGao, 16, pointsList)
+		}
+	}
+	// 混九幺
+	{
+		t2, t3 := 0, 0
+		for _, c := range []int{1, 9, 60, 70, 80, 90, 100, 110, 120} {
+			if all[c] == 2 {
+				t2++
+			}
+			if all[c] == 3 {
+				t3++
+			}
+		}
+		if t2 == 1 && t3 == 4 {
+			ScoreAndIgnore(HunYaoJiu, 32, pointsList)
+		}
+	}
+	// 天听
+	if round.IsTianTing {
+		ScoreAndIgnore(TianTing, 32, pointsList)
+	}
+	// 四字刻
+	t = 0
+	for _, c := range []int{60, 70, 80, 90, 100, 110, 120} {
+		if all[c] >= 3 {
+			t++
+		}
+	}
+	if t == 4 {
+		ScoreAndIgnore(SiZiKe, 24, pointsList)
+	}
+	// 大三风、小三风
+	{
+		t2, t3 := 0, 0
+		for _, c := range []int{60, 70, 80, 90} {
+			if all[c] > 2 {
+				t3++
+			}
+			if all[c] == 2 {
+				t2++
+			}
+		}
+		if t3 >= 3 {
+			ScoreAndIgnore(DaSanFeng, 24, pointsList)
+		}
+		if t3 >= 2 && t2 >= 1 {
+			ScoreAndIgnore(XiaoSanFeng, 6, pointsList)
+		}
+	}
+	// 清龙
+	if mid[2] > 0 && mid[5] > 0 && mid[8] > 0 {
+		ScoreAndIgnore(QingLong, 16, pointsList)
+	}
+	// 全花、春夏秋冬、梅兰竹菊、无花牌
+	{
+		t1, t2 := 0, 0
+		for i := 0; i < 4; i++ {
+			t1 += round.Flowers[i]
+		}
+		for i := 4; i < 8; i++ {
+			t2 += round.Flowers[i]
+		}
+		if t1+t2 == 8 { // 全花
+			ScoreAndIgnore(QuanHua, 16, pointsList)
+		}
+		if t1 == 4 {
+			ScoreAndIgnore(ChunXiaQiuDong, 4, pointsList)
+		}
+		if t2 == 4 {
+			ScoreAndIgnore(MeiLanZhuJu, 4, pointsList)
+		}
+		if t1+t2 > 0 {
+			ScoreAndIgnore(HuaPai, t1+t2, pointsList)
+		}
+		if t1+t2 == 0 {
+			ScoreAndIgnore(WuHuaPai, 4, pointsList)
+		}
+	}
+	// 清一色
+	isOk = true
+	for _, c := range allCards {
+		if all[c] > 0 && c >= 60 {
+			isOk = false
+			break
+		}
+	}
+	if isOk == true {
+		ScoreAndIgnore(QingYiSe, 16, pointsList)
+	}
+	// 双箭刻，箭刻
+	t = 0
+	for _, c := range []int{100, 110, 120} {
+		if all[c] > 2 {
+			t++
+		}
+	}
+	if t == 2 {
+		ScoreAndIgnore(ShuangJianKe, 6, pointsList)
+	} else if t == 1 {
+		ScoreAndIgnore(JianKe, 1, pointsList)
+	}
+	// 碰碰胡
+	isOk = true
+	for _, m := range melds {
+		if m.Type == mahjong.OldSequence {
+			isOk = false
+			break
+		}
+	}
+	if isOk && !round.IsQiDui {
+		ScoreAndIgnore(PengPengHu, 6, pointsList)
+	}
+	// 混一色
+	{
+		t1, t2 := 0, 0
+		for _, c := range allCards {
+			if all[c] == 0 {
+				continue
+			}
+			if c >= 1 && c <= 9 {
+				t1++
+			} else {
+				t2++
+			}
+		}
+		if t1 > 0 && t2 > 0 {
+			ScoreAndIgnore(HunYiSe, 6, pointsList)
+		}
+	}
+	// 全求人
+	{
+		t = 0
+		for _, m := range melds {
+			if m.Type == mahjong.OldVisibleKong || m.Type == mahjong.OldVisibleTriplet || m.Type == mahjong.OldSequence {
+				t++
+			}
+		}
+		if t == 4 && len(round.Melds) == 4 && !round.IsZiMo && round.IsHu { // 必须单钓将
+			ScoreAndIgnore(QuanQiuRen, 6, pointsList)
+		}
+	}
+	// 全带么
+	isOk = true
+	for _, m := range melds {
+		if m.Type == mahjong.OldSequence {
+			if m.Card != 2 && m.Card != 8 {
+				isOk = false
+				break
+			}
+		} else {
+			if m.Card > 1 && m.Card < 9 {
+				isOk = false
+				break
+			}
+		}
+	}
+	if round.WinPair > 1 && round.WinPair < 9 {
+		isOk = false
+	}
+	if round.IsQiDui {
+		for _, c := range allCards {
+			if all[c] > 0 && c > 1 && c < 9 {
+				isOk = false
+			}
+		}
+	}
+	if isOk {
+		ScoreAndIgnore(QuanDaiYao, 4, pointsList)
+	}
+	// 不求人
+	isOk = true
+	for _, m := range round.Melds {
+		if m.Type == mahjong.OldSequence || m.Type == mahjong.OldVisibleTriplet || m.Type == mahjong.OldVisibleKong {
+			isOk = false
+		}
+	}
+	if isOk && round.IsZiMo && round.IsHu {
+		ScoreAndIgnore(BuQiuRen, 4, pointsList)
+	}
+	// 报听
+	if round.IsReadyHand {
+		ScoreAndIgnore(BaoTing, 4, pointsList)
+	}
+	// 平和
+	/*
+		isOk = true
+		t = 0
+		for _, m := range melds {
+			if m.Type == Sequence {
+				t++
+			}
+		}
+		if round.WinPair >= 1 && round.WinPair <= 9 && t == 4 {
+			ScoreAndIgnore(PingHu, 2, pointsList)
+		}
+	*/
+	// 四归一
+	t = 0
+	for _, c := range allCards {
+		if cards[c] == 4 {
+			t++
+		}
+	}
+	if t > 0 {
+		ScoreAndIgnore(SiGuiYi, 2, pointsList)
+	}
+	// 断幺九
+	isOk = true
+	for _, c := range allCards {
+		if all[c] > 0 && !(c >= 2 && c <= 8) {
+			isOk = false
+			break
+		}
+	}
+	if isOk == true {
+		ScoreAndIgnore(DuanYaoJiu, 2, pointsList)
+	}
+	// 门前清
+	isOk = true
+	for _, m := range round.Melds {
+		if m.Type != mahjong.OldInvisibleKong {
+			isOk = false
+			break
+		}
+	}
+	if isOk && !round.IsZiMo && round.IsHu {
+		ScoreAndIgnore(MenQianQing, 2, pointsList)
+	}
+	// 一般高
+	isOk = false
+	for c, _ := range allCards {
+		if mid[c] > 1 {
+			isOk = true
+			break
+		}
+	}
+	if isOk {
+		ScoreAndIgnore(YiBanGao, 1, pointsList)
+	}
+	// 连6
+	isOk = false
+	for c, _ := range allCards {
+		if c+3 < len(mid) && mid[c] > 0 && mid[c+3] > 0 {
+			isOk = true
+			break
+		}
+	}
+	if isOk {
+		ScoreAndIgnore(LianLiu, 1, pointsList)
+	}
+	// 老少副
+	if mid[2] > 0 && mid[8] > 0 {
+		ScoreAndIgnore(LaoShaoFu, 1, pointsList)
+	}
+	// 幺九刻
+	isOk = false
+	for _, m := range melds {
+		if m.Type != mahjong.OldSequence && !(m.Card >= 2 && m.Card <= 8) {
+			isOk = true
+			break
+		}
+	}
+	if isOk {
+		ScoreAndIgnore(YaoJiuKe, 1, pointsList)
+	}
+	// 边张
+	if round.IsBianZhang {
+		ScoreAndIgnore(BianZhang, 1, pointsList)
+	}
+	// 坎张
+	if round.IsKanZhang {
+		ScoreAndIgnore(KanZhang, 1, pointsList)
+	}
+	// 单钓将
+	if round.IsDanDiaoJiang {
+		ScoreAndIgnore(DanDiaoJiang, 1, pointsList)
+	}
+	// 自摸
+	if round.IsZiMo && round.IsHu {
+		ScoreAndIgnore(ZiMo, 1, pointsList)
+	}
+
+	// 胡牌时才能判断的番型
+	// 天胡
+	if round.IsTianHu && round.IsHu {
+		ScoreAndIgnore(TianHu, 88, pointsList)
+	}
+	// 地胡
+	if round.IsDiHu && round.IsHu {
+		ScoreAndIgnore(DiHu, 88, pointsList)
+	}
+	// 妙手回春
+	if round.IsMiaoShouHuiChun && round.IsHu {
+		ScoreAndIgnore(MiaoShouHuiChun, 8, pointsList)
+	}
+
+	// 海底捞月
+	if round.IsHaiDiLaoYue && round.IsHu {
+		ScoreAndIgnore(HaiDiLaoYue, 8, pointsList)
+	}
+	// 杠上开花
+	if round.IsGangShangKaiHua && round.IsHu {
+		ScoreAndIgnore(GangShangKaiHua, 8, pointsList)
+	}
+	// 抢杠胡
+	if round.IsQiangGangHu && round.IsHu {
+		ScoreAndIgnore(QiangGangHu, 8, pointsList)
+	}
+	// 绝张
+	if round.IsJueZhang && round.IsHu {
+		ScoreAndIgnore(JueZhang, 4, pointsList)
+	}
+	// 人胡
+	if round.IsRenHu && round.IsHu {
+		ScoreAndIgnore(RenHu, 64, pointsList)
+	}
+	// 报听
+	if round.IsReadyHand {
+		ScoreAndIgnore(BaoTing, 4, pointsList)
+	}
+}
+
+func GetBestCard(remainingCards, handCards []int) int {
+	allCards := mahjong.GetAllCards()
+	var seq []int
+	for _, c := range allCards {
+		n := handCards[c]
+		for i := 0; i < n; i++ {
+			seq = append(seq, c)
+		}
+	}
+	log.Info("best hand", seq)
+	// 优先级从高到底
+	// 选项1，有对子的情况 ,组成坎
+	// 选项2，有对子的情况 ,组成2张相邻的牌
+	// 选项3，有对子的情况 ,组成对子的牌
+	// 选项4，无对子，凑成对子
+	// 选项5，无对子，凑成坎
+	// 选项6，无对子，凑成2张相邻的牌
+	var opts [7][255]int
+	answer := func(extra, card3, card2, pair []int) {
+		for i := 0; i < len(extra); i++ {
+			c1 := extra[i]
+			if c1 > 1 {
+				card2[c1-1] = 1
+			}
+			if c1 < 9 {
+				card2[c1+1] = 1
+			}
+			card2[c1] = 1
+			pair[c1] = 1
+			for j := i + 1; j < len(extra); j++ {
+				c2 := extra[j]
+				if c1 == c2 {
+					card3[c1] = 1
+				} else if c1+1 == c2 {
+					if c1-1 > 0 {
+						card3[c1-1] = 1
+					}
+					if c1+2 <= 9 {
+						card3[c1+2] = 1
+					}
+				} else if c1+2 == c2 {
+					card3[c1+1] = 1
+				}
+			}
+		}
+	}
+	var bestWeight int
+	var bestOpt *mahjong.SplitOption
+	for _, opt := range Split(handCards, 64) {
+		weight := mahjong.GetWeight(opt.Extra, remainingCards)
+		if bestWeight < weight {
+			bestWeight = weight
+			bestOpt = &opt
+		}
+	}
+	log.Info("best opt", bestOpt)
+
+	if opt := bestOpt; opt != nil {
+		extra := opt.Extra
+		for i := 0; i < len(extra); i++ {
+			log.Info("best extra", extra)
+			var tmpCards []int
+			if i+1 < len(extra) && extra[i] == extra[i+1] {
+				for j := 0; j < len(extra); j++ {
+					if j == i || j == i+1 {
+						continue
+					}
+					tmpCards = append(tmpCards, extra[j])
+				}
+				answer(tmpCards, opts[1][:], opts[2][:], opts[3][:])
+			}
+		}
+		answer(extra, opts[5][:], opts[6][:], opts[4][:])
+	}
+
+	for _, cards := range opts {
+		var seq []int
+		for _, c := range allCards {
+			if cards[c] > 0 && remainingCards[c] > 0 {
+				seq = append(seq, c)
+			}
+		}
+		n := len(seq)
+		log.Info("best card", seq)
+		if n > 0 {
+			return seq[rand.Intn(n)]
+		}
+	}
+	for _, c := range allCards {
+		if handCards[c] > 2 && remainingCards[c] > 0 {
+			return c
+		}
+	}
+	return 0
+}

@@ -43,6 +43,10 @@ type RoomObj struct {
 
 	player *service.Player
 	room   *Room
+
+	// TODO 待实现
+	isReady       bool
+	isObjectClone bool
 }
 
 func GetRoomObj(player *service.Player) *RoomObj {
@@ -56,6 +60,25 @@ func newRoomObj(player *service.Player) service.EnterAction {
 
 func (obj *RoomObj) GetSeatIndex() int {
 	return obj.seatIndex
+}
+
+func (obj *RoomObj) PrepareClone() {
+	obj.isObjectClone = true
+}
+
+func (obj *RoomObj) CancelClone() {
+	obj.isObjectClone = false
+}
+
+func (obj *RoomObj) IsReady() bool {
+	return obj.isReady
+}
+
+func (obj *RoomObj) Ready() errcode.Error {
+	if obj.isReady {
+		return errcode.New("ready_again", "ready again")
+	}
+	return nil
 }
 
 func (obj *RoomObj) TryEnter() errcode.Error {
