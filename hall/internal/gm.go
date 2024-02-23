@@ -1,9 +1,10 @@
 package internal
 
 import (
+	"quasar/utils"
+
 	"github.com/guogeer/quasar/cmd"
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/util"
 )
 
 type gmArgs struct {
@@ -21,7 +22,7 @@ func funcSendMail(ctx *cmd.Context, data any) {
 	args := data.(*gmArgs)
 
 	mail := &Mail{}
-	util.DeepCopy(mail, args.Mail)
+	utils.DeepCopy(mail, args.Mail)
 	log.Info("send mail", args.Users, mail.EffectTime, mail.RegTime)
 	if mail.Type == MailTypeMass {
 		args.Users = []int{0}

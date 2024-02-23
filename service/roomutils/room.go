@@ -2,6 +2,7 @@ package roomutils
 
 import (
 	"encoding/json"
+	"quasar/utils"
 	"slices"
 	"strconv"
 	"strings"
@@ -12,7 +13,6 @@ import (
 	"github.com/guogeer/quasar/cmd"
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/util"
 )
 
 var gSubGames map[int]*subGame // 所有的场次
@@ -101,7 +101,7 @@ func init() {
 		json.Unmarshal(enterReq.RawData, args)
 		return service.GetServerId() + ":" + strconv.Itoa(args.SubId)
 	})
-	util.GetTimerSet().NewPeriodTimer(tick10s, time.Now(), 10*time.Second)
+	utils.GetTimerSet().NewPeriodTimer(tick10s, time.Now(), 10*time.Second)
 }
 
 func tick10s() {

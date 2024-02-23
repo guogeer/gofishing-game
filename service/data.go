@@ -5,6 +5,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"quasar/utils"
 	"time"
 
 	"gofishing-game/internal/errcode"
@@ -15,7 +16,6 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/util"
 )
 
 type EnumDataReset int
@@ -41,7 +41,7 @@ type dataObj struct {
 
 	loadSavers []loadSaver
 	period     time.Duration
-	saveTimer  *util.Timer
+	saveTimer  *utils.Timer
 	// offlinePos int32
 	offline *pb.OfflineBin
 

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net"
 	"net/url"
+	"quasar/utils"
 	"strings"
 	"time"
 
@@ -17,7 +18,6 @@ import (
 	"github.com/guogeer/quasar/cmd"
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/util"
 )
 
 var (
@@ -167,7 +167,7 @@ func CreateAccount(method string, account *pb.AccountInfo, params *pb.LoginParam
 		rpc.CacheClient().AddSomeItem(context.Background(), &pb.AddSomeItemReq{Uid: int32(uid), Items: items})
 		rpc.CacheClient().AddSomeItemLog(context.Background(), &pb.AddSomeItemLogReq{
 			Uid:      int32(uid),
-			Uuid:     util.GUID(),
+			Uuid:     utils.GUID(),
 			Way:      "sys.new_user",
 			Items:    items,
 			CreateTs: time.Now().Unix(),
@@ -206,8 +206,8 @@ func login(c *api.Context, data any) (any, error) {
 
 	loginParams := &pb.LoginParams{}
 	accountInfo := &pb.AccountInfo{Ip: c.Request.RemoteAddr}
-	util.DeepCopy(accountInfo, args)
-	util.DeepCopy(loginParams, args)
+	utils.DeepCopy(accountInfo, args)
+	utils.DeepCopy(loginParams, args)
 	ss, e := CreateAccount("login", accountInfo, loginParams)
 	if e != nil {
 		return nil, errors.New(e.Error())

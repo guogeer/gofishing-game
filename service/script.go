@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"quasar/utils"
 	"strings"
 	"sync"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
 	"github.com/guogeer/quasar/script"
-	"github.com/guogeer/quasar/util"
 	lua "github.com/yuin/gopher-lua"
 	luajson "layeh.com/gopher-json"
 	luahelper "layeh.com/gopher-luar"
@@ -26,7 +26,7 @@ type scriptFuncEntry struct {
 var cmdEntries sync.Map
 
 func scriptCreateUUID(L *lua.LState) int {
-	uuid := util.GUID()
+	uuid := utils.GUID()
 	L.Push(lua.LString(uuid))
 	return 1
 }

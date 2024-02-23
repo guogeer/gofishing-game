@@ -1,9 +1,8 @@
 package gameutils
 
 import (
+	"quasar/utils"
 	"testing"
-
-	"github.com/guogeer/quasar/util"
 )
 
 func TestAddStructFields(t *testing.T) {
@@ -21,7 +20,7 @@ func TestAddStructFields(t *testing.T) {
 		{N: 2, N2: 0, N3: 200, N4: 2000.2, N5: "hi b", N6: true},
 	}
 	AddStructFields(&samples[1], &samples[2])
-	if !util.EqualJSON(samples[0], samples[1]) {
+	if !utils.EqualJSON(samples[0], samples[1]) {
 		t.Error(samples[0], samples[1])
 	}
 }
@@ -47,7 +46,7 @@ func TestInitNilFields(t *testing.T) {
 		N:   &n,
 	}
 	InitNilFields(a)
-	if !util.EqualJSON(a, ans) {
+	if !utils.EqualJSON(a, ans) {
 		t.Error(a, ans)
 	}
 }
@@ -65,10 +64,10 @@ func TestConvertMap(t *testing.T) {
 	}
 	a2 := ConvertMap(a)
 	m2 := ConvertMap(m)
-	if !util.EqualJSON(a, a2) {
+	if !utils.EqualJSON(a, a2) {
 		t.Error(a, a2)
 	}
-	if !util.EqualJSON(m, m2) {
+	if !utils.EqualJSON(m, m2) {
 		t.Error(a, a2)
 	}
 }

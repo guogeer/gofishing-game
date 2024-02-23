@@ -6,10 +6,10 @@ import (
 	mjutils "gofishing-game/demo/mahjong/utils"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
+	"quasar/utils"
 	"time"
 
 	"github.com/guogeer/quasar/config"
-	"github.com/guogeer/quasar/util"
 )
 
 // 转转麻将
@@ -80,8 +80,8 @@ func (mj *ZhengzhouMahjong) startChoosePao() {
 		p := room.GetPlayer(i)
 		obj := p.localObj.(*ZhengzhouObj)
 		obj.pao = -1
-		util.StopTimer(p.operateTimer)
-		p.operateTimer = util.NewTimer(func() {
+		utils.StopTimer(p.operateTimer)
+		p.operateTimer = utils.NewTimer(func() {
 			if !room.IsTypeScore() {
 				obj.ChoosePao(0)
 			}
@@ -363,7 +363,7 @@ func (obj *ZhengzhouObj) ChoosePao(pao int) {
 	if room.Status != roomStatusChoosePao {
 		return
 	}
-	if util.InArray([]int{0, 1, 2, 3}, pao) == 0 {
+	if utils.InArray([]int{0, 1, 2, 3}, pao) == 0 {
 		return
 	}
 	obj.pao = pao

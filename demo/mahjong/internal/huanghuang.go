@@ -7,10 +7,9 @@ import (
 	"gofishing-game/internal/cardutils"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
+	"quasar/utils"
 	"strconv"
 	"time"
-
-	"github.com/guogeer/quasar/util"
 )
 
 var (
@@ -348,7 +347,7 @@ func (obj *HuanghuangObj) ChoosePiao(piao int) {
 	if room.Status != roomStatusChoosePiao {
 		return
 	}
-	if util.InArray(huanghuangPiaoOptions, piao) == 0 {
+	if utils.InArray(huanghuangPiaoOptions, piao) == 0 {
 		return
 	}
 	obj.piao = piao

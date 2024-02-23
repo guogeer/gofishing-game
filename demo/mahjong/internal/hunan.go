@@ -5,17 +5,17 @@ import (
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"math/rand"
+	"quasar/utils"
 	"strings"
 	"time"
 
 	"github.com/guogeer/quasar/config"
-	"github.com/guogeer/quasar/util"
 )
 
 type HunanMahjong struct {
 	room          *MahjongRoom
 	boomPlayer    *MahjongPlayer
-	buyHorseTimer *util.Timer
+	buyHorseTimer *utils.Timer
 
 	ghostCard int
 }
@@ -115,7 +115,7 @@ func (h *HunanMahjong) OnWin() {
 		room.Award()
 	} else {
 		room.Broadcast("StartBuyHorse", map[string]any{"ts": room.deadline.Unix(), "Num": 4, "uid": uid})
-		h.buyHorseTimer = util.NewTimer(func() {
+		h.buyHorseTimer = utils.NewTimer(func() {
 			index := rand.Intn(4)
 			h.OnBuyHorse(index)
 		}, d)
@@ -124,7 +124,7 @@ func (h *HunanMahjong) OnWin() {
 
 func (h *HunanMahjong) OnBuyHorse(index int) {
 	room := h.room
-	util.StopTimer(h.buyHorseTimer)
+	utils.StopTimer(h.buyHorseTimer)
 
 	var horses [4]int
 	for i := range horses {

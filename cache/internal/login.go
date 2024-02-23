@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"fmt"
+	"quasar/utils"
 	"reflect"
 	"regexp"
 	"time"
@@ -13,7 +14,6 @@ import (
 	"gofishing-game/internal/pb"
 
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/util"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -108,7 +108,7 @@ func (cc *Cache) Auth(ctx context.Context, req *pb.AuthReq) (*pb.AuthResp, error
 			chanrs.Scan(dbo.JSON(&cv))
 			// IP设置了白名单时仅允许名单内的IP访问
 			allowIPs := matchIPs.FindAllString(cv.AllowIPs, -1)
-			if len(allowIPs) > 0 && util.InArray(allowIPs, req.Ip) == 0 {
+			if len(allowIPs) > 0 && utils.InArray(allowIPs, req.Ip) == 0 {
 				resp.Reason = -3
 			}
 		}
@@ -236,7 +236,7 @@ func (cc *Cache) CreateAccount(ctx context.Context, req *pb.CreateAccountReq) (*
 		newInfo.Phone = "" // 忽略手机号
 		db.QueryRow("select uid from user_plate where open_id=? limit 1", newInfo.OpenId).Scan(&newInfo.Uid)
 		userInfo, _ := cc.QueryUserInfo(ctx, &pb.QueryUserInfoReq{Uid: newInfo.Uid})
-		util.DeepCopy(oldInfo, userInfo.Info)
+		utils.DeepCopy(oldInfo, userInfo.Info)
 	}
 
 	fields := map[string]any{}

@@ -8,14 +8,14 @@ import (
 	"gofishing-game/service/roomutils"
 	"gofishing-game/service/system"
 	"math/rand"
+	"quasar/utils"
+	"quasar/utils/randutils"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/randutil"
-	"github.com/guogeer/quasar/util"
 )
 
 const (
@@ -80,8 +80,8 @@ type MahjongRoom struct {
 
 	lastCard int
 
-	chooseColorTimer      *util.Timer
-	exchangeTriCardsTimer *util.Timer
+	chooseColorTimer      *utils.Timer
+	exchangeTriCardsTimer *utils.Timer
 	bustTimeout           func()
 
 	buyHorse     int
@@ -221,7 +221,7 @@ func (room *MahjongRoom) StartDealCard() {
 	room.cheatSeats = 0
 	// 无测试牌型
 	test := cardutils.GetSample()
-	if len(test) == 0 && len(robotSeats) > 0 && randutil.IsPercentNice(percent) {
+	if len(test) == 0 && len(robotSeats) > 0 && randutils.IsPercentNice(percent) {
 		seatId := robotSeats[rand.Intn(len(robotSeats))]
 		room.cheatSeats = 1 << uint(seatId)
 	}
@@ -292,7 +292,7 @@ func (room *MahjongRoom) StartExchangeTriCards() {
 		p.WriteJSON("StartExchangeTriCards", map[string]any{"ts": room.deadline.UTC(), "TriCards": p.defaultTriCards})
 	}
 
-	room.exchangeTriCardsTimer = util.NewTimer(func() {
+	room.exchangeTriCardsTimer = utils.NewTimer(func() {
 		if room.IsTypeScore() {
 			return
 		}
@@ -315,7 +315,7 @@ func (room *MahjongRoom) OnExchangeTriCards() {
 	}
 
 	// OK
-	util.StopTimer(room.exchangeTriCardsTimer)
+	utils.StopTimer(room.exchangeTriCardsTimer)
 	var exchangeOpts = [4][4]int{{0, 0, 0, 0}, {1, 2, 3, 0}, {2, 3, 0, 1}, {3, 0, 1, 2}}
 	dict := rand.Intn(3) + 1
 	for i := 0; i < room.NumSeat(); i++ {
@@ -361,7 +361,7 @@ func (room *MahjongRoom) StartChooseColor() {
 		p.WriteJSON("StartChooseColor", map[string]any{"ts": room.deadline.Unix(), "Color": color})
 	}
 
-	room.chooseColorTimer = util.NewTimer(func() {
+	room.chooseColorTimer = utils.NewTimer(func() {
 		if room.IsTypeScore() {
 			return
 		}
@@ -385,7 +385,7 @@ func (room *MahjongRoom) OnChooseColor() {
 		}
 		colors[i] = p.discardColor
 	}
-	util.StopTimer(room.chooseColorTimer)
+	utils.StopTimer(room.chooseColorTimer)
 	room.Broadcast("FinishChooseColor", map[string]any{"Colors": colors})
 	room.Status = roomutils.RoomStatusPlaying
 	room.dealer.OnDraw()
@@ -467,7 +467,7 @@ func (room *MahjongRoom) OnWin() {
 			p.robKong = false
 			p.operateTips = nil
 			// 被抢杠胡后，取消玩家操作
-			util.StopTimer(p.operateTimer)
+			utils.StopTimer(p.operateTimer)
 			code := errcode.New("other_rob_kong", "rob kong")
 			room.Broadcast("kong", map[string]any{"code": code, "msg": code.Error(), "card": last.Card, "type": last.Type, "uid": p.Id})
 		}
@@ -575,7 +575,7 @@ func (room *MahjongRoom) Award() {
 	}
 	room.localMahjong.Award()
 
-	/*guid := util.GUID()
+	/*guid := utils.GUID()
 	itemWay := service.ItemWay{
 		Way:    "user." + service.GetName() + "_play",
 		SubId:  room.SubId,
@@ -775,7 +775,7 @@ func (room *MahjongRoom) GetAnyCards() []int {
 }
 
 func (room *MahjongRoom) IsAnyCard(c int) bool {
-	return util.InArray(room.GetAnyCards(), c) > 0
+	return utils.InArray(room.GetAnyCards(), c) > 0
 }
 
 func (room *MahjongRoom) piao() int {

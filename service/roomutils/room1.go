@@ -4,6 +4,7 @@ package roomutils
 // 房间
 
 import (
+	"quasar/utils"
 	"time"
 
 	"gofishing-game/internal/cardutils"
@@ -11,7 +12,6 @@ import (
 	"gofishing-game/service"
 
 	"github.com/guogeer/quasar/config"
-	"github.com/guogeer/quasar/util"
 )
 
 // 定制的房间
@@ -27,7 +27,7 @@ type Room struct {
 	customRoom     CustomRoom
 	freeDuration   time.Duration
 	playDuration   time.Duration
-	countdownTimer *util.Timer
+	countdownTimer *utils.Timer
 	cardSet        *cardutils.CardSet // 牌堆
 
 	seatPlayers []*service.Player
@@ -123,8 +123,8 @@ func (room *Room) StartGame() {
 	room.cardSet.Shuffle()
 	room.Status = RoomStatusPlaying
 
-	util.StopTimer(room.countdownTimer)
-	room.countdownTimer = util.NewTimer(room.customRoom.GameOver, room.playDuration)
+	utils.StopTimer(room.countdownTimer)
+	room.countdownTimer = utils.NewTimer(room.customRoom.GameOver, room.playDuration)
 }
 
 func (room *Room) FreeDuration() time.Duration {
@@ -146,8 +146,8 @@ func (room *Room) SetPlayDuration(d time.Duration) {
 func (room *Room) GameOver() {
 	room.Status = 0
 	room.CardSet().Shuffle()
-	util.StopTimer(room.countdownTimer)
-	room.countdownTimer = util.NewTimer(room.customRoom.StartGame, room.FreeDuration())
+	utils.StopTimer(room.countdownTimer)
+	room.countdownTimer = utils.NewTimer(room.customRoom.StartGame, room.FreeDuration())
 }
 
 func (room *Room) GetEmptySeat() int {

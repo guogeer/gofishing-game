@@ -11,10 +11,9 @@ package cardutils
 import (
 	"fmt"
 	"quasar/log"
+	"quasar/utils/randutils"
 	"strconv"
 	"strings"
-
-	"github.com/guogeer/quasar/randutil"
 )
 
 var (
@@ -143,7 +142,7 @@ func (cs *CardSet) Shuffle() {
 	}
 	cs.randCards = append(cs.randCards, cs.extraCards...)
 
-	randutil.Shuffle(cs.randCards)
+	randutils.Shuffle(cs.randCards)
 	cs.dealNum = 0
 }
 

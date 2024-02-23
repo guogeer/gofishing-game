@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"quasar/utils"
 	"runtime"
 	"time"
 
@@ -16,7 +17,6 @@ import (
 
 	"github.com/guogeer/quasar/cmd"
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/util"
 )
 
 var port = flag.Int("port", 0, "server port")
@@ -80,7 +80,7 @@ func Start() {
 			log.Infof("server %s recv signal SIGINT and quit", GetServerId())
 			return
 		}
-		util.GetTimerSet().RunOnce()
+		utils.GetTimerSet().RunOnce()
 		rpc.RunOnce() // 无等待
 		// handle network message
 		cmd.RunOnce() // 无消息时会等待

@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"quasar/utils"
 	"time"
 
 	"gofishing-game/internal"
@@ -15,7 +16,6 @@ import (
 	"github.com/guogeer/quasar/cmd"
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/util"
 )
 
 const (
@@ -109,7 +109,7 @@ func (obj *mailObj) checkMassMails() []*Mail {
 	for _, mail := range GetWorld().massMails {
 		if obj.IsMassMailValid(mail) {
 			copyMail := &Mail{}
-			util.DeepCopy(copyMail, mail)
+			utils.DeepCopy(copyMail, mail)
 			copyMail.RecvId = p.Id
 			copyMail.Type = MailTypeSystem
 			massMails = append(massMails, copyMail)
@@ -156,7 +156,7 @@ func (obj *mailObj) Look() {
 			mails := make([]*Mail, 0, 8)
 			for _, pbMail := range resp.Mails {
 				mail := &Mail{}
-				util.DeepCopy(mail, pbMail)
+				utils.DeepCopy(mail, pbMail)
 				mails = append(mails, mail)
 			}
 			if emptyMailId > 0 {
@@ -236,7 +236,7 @@ func (obj *mailObj) Draw(id int64) {
 			}
 			// OK
 			mail := &Mail{}
-			util.DeepCopy(mail, pbMail)
+			utils.DeepCopy(mail, pbMail)
 			p.BagObj().AddSomeItems(gameutils.ParseNumbericItems(mail.Reward), "mail_draw")
 			p.mailObj.OnRecv(-1)
 		})
@@ -245,7 +245,7 @@ func (obj *mailObj) Draw(id int64) {
 
 func SyncSendMail(mail *Mail) int64 {
 	pbMail := &pb.Mail{}
-	util.DeepCopy(pbMail, mail)
+	utils.DeepCopy(pbMail, mail)
 	resp, err := rpc.CacheClient().SendMail(context.Background(),
 		&pb.SendMailReq{Mail: pbMail})
 	if err != nil {
@@ -263,7 +263,7 @@ func SyncSendMail(mail *Mail) int64 {
 // {items} 物品列表
 func SendMail(newMail *Mail) {
 	mail := &Mail{}
-	util.DeepCopy(mail, newMail)
+	utils.DeepCopy(mail, newMail)
 
 	go func() {
 		id := SyncSendMail(mail)

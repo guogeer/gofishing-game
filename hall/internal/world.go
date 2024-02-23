@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"encoding/json"
+	"quasar/utils"
 	"time"
 
 	"gofishing-game/internal/pb"
@@ -12,7 +13,6 @@ import (
 	"github.com/guogeer/quasar/cmd"
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/util"
 )
 
 // 版本更新奖励
@@ -43,7 +43,7 @@ type hallWorld struct {
 
 	maintain struct {
 		StartTime, EndTime time.Time
-		notifyTimer        *util.Timer
+		notifyTimer        *utils.Timer
 	}
 	segments []service.GameOnlineSegment
 }
@@ -60,9 +60,9 @@ func init() {
 	service.CreateWorld(w)
 
 	startTime, _ := config.ParseTime("2010-01-01")
-	util.NewPeriodTimer(w.UpdateOnline, startTime, 5*time.Minute)
-	//util.NewPeriodTimer(hall.tick1m, startTime, 1*time.Minute)
-	//util.NewPeriodTimer(hall.tick1d, startTime, 24*time.Hour)
+	utils.NewPeriodTimer(w.UpdateOnline, startTime, 5*time.Minute)
+	//utils.NewPeriodTimer(hall.tick1m, startTime, 1*time.Minute)
+	//utils.NewPeriodTimer(hall.tick1d, startTime, 24*time.Hour)
 
 	w.updateBuildRank()
 	w.updateMaintain()
@@ -75,7 +75,7 @@ func init() {
 	}
 	for _, pbMail := range resp.Mails {
 		mail := &Mail{}
-		util.DeepCopy(mail, pbMail)
+		utils.DeepCopy(mail, pbMail)
 	}
 }
 
@@ -138,8 +138,8 @@ func (w *hallWorld) notifyMaintain() {
 	if secs > 60 {
 		msg["Content"] = "The game will be temporarily closed after {clock}."
 
-		util.StopTimer(w.maintain.notifyTimer)
-		w.maintain.notifyTimer = util.NewTimer(w.notifyMaintain, time.Until(w.maintain.StartTime)-time.Minute)
+		utils.StopTimer(w.maintain.notifyTimer)
+		w.maintain.notifyTimer = utils.NewTimer(w.notifyMaintain, time.Until(w.maintain.StartTime)-time.Minute)
 	}
 	log.Infof("maintain broadcast msg %s", msg["Content"])
 	service.Broadcast2Gateway("Maintain", msg)
@@ -157,15 +157,15 @@ func (w *hallWorld) updateMaintain() {
 		startTime, _ := config.ParseTime(pbData.StartTime)
 		endTime, _ := config.ParseTime(pbData.EndTime)
 		rpc.OnResponse(func() {
-			util.StopTimer(w.maintain.notifyTimer)
+			utils.StopTimer(w.maintain.notifyTimer)
 			w.maintain.StartTime = startTime
 			w.maintain.EndTime = endTime
 			log.Infof("maintain game at %s-%s content %s allow list %s", pbData.StartTime, pbData.EndTime, pbData.Content, pbData.AllowList)
 
 			if d := time.Until(startTime); d > 5*time.Minute {
-				w.maintain.notifyTimer = util.NewTimer(w.notifyMaintain, d-5*time.Minute)
+				w.maintain.notifyTimer = utils.NewTimer(w.notifyMaintain, d-5*time.Minute)
 			} else if d > time.Minute {
-				w.maintain.notifyTimer = util.NewTimer(w.notifyMaintain, -time.Minute)
+				w.maintain.notifyTimer = utils.NewTimer(w.notifyMaintain, -time.Minute)
 			}
 		})
 	}()

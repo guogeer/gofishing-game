@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"quasar/utils"
 	"time"
 
 	"gofishing-game/internal/gameutils"
@@ -13,7 +14,6 @@ import (
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
 	"github.com/guogeer/quasar/script"
-	"github.com/guogeer/quasar/util"
 )
 
 var (
@@ -62,8 +62,8 @@ func init() {
 	gGatewayPlayers = make(map[string]*Player)
 
 	startTime, _ := config.ParseTime("2018-01-31 00:00:00")
-	util.NewPeriodTimer(tick10s, startTime, 10*time.Second)
-	util.NewPeriodTimer(tick1d, startTime, 24*time.Hour)
+	utils.NewPeriodTimer(tick10s, startTime, 10*time.Second)
+	utils.NewPeriodTimer(tick1d, startTime, 24*time.Hour)
 }
 
 func CreateWorld(w World) {
@@ -188,7 +188,7 @@ func AddSomeItemLog(uid int, items []gameutils.Item, way string) {
 	req := &pb.AddSomeItemLogReq{
 		Uid:      int32(uid),
 		Items:    pbItems,
-		Uuid:     util.GUID(),
+		Uuid:     utils.GUID(),
 		Way:      way,
 		CreateTs: time.Now().Unix(),
 	}

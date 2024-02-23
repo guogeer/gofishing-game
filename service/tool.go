@@ -2,6 +2,7 @@
 package service
 
 import (
+	"quasar/utils"
 	"reflect"
 	"sort"
 	"strconv"
@@ -14,7 +15,6 @@ import (
 	"github.com/guogeer/quasar/cmd"
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/util"
 )
 
 const toolFuncPrefix = "Test_"
@@ -125,7 +125,7 @@ func (tool *testTool) Test_S升级到X(ctx *cmd.Context, params string) {
 		addExp += exp
 	}
 
-	ply.BagObj().Add(1110, addExp, util.GUID())
+	ply.BagObj().Add(1110, addExp, utils.GUID())
 }
 
 func (tool *testTool) Test_L离开游戏(ctx *cmd.Context, params string) {
@@ -142,7 +142,7 @@ func (tool *testTool) Test_Z增加指定物品数量(ctx *cmd.Context, params st
 	if itemId == 0 {
 		ply.WriteJSON("prompt", cmd.M{"msg": "格式：物品ID,物品数量"})
 	}
-	ply.BagObj().Add(itemId, int64(num), util.GUID())
+	ply.BagObj().Add(itemId, int64(num), utils.GUID())
 }
 
 type testReseter interface {

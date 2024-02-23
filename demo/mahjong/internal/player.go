@@ -12,12 +12,12 @@ import (
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"gofishing-game/service/system"
+	"quasar/utils"
+	"quasar/utils/randutils"
 	"time"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/randutil"
-	"github.com/guogeer/quasar/util"
 )
 
 type ChipResult struct {
@@ -152,7 +152,7 @@ type MahjongPlayer struct {
 	tempChip              int64
 	isBustOrNot           bool // 选择破产
 
-	operateTimer *util.Timer
+	operateTimer *utils.Timer
 }
 
 func NewMahjongPlayer() *MahjongPlayer {
@@ -251,7 +251,7 @@ func (ply *MahjongPlayer) Fail() {
 	ply.isBust = true
 	ply.leaveGame = true
 	ply.isBustOrNot = false
-	util.StopTimer(ply.operateTimer)
+	utils.StopTimer(ply.operateTimer)
 	room.Broadcast("Fail", map[string]any{"uid": ply.Id})
 	room.OnBust()
 }
@@ -450,7 +450,7 @@ func (ply *MahjongPlayer) Draw() {
 	drawCard := InvalidCard
 	for {
 		percent, _ := config.Float("Room", room.SubId, "WinPercent")
-		if randutil.IsPercentNice(percent) && room.cheatSeats == 0 {
+		if randutils.IsPercentNice(percent) && room.cheatSeats == 0 {
 			color := ply.discardColor
 			for _, c := range cardutils.GetAllCards() {
 				if cards[c] == 2 && c/10 != color && room.CardSet().Cheat(c) > 0 {
@@ -710,7 +710,7 @@ func (ply *MahjongPlayer) Kong(c int) {
 	room.kongPlayer = ply
 	// 摸的牌和杠的牌的可能不同
 	room.lastCard = c
-	util.StopTimer(ply.operateTimer)
+	utils.StopTimer(ply.operateTimer)
 
 	// 判断是否有抢杠胡
 	// 增加明杠可抢
@@ -913,7 +913,7 @@ func (ply *MahjongPlayer) Chow(c int) {
 	room.expectDiscardPlayer = ply
 	room.discardPlayer = nil
 	room.kongPlayer = nil
-	util.StopTimer(ply.operateTimer)
+	utils.StopTimer(ply.operateTimer)
 
 	ply.operateTips = nil
 	if !ply.isReadyHand {
@@ -1001,7 +1001,7 @@ func (ply *MahjongPlayer) Pong() {
 	room.expectKongPlayer = nil
 	room.expectDiscardPlayer = ply
 	room.discardPlayer = nil
-	util.StopTimer(ply.operateTimer)
+	utils.StopTimer(ply.operateTimer)
 
 	ply.operateTips = nil
 	if !ply.isReadyHand {
@@ -1067,7 +1067,7 @@ func (ply *MahjongPlayer) Win() {
 	ply.WriteJSON("Win", map[string]any{"code": errcode.CodeOk})
 
 	// OK
-	util.StopTimer(ply.operateTimer)
+	utils.StopTimer(ply.operateTimer)
 	ply.isWin = true
 	ply.isReadyHand = true
 	// drawCard := ply.drawCard
@@ -1127,7 +1127,7 @@ func (ply *MahjongPlayer) Discard(c int) {
 	if cards[c] < 1 || room.expectDiscardPlayer != ply {
 		return
 	}
-	if util.InArray(ply.blackList, c) > 0 {
+	if utils.InArray(ply.blackList, c) > 0 {
 		return
 	}
 
@@ -1274,7 +1274,7 @@ func (ply *MahjongPlayer) Pass() {
 	}
 	log.Debugf("player %d pass", ply.Id)
 	// OK
-	util.StopTimer(ply.operateTimer)
+	utils.StopTimer(ply.operateTimer)
 	ply.WriteJSON("Pass", map[string]any{"code": errcode.CodeOk})
 
 	ply.delayChow = false
@@ -1399,7 +1399,7 @@ func (ply *MahjongPlayer) Timeout(f func()) {
 }
 
 func (ply *MahjongPlayer) GameOver() {
-	util.StopTimer(ply.operateTimer)
+	utils.StopTimer(ply.operateTimer)
 	ply.StartGame()
 }
 
@@ -1418,7 +1418,7 @@ func (ply *MahjongPlayer) autoDiscard() {
 		ply.Discard(ply.drawCard)
 	} else {
 		for c, n := range ply.handCards {
-			if n > 0 && util.InArray(ply.blackList, c) == 0 {
+			if n > 0 && utils.InArray(ply.blackList, c) == 0 {
 				ply.Discard(c)
 				return
 			}
@@ -1449,7 +1449,7 @@ func (ply *MahjongPlayer) ChangeRoom() {
 
 	roomutils.GetRoomObj(ply.Player).PrepareClone()
 	roomutils.GetRoomObj(clone.Player).CancelClone()
-	util.StopTimer(clone.operateTimer)
+	utils.StopTimer(clone.operateTimer)
 
 	clone.StartGame()
 	clone.OnEnter()
@@ -1482,7 +1482,7 @@ func (ply *MahjongPlayer) AutoPlay(t int) {
 	if ply.leaveGame {
 		return
 	}
-	util.ResetTimer(ply.operateTimer, d)
+	utils.ResetTimer(ply.operateTimer, d)
 }
 
 func (ply *MahjongPlayer) GetWinOptions() {
@@ -1689,7 +1689,7 @@ func (ply *MahjongPlayer) IsAbleChow(start int) bool {
 	cards[start+1]--
 	cards[start+2]--
 	for _, c := range cardutils.GetAllCards() {
-		if cards[c] > 0 && util.InArray(blackList, c) == 0 {
+		if cards[c] > 0 && utils.InArray(blackList, c) == 0 {
 			counter++
 		}
 	}
@@ -1883,7 +1883,7 @@ func (ply *MahjongPlayer) Double() {
 
 	ply.operateTips = nil
 	ply.readyHandTips = nil
-	util.StopTimer(ply.operateTimer)
+	utils.StopTimer(ply.operateTimer)
 
 	c := ply.drawCard
 	if c == -1 {

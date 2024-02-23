@@ -2,11 +2,10 @@ package internal
 
 import (
 	"context"
+	"quasar/utils"
 
 	"gofishing-game/internal/dbo"
 	"gofishing-game/internal/pb"
-
-	"github.com/guogeer/quasar/util"
 )
 
 func (cc *Cache) QueryUserInfo(ctx context.Context, req *pb.QueryUserInfoReq) (*pb.QueryUserInfoResp, error) {
@@ -38,7 +37,7 @@ func (cc *Cache) QuerySimpleUserInfo(ctx context.Context, req *pb.QuerySimpleUse
 		db.QueryRow("select uid from user_plate where open_id=?", req.OpenId).Scan(&simpleInfo.Uid)
 	}
 	userInfo, _ := cc.QueryUserInfo(ctx, &pb.QueryUserInfoReq{Uid: simpleInfo.Uid})
-	util.DeepCopy(simpleInfo, userInfo)
+	utils.DeepCopy(simpleInfo, userInfo)
 
 	globalBin := &pb.GlobalBin{}
 	db.QueryRow("select bin from user_bin where uid=? and `class`=?", simpleInfo.Uid, "global").Scan(dbo.PB(globalBin))

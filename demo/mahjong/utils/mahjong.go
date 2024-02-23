@@ -3,11 +3,11 @@ package utils
 import (
 	"fmt"
 	"gofishing-game/internal/cardutils"
+	"quasar/utils"
 	"strconv"
 	"strings"
 
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/util"
 )
 
 const (
@@ -293,7 +293,7 @@ func (helper *MahjongHelper) Win(cards []int, melds []Meld) *WinOption {
 		}
 		if jiangyise {
 			for _, c := range cardutils.GetAllCards() {
-				if cards[c] > 0 && !IsValueSame(c, 2, 5, 8) && util.InArray(helper.AnyCards, c) == 0 {
+				if cards[c] > 0 && !IsValueSame(c, 2, 5, 8) && utils.InArray(helper.AnyCards, c) == 0 {
 					jiangyise = false
 					break
 				}

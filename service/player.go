@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"quasar/utils"
 	"time"
 
 	"gofishing-game/internal/errcode"
@@ -16,7 +17,6 @@ import (
 	"github.com/guogeer/quasar/cmd"
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/util"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -70,8 +70,8 @@ type Player struct {
 	bagObj     *bagObj
 	GameAction GameAction
 
-	TimerGroup *util.TimerGroup // 定时器组
-	closeTimer *util.Timer
+	TimerGroup *utils.TimerGroup // 定时器组
+	closeTimer *utils.Timer
 
 	// IsFirstEnter bool // 第一次进入游戏（非房间）
 
@@ -117,12 +117,12 @@ func (player *Player) Enter() errcode.Error {
 	data := GetEnterQueue().GetRequest(player.Id).EnterGameResp
 	gameutils.InitNilFields(data)
 
-	util.DeepCopy(&player.UserInfo, data.UserInfo)
+	utils.DeepCopy(&player.UserInfo, data.UserInfo)
 	player.CreateTime = data.UserInfo.CreateTime
 
 	player.isBusy = true
 	player.IsRobot = (player.ChanId == "robot")
-	player.TimerGroup = &util.TimerGroup{}
+	player.TimerGroup = &utils.TimerGroup{}
 	player.IsSessionClose = false
 	player.tempValues = map[string]any{}
 	player.allNotify = map[string]any{}
@@ -183,7 +183,7 @@ func (player *Player) OnEnter() {
 
 	player.isBusy = false
 	player.clientValues = nil
-	util.StopTimer(player.closeTimer) // 移除断线超时T人
+	utils.StopTimer(player.closeTimer) // 移除断线超时T人
 }
 
 // 进入游戏时，需通知客户端的数据
@@ -393,7 +393,7 @@ func (player *Player) updateLevel(reason string) {
 			items = append(items, gameutils.ParseNumbericItems(reward)...)
 		}
 
-		// player.ItemObj().AddSome(items, util.GUID(), "level_up")
+		// player.ItemObj().AddSome(items, utils.GUID(), "level_up")
 		// player.shopObj.OnLevelUp()
 		player.SetTempValue("LevelReward", items)
 		for _, action := range player.enterActions {
@@ -430,7 +430,7 @@ func (player *Player) Notify(data any) {
 		oldNotify[k] = player.allNotify[k]
 		player.allNotify[k] = newNotify[k]
 	}
-	if util.EqualJSON(newNotify, oldNotify) {
+	if utils.EqualJSON(newNotify, oldNotify) {
 		return
 	}
 

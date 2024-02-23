@@ -9,13 +9,13 @@ import (
 	"gofishing-game/service/roomutils"
 	"gofishing-game/service/system"
 	"math/rand"
+	"quasar/utils/randutils"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/randutil"
 )
 
 const (
@@ -462,7 +462,7 @@ func (room *DoudizhuRoom) StartDealCard() {
 	room.cheatSeats = 0
 	// 无测试牌型
 	test := cardutils.GetSample()
-	if len(test) == 0 && randutil.IsPercentNice(percent) {
+	if len(test) == 0 && randutils.IsPercentNice(percent) {
 		dealerSeatId := room.dealer.GetSeatIndex()
 		for i := 0; i < room.NumSeat(); i++ {
 			p := room.GetPlayer((dealerSeatId + i + 1) % room.NumSeat())

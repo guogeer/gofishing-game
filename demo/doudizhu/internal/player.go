@@ -7,10 +7,10 @@ import (
 	. "gofishing-game/internal/errcode"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
+	"quasar/utils"
 	"time"
 
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/util"
 )
 
 // 玩家信息
@@ -47,7 +47,7 @@ type DoudizhuPlayer struct {
 	jiaofen    int // -1 没答复；0、不叫；
 	qiangdizhu int // -1 没答复；0、不叫；1、叫；2、再抢
 
-	operateTimer *util.Timer
+	operateTimer *utils.Timer
 }
 
 func (ply *DoudizhuPlayer) TryLeave() errcode.Error {
@@ -177,7 +177,7 @@ func (ply *DoudizhuPlayer) SetAutoPlay(t int) {
 	if isAutoPlay {
 		d = room.autoTime.Sub(time.Now())
 	}
-	util.ResetTimer(ply.operateTimer, d)
+	utils.ResetTimer(ply.operateTimer, d)
 	room.OnTurn()
 }
 
@@ -239,7 +239,7 @@ func (ply *DoudizhuPlayer) Discard(cards []int) {
 		data["BoomTimes"] = multiple
 		data["CurrentTimes"] = room.currentTimes
 	}
-	util.StopTimer(ply.operateTimer)
+	utils.StopTimer(ply.operateTimer)
 	room.Broadcast("Discard", data)
 
 	for _, c := range cards {
@@ -310,7 +310,7 @@ func (ply *DoudizhuPlayer) Jiaofen(choice int) {
 	if ply.jiaofen != -1 {
 		return
 	}
-	if util.InArray([]int{0, 1, 2, 3}, choice) == 0 {
+	if utils.InArray([]int{0, 1, 2, 3}, choice) == 0 {
 		return
 	}
 	if other := room.choosePlayer; other != nil && choice > 0 && choice <= other.jiaofen {
@@ -335,7 +335,7 @@ func (ply *DoudizhuPlayer) Pass() {
 
 	// OK
 	ply.action = nil
-	util.StopTimer(ply.operateTimer)
+	utils.StopTimer(ply.operateTimer)
 	room.Broadcast("Pass", map[string]any{"uid": ply.Id})
 	room.Turn()
 }

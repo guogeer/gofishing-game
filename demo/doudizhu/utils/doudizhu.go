@@ -10,7 +10,6 @@ import (
 )
 
 var enableDebugDoudizhu = false
-var ignorefmt1106 = fmt.Sprint("ignore fmt")
 
 const (
 	DoudizhuNone = iota

@@ -2,12 +2,12 @@ package internal
 
 import (
 	"context"
+	"quasar/utils"
 
 	"gofishing-game/internal/dbo"
 	"gofishing-game/internal/pb"
 
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/util"
 )
 
 type Mail struct {
@@ -55,7 +55,7 @@ func (cc *Cache) QuerySomeMail(ctx context.Context, req *pb.QuerySomeMailReq) (*
 		mail := &pb.Mail{}
 		simpleMail := &Mail{}
 		rs.Scan(&mail.Id, &mail.Type, &mail.RecvId, dbo.JSON(simpleMail), &mail.Status, &mail.SendTime)
-		util.DeepCopy(mail, simpleMail)
+		utils.DeepCopy(mail, simpleMail)
 		mails = append(mails, mail)
 	}
 	return &pb.QuerySomeMailResp{Mails: mails}, nil
@@ -66,7 +66,7 @@ func (cc *Cache) SendMail(ctx context.Context, req *pb.SendMailReq) (*pb.SendMai
 
 	mail := req.Mail
 	simpleMail := &Mail{}
-	util.DeepCopy(simpleMail, req.Mail)
+	utils.DeepCopy(simpleMail, req.Mail)
 	rs, err := db.Exec("insert into mail(`type`,recv_uid,`data`) values(?,?,?)", mail.Type, mail.RecvId, dbo.JSON(simpleMail))
 	if err != nil {
 		log.Error("send mail", err)

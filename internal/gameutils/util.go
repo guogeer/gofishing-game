@@ -2,9 +2,8 @@ package gameutils
 
 import (
 	"fmt"
+	"quasar/utils"
 	"reflect"
-
-	"github.com/guogeer/quasar/util"
 )
 
 func addStructFieldsWithMulti(obj, add any, multi int) {
@@ -24,8 +23,8 @@ func addStructFieldsWithMulti(obj, add any, multi int) {
 		objname := objv.Type().Field(i).Name
 		addfield := addv.FieldByName(objname)
 
-		objkind := util.ConvertKind(objfield.Kind())
-		addkind := util.ConvertKind(addfield.Kind())
+		objkind := utils.ConvertKind(objfield.Kind())
+		addkind := utils.ConvertKind(addfield.Kind())
 		if !objfield.CanSet() {
 			continue
 		}
