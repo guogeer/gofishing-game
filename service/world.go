@@ -90,6 +90,10 @@ func Broadcast2Gateway(messageId string, i any) {
 	cmd.Route("router", "C2S_Broadcast", data)
 }
 
+func BroadcastNotification(notification string) {
+	Broadcast2Gateway("broadcast", map[string]any{"notification": notification})
+}
+
 func GetAllPlayers() []*Player {
 	players := make([]*Player, 0, len(gAllPlayers))
 	for _, player := range gAllPlayers {
