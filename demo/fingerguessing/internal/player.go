@@ -130,8 +130,9 @@ func (ply *fingerGuessingPlayer) GameOver(guesture string) (int64, int) {
 		return gameutils.CountItems(costItems, gameutils.ItemIdGold), cmp
 	}
 
-	awardStr, _ := config.String("room", room.SubId, "award")
-	awardItems := gameutils.ParseNumbericItems(awardStr)
+	var baseAward, constAward string
+	config.Scan("room", room.SubId, "baseAward, constAward", &baseAward, &constAward)
+	awardItems := append(gameutils.ParseNumbericItems(baseAward), gameutils.ParseNumbericItems(constAward)...)
 	ply.BagObj().AddSomeItems(awardItems, "finger_guessing_award")
 
 	return gameutils.CountItems(awardItems, gameutils.ItemIdGold) * int64(cmp), cmp
