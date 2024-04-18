@@ -3,7 +3,6 @@ package shengsidu
 import (
 	"gofishing-game/service"
 	"third/cardutil"
-	. "third/errcode"
 	"time"
 
 	"github.com/guogeer/quasar/log"
@@ -216,7 +215,7 @@ func (ply *ShengsiduPlayer) Discard(cards []int) {
 	}
 	// 下家报单必须出最大的单张
 	baodan := false
-	next := room.GetPlayer((ply.SeatId + 1) % room.SeatNum())
+	next := room.GetPlayer((ply.SeatId + 1) % room.NumSeat())
 	if next != nil && len(next.GetSortedCards()) == 1 {
 		baodan = true
 	}
@@ -301,8 +300,8 @@ func (ply *ShengsiduPlayer) Replay(messageId string, i interface{}) {
 	case "StartDealCard":
 		room := ply.Room()
 		data := i.(map[string]any)
-		all := make([][]int, room.SeatNum())
-		for k := 0; k < room.SeatNum(); k++ {
+		all := make([][]int, room.NumSeat())
+		for k := 0; k < room.NumSeat(); k++ {
 			other := room.GetPlayer(k)
 			all[k] = other.GetSortedCards()
 		}

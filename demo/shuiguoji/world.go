@@ -7,7 +7,7 @@ import (
 	"third/rpc"
 	"time"
 
-	"github.com/guogeer/quasar/util"
+	"github.com/guogeer/quasar/utils"
 	"golang.org/x/net/context"
 )
 

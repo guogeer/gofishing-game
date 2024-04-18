@@ -1,15 +1,15 @@
 package niuniu
 
 import (
+	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
 	"math/rand"
 	"third/cardutil"
-	. "third/errcode"
 	"time"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/util"
+	"github.com/guogeer/quasar/utils"
 )
 
 const (
@@ -85,7 +85,7 @@ func (room *NiuNiuRoom) OnEnter(player *service.Player) {
 
 	// 自动坐下
 	seatId := room.GetEmptySeat()
-	if comer.SeatId == service.NoSeat && seatId != service.NoSeat {
+	if comer.SeatId == roomutils.NoSeat && seatId != roomutils.NoSeat {
 		// comer.SitDown()
 		comer.RoomObj.SitDown(seatId)
 
@@ -101,7 +101,7 @@ func (room *NiuNiuRoom) OnEnter(player *service.Player) {
 	}
 
 	var seats []*NiuNiuPlayerInfo
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil {
 			info := p.GetUserInfo(comer.Id == p.Id)
 			seats = append(seats, info)
@@ -207,7 +207,7 @@ func (room *NiuNiuRoom) Award() {
 		}
 	}
 	// 清理上局数据
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil {
 			if p.lastWinGold > 0 {
 				p.betInAddition = true
@@ -318,7 +318,7 @@ func (room *NiuNiuRoom) GameOver() {
 	// 积分场最后一局
 	details := make([]UserDetail, 0, 8)
 	if room.IsUserCreate() && room.ExistTimes+1 == room.LimitTimes {
-		for i := 0; i < room.SeatNum(); i++ {
+		for i := 0; i < room.NumSeat(); i++ {
 			if p := room.GetPlayer(i); p != nil {
 				details = append(details, UserDetail{UId: p.Id, Gold: p.Gold - p.OriginGold})
 			}
@@ -349,7 +349,7 @@ func (room *NiuNiuRoom) GameOver() {
 // 游戏中玩家
 func (room *NiuNiuRoom) readyPlayers() []*NiuNiuPlayer {
 	all := make([]*NiuNiuPlayer, 0, 16)
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil && p.RoomObj.IsReady() {
 			all = append(all, p)
 		}
@@ -628,7 +628,7 @@ func (room *NiuNiuRoom) OnChooseTriCards() {
 }
 
 func (room *NiuNiuRoom) GetPlayer(seatId int) *NiuNiuPlayer {
-	if seatId < 0 || seatId >= room.SeatNum() {
+	if seatId < 0 || seatId >= room.NumSeat() {
 		return nil
 	}
 	if p := room.SeatPlayers[seatId]; p != nil {

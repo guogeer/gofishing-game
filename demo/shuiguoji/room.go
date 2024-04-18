@@ -2,8 +2,8 @@ package shuiguoji
 
 import (
 	"container/list"
+	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
-	. "third/errcode"
 
 	"github.com/guogeer/quasar/log"
 )
@@ -67,7 +67,7 @@ func (room *shuiguojiRoom) OnEnter(player *service.Player) {
 
 	// 自动坐下
 	seatId := room.GetEmptySeat()
-	if comer.SeatId == service.NoSeat && seatId != service.NoSeat {
+	if comer.SeatId == roomutils.NoSeat && seatId != roomutils.NoSeat {
 		comer.RoomObj.SitDown(seatId)
 
 		info := comer.GetUserInfo(0)
@@ -83,7 +83,7 @@ func (room *shuiguojiRoom) OnEnter(player *service.Player) {
 	}
 
 	var seats []*shuiguojiUserInfo
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil {
 			info := p.GetUserInfo(comer.Id)
 			seats = append(seats, info)
@@ -98,7 +98,7 @@ func (room *shuiguojiRoom) GameOver() {
 }
 
 func (room *shuiguojiRoom) GetPlayer(seatId int) *shuiguojiPlayer {
-	if seatId < 0 || seatId >= room.SeatNum() {
+	if seatId < 0 || seatId >= room.NumSeat() {
 		return nil
 	}
 	if p := room.SeatPlayers[seatId]; p != nil {

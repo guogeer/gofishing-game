@@ -3,7 +3,6 @@ package paodekuai
 import (
 	"gofishing-game/service"
 	"third/cardutil"
-	. "third/errcode"
 	"time"
 
 	"github.com/guogeer/quasar/log"
@@ -196,7 +195,7 @@ func (ply *PaodekuaiPlayer) Discard(cards []int) {
 		return
 	}
 	// 下家报单必须出最大的牌
-	next := room.GetPlayer((ply.SeatId + 1) % room.SeatNum())
+	next := room.GetPlayer((ply.SeatId + 1) % room.NumSeat())
 	if len(cards) == 1 && len(next.GetSortedCards()) == 1 {
 		maxCard := room.helper.MaxCard(ply.GetSortedCards())
 		if room.helper.Value(cards[0]) != room.helper.Value(maxCard) {
@@ -267,8 +266,8 @@ func (ply *PaodekuaiPlayer) Replay(messageId string, i interface{}) {
 	case "StartDealCard":
 		room := ply.Room()
 		data := i.(map[string]any)
-		all := make([][]int, room.SeatNum())
-		for k := 0; k < room.SeatNum(); k++ {
+		all := make([][]int, room.NumSeat())
+		for k := 0; k < room.NumSeat(); k++ {
 			other := room.GetPlayer(k)
 			all[k] = other.GetSortedCards()
 		}

@@ -8,10 +8,10 @@ import (
 )
 
 func init() {
-	cmd.Bind(Bet, (*Args)(nil))
-	cmd.Bind(RobDealer, (*Args)(nil))
-	cmd.Bind(GetHistory, (*Args)(nil))
-	cmd.Bind(SitDown, (*Args)(nil))
+	cmd.BindFunc(Bet, (*Args)(nil))
+	cmd.BindFunc(RobDealer, (*Args)(nil))
+	cmd.BindFunc(GetHistory, (*Args)(nil))
+	cmd.BindFunc(SitDown, (*Args)(nil))
 }
 
 type Args struct {

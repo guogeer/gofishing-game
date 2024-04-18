@@ -3,15 +3,15 @@ package internal
 import (
 	"container/list"
 	"fmt"
+	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
 	"strings"
-	. "third/errcode"
 	"third/gameutil"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
 	"github.com/guogeer/quasar/script"
-	"github.com/guogeer/quasar/util"
+	"github.com/guogeer/quasar/utils"
 )
 
 type Item = gameutils.Item
@@ -52,7 +52,7 @@ func (ply *entertainmentPlayer) AfterEnter() {
 	// 自动坐下
 	room := ply.Room()
 	seatId := room.GetEmptySeat()
-	if ply.SeatId == service.NoSeat && seatId != service.NoSeat {
+	if ply.SeatId == roomutils.NoSeat && seatId != roomutils.NoSeat {
 		if err := ply.TrySitDown(seatId); err.Code == Ok {
 			ply.SitDown(seatId)
 		}
@@ -150,7 +150,7 @@ func (ply *entertainmentPlayer) SitDown(seatId int) {
 
 	// OK
 	if other != nil {
-		room.robSeat = service.NoSeat
+		room.robSeat = roomutils.NoSeat
 	}
 }
 
@@ -302,7 +302,7 @@ func (ply *entertainmentPlayer) Bet(area int, gold int64) {
 	}
 
 	// 玩家有座位
-	if ply.SeatId != service.NoSeat || betArgs.BigBet > 0 {
+	if ply.SeatId != roomutils.NoSeat || betArgs.BigBet > 0 {
 		room.Broadcast("Bet", data, ply.Id)
 	}
 	// 移除房间通知

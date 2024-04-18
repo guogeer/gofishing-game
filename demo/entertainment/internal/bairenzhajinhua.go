@@ -4,6 +4,7 @@ package internal
 import (
 	"container/list"
 	"gofishing-game/service"
+	"gofishing-game/service/roomutils"
 	"math/rand"
 	"third/cardutil"
 
@@ -108,7 +109,7 @@ type BairenzhajinhuaWorld struct {
 
 func (w *BairenzhajinhuaWorld) NewRoom(id, subId int) *service.Room {
 	room := &entertainmentRoom{
-		robSeat:         service.NoSeat,
+		robSeat:         roomutils.NoSeat,
 		betAreas:        make([]int64, 4),
 		dealerQueue:     list.New(),
 		helper:          &bairenzhajinhuaHelper{},

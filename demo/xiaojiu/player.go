@@ -5,7 +5,6 @@ package xiaojiu
 
 import (
 	"gofishing-game/service"
-	. "third/errcode"
 
 	"github.com/guogeer/quasar/log"
 	"github.com/guogeer/quasar/util"

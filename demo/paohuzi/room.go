@@ -1,10 +1,10 @@
 package paohuzi
 
 import (
+	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
 	"math/rand"
 	"third/cardutil"
-	. "third/errcode"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
@@ -13,7 +13,7 @@ import (
 	// "third/rpc"
 	"time"
 
-	"github.com/guogeer/quasar/util"
+	"github.com/guogeer/quasar/utils"
 	// "golang.org/x/net/context"
 )
 
@@ -53,7 +53,7 @@ func (room *PaohuziRoom) OnEnter(player *service.Player) {
 
 	// 自动坐下
 	seatId := room.GetEmptySeat()
-	if player.SeatId == service.NoSeat && seatId != service.NoSeat {
+	if player.SeatId == roomutils.NoSeat && seatId != roomutils.NoSeat {
 		// comer.SitDown()
 		comer.RoomObj.SitDown(seatId)
 
@@ -69,7 +69,7 @@ func (room *PaohuziRoom) OnEnter(player *service.Player) {
 	}
 
 	var seats []*PaohuziUserInfo
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil {
 			info := p.GetUserInfo(comer.Id == p.Id)
 			seats = append(seats, info)
@@ -118,7 +118,7 @@ func (room *PaohuziRoom) StartGame() {
 	}
 	// 随机
 	if room.dealer == nil {
-		seatId := rand.Intn(room.SeatNum())
+		seatId := rand.Intn(room.NumSeat())
 		room.dealer = room.GetPlayer(seatId)
 	}
 	room.Broadcast("NewDealer", map[string]any{"UId": room.dealer.Id})
@@ -126,7 +126,7 @@ func (room *PaohuziRoom) StartGame() {
 	room.StartDealCard()
 
 	// 提龙
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		p := room.GetPlayer(i)
 		for _, c := range cardutil.GetAllCards() {
 			if p.cards[c] == 4 {
@@ -154,12 +154,12 @@ func (room *PaohuziRoom) OnWin() {
 		others = append(others, other)
 	}
 
-	startId, nearId := service.NoSeat, service.NoSeat
+	startId, nearId := roomutils.NoSeat, roomutils.NoSeat
 	if other := room.discardPlayer; other != nil {
 		startId = other.SeatId
 	}
 	for _, other := range others {
-		if nearId == service.NoSeat ||
+		if nearId == roomutils.NoSeat ||
 			room.distance(startId, nearId) > room.distance(startId, other.SeatId) {
 			nearId = other.SeatId
 		}
@@ -201,8 +201,8 @@ func (room *PaohuziRoom) GameOver() {
 		Gold  int64
 		Win   *WinOption `json:",omitempty"`
 	}
-	details := make([]UserDetail, room.SeatNum())
-	for i := 0; i < room.SeatNum(); i++ {
+	details := make([]UserDetail, room.NumSeat())
+	for i := 0; i < room.NumSeat(); i++ {
 		p := room.GetPlayer(i)
 		details[i].Cards = p.GetSortedCards()
 
@@ -218,7 +218,7 @@ func (room *PaohuziRoom) GameOver() {
 		}
 		gold := int64(kong) * unit
 		// 提龙
-		for k := 0; k < room.SeatNum(); k++ {
+		for k := 0; k < room.NumSeat(); k++ {
 			if other := room.GetPlayer(k); p != other {
 				details[i].Gold += gold
 				details[k].Gold -= gold
@@ -252,7 +252,7 @@ func (room *PaohuziRoom) GameOver() {
 		}
 
 		gold := int64(quality) * unit
-		for i := 0; i < room.SeatNum(); i++ {
+		for i := 0; i < room.NumSeat(); i++ {
 			if p := room.GetPlayer(i); p != winner {
 				details[p.SeatId].Gold -= gold
 				details[winner.SeatId].Gold += gold
@@ -260,7 +260,7 @@ func (room *PaohuziRoom) GameOver() {
 		}
 	}
 
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		p := room.GetPlayer(i)
 		p.AddGold(details[p.SeatId].Gold, guid, way)
 		if p.maxGold < p.Gold {
@@ -277,8 +277,8 @@ func (room *PaohuziRoom) GameOver() {
 			MaxGold    int64
 		}
 
-		seats := make([]TotalAward, 0, room.SeatNum())
-		for i := 0; i < room.SeatNum(); i++ {
+		seats := make([]TotalAward, 0, room.NumSeat())
+		for i := 0; i < room.NumSeat(); i++ {
 			p := room.GetPlayer(i)
 			seats[i] = TotalAward{
 				WinTimes:   p.winTimes,
@@ -305,7 +305,7 @@ func (room *PaohuziRoom) StartDealCard() {
 
 	c := room.CardSet().Deal()
 	room.dealer.cards[c]++
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		p := room.GetPlayer(i)
 		for k := 0; k < 20; k++ {
 			c := room.CardSet().Deal()
@@ -318,7 +318,7 @@ func (room *PaohuziRoom) StartDealCard() {
 }
 
 func (room *PaohuziRoom) GetPlayer(seatId int) *PaohuziPlayer {
-	if seatId < 0 || seatId >= room.SeatNum() {
+	if seatId < 0 || seatId >= room.NumSeat() {
 		return nil
 	}
 	if p := room.SeatPlayers[seatId]; p != nil {
@@ -330,7 +330,7 @@ func (room *PaohuziRoom) GetPlayer(seatId int) *PaohuziPlayer {
 func (room *PaohuziRoom) Turn() {
 	// 没人可以出牌，选取出牌的下家当庄家
 	if p := room.discardPlayer; p != nil {
-		nextId := (p.SeatId + 1) % room.SeatNum()
+		nextId := (p.SeatId + 1) % room.NumSeat()
 		next := room.GetPlayer(nextId)
 		next.Draw()
 	}
@@ -350,5 +350,5 @@ func (room *PaohuziRoom) Timing() {
 }
 
 func (room *PaohuziRoom) distance(from, to int) int {
-	return (to - from + room.SeatNum()) % room.SeatNum()
+	return (to - from + room.NumSeat()) % room.NumSeat()
 }

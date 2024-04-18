@@ -1,17 +1,17 @@
 package zhajinhua
 
 import (
+	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
 	"math/rand"
 	"third/cardutil"
-	. "third/errcode"
 	"third/gameutil"
 	"time"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
 	"github.com/guogeer/quasar/randutil"
-	"github.com/guogeer/quasar/util"
+	"github.com/guogeer/quasar/utils"
 )
 
 var (
@@ -60,7 +60,7 @@ func (room *ZhajinhuaRoom) OnEnter(player *service.Player) {
 	log.Infof("player %d enter room %d", comer.Id, room.Id)
 
 	seatId := room.GetEmptySeat()
-	if seatId != service.NoSeat && comer.SeatId == service.NoSeat {
+	if seatId != roomutils.NoSeat && comer.SeatId == roomutils.NoSeat {
 		comer.RoomObj.SitDown(seatId)
 
 		info := comer.GetUserInfo(false)
@@ -81,7 +81,7 @@ func (room *ZhajinhuaRoom) OnEnter(player *service.Player) {
 	}
 
 	var seats []*ZhajinhuaUserInfo
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil {
 			info := p.GetUserInfo(comer.Id == p.Id)
 			seats = append(seats, info)
@@ -161,7 +161,7 @@ func (room *ZhajinhuaRoom) OnCreate() {
 
 func (room *ZhajinhuaRoom) Award() {
 	guid := util.GUID()
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		p := room.GetPlayer(i)
 		if p != nil && p.RoomObj.IsReady() {
 			p.winGold = 0
@@ -175,13 +175,13 @@ func (room *ZhajinhuaRoom) Award() {
 	details := make([]CompareResult, 0, 4)
 	if winner == nil {
 		var compareUsers, activeUsers int
-		for i := 0; i < room.SeatNum(); i++ {
+		for i := 0; i < room.NumSeat(); i++ {
 			if p := room.GetPlayer(i); p != nil && p.IsPlaying() {
 				activeUsers++
 			}
 		}
-		for i := 0; i < room.SeatNum(); i++ {
-			seatId := (room.dealerSeatId + 1 + i) % room.SeatNum()
+		for i := 0; i < room.NumSeat(); i++ {
+			seatId := (room.dealerSeatId + 1 + i) % room.NumSeat()
 			if p := room.GetPlayer(seatId); p != nil && p.IsPlaying() {
 				compareUsers++
 				if winner == nil {
@@ -211,13 +211,13 @@ func (room *ZhajinhuaRoom) Award() {
 	}
 
 	isAllRobot := true
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		user := room.StartGameUsers[i]
 		if bet := room.allBet[i]; bet != 0 && user != nil && !user.IsRobot {
 			isAllRobot = false
 		}
 	}
-	for i := 0; !isAllRobot && i < room.SeatNum(); i++ {
+	for i := 0; !isAllRobot && i < room.NumSeat(); i++ {
 		var balance int64 = -1
 		if p := room.GetPlayer(i); p != nil {
 			balance = p.Gold
@@ -242,8 +242,8 @@ func (room *ZhajinhuaRoom) Award() {
 		CardType  int
 		ExtraGold int64 `json:",omitempty"` // 返还的金币
 	}
-	users := make([]UserDetail, 0, room.SeatNum())
-	for i := 0; i < room.SeatNum(); i++ {
+	users := make([]UserDetail, 0, room.NumSeat())
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil && p.RoomObj.IsReady() {
 			typ, _ := room.helper.GetType(p.cards[:])
 			detail := UserDetail{UId: p.Id, Cards: p.cards[:], CardType: typ, ExtraGold: p.extraGold}
@@ -283,7 +283,7 @@ func (room *ZhajinhuaRoom) GameOver() {
 
 func (room *ZhajinhuaRoom) CountActivePlayers() int {
 	counter := 0
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil && p.IsPlaying() {
 			counter++
 		}
@@ -294,7 +294,7 @@ func (room *ZhajinhuaRoom) CountActivePlayers() int {
 func (room *ZhajinhuaRoom) StartGame() {
 	room.Room.StartGame()
 	room.Status = service.RoomStatusPlaying
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil {
 			p.isShow = false
 			p.cards = nil
@@ -325,7 +325,7 @@ func (room *ZhajinhuaRoom) StartGame() {
 	room.currentChip = room.Unit()
 
 	activeSeats := make([]int, 0, 8)
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		p := room.GetPlayer(i)
 		if p != nil && p.RoomObj.IsReady() {
 			activeSeats = append(activeSeats, i)
@@ -367,13 +367,13 @@ func (room *ZhajinhuaRoom) StartGame() {
 	}
 
 	users := make([]StupidUser, 0, 8)
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil && p.IsPlaying() {
 			users = append(users, StupidUser{UId: p.Id, SeatId: p.SeatId, Cards: p.cards, IsRobot: p.IsRobot})
 		}
 	}
 	for _, p := range room.AllPlayers {
-		data := map[string]any{"AllBet": room.allBet[:room.SeatNum()]}
+		data := map[string]any{"AllBet": room.allBet[:room.NumSeat()]}
 		if p.IsRobot == true {
 			data["Users"] = users
 		}
@@ -386,7 +386,7 @@ func (room *ZhajinhuaRoom) StartGame() {
 }
 
 func (room *ZhajinhuaRoom) GetPlayer(seatId int) *ZhajinhuaPlayer {
-	if seatId < 0 || seatId >= room.SeatNum() {
+	if seatId < 0 || seatId >= room.NumSeat() {
 		return nil
 	}
 	if p := room.SeatPlayers[seatId]; p != nil {
@@ -405,7 +405,7 @@ func (room *ZhajinhuaRoom) OnTakeAction() {
 	next := room.GetPlayer(nextId)
 
 	var counter, allInUsers int
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil && p.IsPlaying() {
 			counter++
 			room.winner = p
@@ -469,14 +469,14 @@ func (room *ZhajinhuaRoom) OnTurn() {
 }
 
 func (room *ZhajinhuaRoom) NextSeat(seatId int) int {
-	for i := 0; i < room.SeatNum(); i++ {
-		nextId := (seatId + i + 1) % room.SeatNum()
+	for i := 0; i < room.NumSeat(); i++ {
+		nextId := (seatId + i + 1) % room.NumSeat()
 		next := room.GetPlayer(nextId)
 		if next != nil && next.IsPlaying() {
 			return next.SeatId
 		}
 	}
-	return service.NoSeat
+	return roomutils.NoSeat
 }
 
 func (room *ZhajinhuaRoom) IsAbleAllIn() bool {

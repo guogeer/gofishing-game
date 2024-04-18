@@ -3,7 +3,6 @@ package shisanshui
 import (
 	"gofishing-game/service"
 	"third/cardutil"
-	. "third/errcode"
 	"time"
 
 	"github.com/guogeer/quasar/log"

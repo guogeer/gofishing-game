@@ -1,10 +1,10 @@
 package shengsidu
 
 import (
+	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
 	"math/rand"
 	"third/cardutil"
-	. "third/errcode"
 
 	"github.com/guogeer/quasar/log"
 
@@ -12,7 +12,7 @@ import (
 	// "third/rpc"
 	"time"
 
-	"github.com/guogeer/quasar/util"
+	"github.com/guogeer/quasar/utils"
 	// "golang.org/x/net/context"
 )
 
@@ -69,7 +69,7 @@ func (room *ShengsiduRoom) OnEnter(player *service.Player) {
 
 	// 自动坐下
 	seatId := room.GetEmptySeat()
-	if player.SeatId == service.NoSeat && seatId != service.NoSeat {
+	if player.SeatId == roomutils.NoSeat && seatId != roomutils.NoSeat {
 		// comer.SitDown()
 		comer.RoomObj.SitDown(seatId)
 
@@ -85,7 +85,7 @@ func (room *ShengsiduRoom) OnEnter(player *service.Player) {
 	}
 
 	var seats []*ShengsiduUserInfo
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil {
 			info := p.GetUserInfo(comer.Id == p.Id)
 			seats = append(seats, info)
@@ -139,7 +139,7 @@ func (room *ShengsiduRoom) StartGame() {
 	}
 	// 随机
 	if room.dealer == nil {
-		seatId := rand.Intn(room.SeatNum())
+		seatId := rand.Intn(room.NumSeat())
 		room.dealer = room.GetPlayer(seatId)
 	}
 	room.Broadcast("NewDealer", map[string]any{"UId": room.dealer.Id})
@@ -166,14 +166,14 @@ func (room *ShengsiduRoom) Award() {
 	winPlayer.winTimes++
 
 	springNum := 0
-	bills := make([]Bill, room.SeatNum())
+	bills := make([]Bill, room.NumSeat())
 	bills[winSeatId].Hearts10 = (room.hearts10Player == winPlayer)
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		p := room.GetPlayer(i)
 		bills[i].Cards = p.GetSortedCards()
 		// 有炸弹
 		if t := p.boomTimes; t > 0 && false {
-			for k := 0; k < room.SeatNum(); k++ {
+			for k := 0; k < room.NumSeat(); k++ {
 				if other := room.GetPlayer(k); p != other {
 					gold := int64(t) * 10 * unit
 					bills[k].Gold -= gold
@@ -199,7 +199,7 @@ func (room *ShengsiduRoom) Award() {
 		}
 	}
 
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		p := room.GetPlayer(i)
 		bill := &bills[i]
 		if p != nil {
@@ -207,7 +207,7 @@ func (room *ShengsiduRoom) Award() {
 			if bill.Spring {
 				loseGold <<= 1
 			}
-			if springNum+1 == room.SeatNum() {
+			if springNum+1 == room.NumSeat() {
 				loseGold <<= 1
 			}
 			// 红桃10扎鸟
@@ -219,7 +219,7 @@ func (room *ShengsiduRoom) Award() {
 			bills[winSeatId].Gold += loseGold
 		}
 	}
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		p := room.GetPlayer(i)
 		gold := bills[i].Gold
 		if p.maxWinGold < gold {
@@ -228,8 +228,8 @@ func (room *ShengsiduRoom) Award() {
 		p.AddGold(gold, guid, way)
 	}
 	if springNum > 0 {
-		if room.SeatNum() > 2 && springNum+1 < room.SeatNum() {
-			for i := 0; i < room.SeatNum(); i++ {
+		if room.NumSeat() > 2 && springNum+1 < room.NumSeat() {
+			for i := 0; i < room.NumSeat(); i++ {
 				p := room.GetPlayer(i)
 				if p != room.winPlayer {
 					p.addition["BeiBanTong"] += 1
@@ -239,8 +239,8 @@ func (room *ShengsiduRoom) Award() {
 				p.addition["TongBieJia"] += 1
 			}
 		}
-		if room.SeatNum() == 2 && springNum+1 == room.SeatNum() {
-			for i := 0; i < room.SeatNum(); i++ {
+		if room.NumSeat() == 2 && springNum+1 == room.NumSeat() {
+			for i := 0; i < room.NumSeat(); i++ {
 				p := room.GetPlayer(i)
 				if p != room.winPlayer {
 					p.addition["BeiQuanTong"] += 1
@@ -250,14 +250,14 @@ func (room *ShengsiduRoom) Award() {
 				p.addition["TongBieJia"] += 1
 			}
 		}
-		if room.SeatNum() > 2 && springNum+1 == room.SeatNum() {
+		if room.NumSeat() > 2 && springNum+1 == room.NumSeat() {
 			if p := room.winPlayer; p != nil {
 				p.addition["YiTongTianXia"] += 1
 			}
 		}
 	}
 	// 统别家，旧版拼错
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		p := room.GetPlayer(i)
 		if p != room.winPlayer {
 			p.addition["TongBeiJia"] = p.addition["TongBieJia"]
@@ -287,7 +287,7 @@ func (room *ShengsiduRoom) GameOver() {
 
 		// 积分场最后一局
 		details := make([]TotalAwardInfo, 0, 8)
-		for i := 0; i < room.SeatNum(); i++ {
+		for i := 0; i < room.NumSeat(); i++ {
 			if p := room.GetPlayer(i); p != nil {
 				details = append(details, TotalAwardInfo{
 					Boom:       p.totalBoomTimes,
@@ -318,7 +318,7 @@ func (room *ShengsiduRoom) StartDealCard() {
 	sec := room.GetShowTime(room.autoTime)
 
 	diamonds := 0x02 // 方片2
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		p := room.GetPlayer(i)
 		for k := 0; k < 13; k++ {
 			c := room.CardSet().Deal()
@@ -351,7 +351,7 @@ func (room *ShengsiduRoom) StartDealCard() {
 	data := map[string]any{
 		"Sec": sec,
 	}
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		p := room.GetPlayer(i)
 		data["Cards"] = p.GetSortedCards()
 		p.WriteJSON("StartDealCard", data)
@@ -359,7 +359,7 @@ func (room *ShengsiduRoom) StartDealCard() {
 }
 
 func (room *ShengsiduRoom) GetPlayer(seatId int) *ShengsiduPlayer {
-	if seatId < 0 || seatId >= room.SeatNum() {
+	if seatId < 0 || seatId >= room.NumSeat() {
 		return nil
 	}
 	if p := room.SeatPlayers[seatId]; p != nil {
@@ -373,7 +373,7 @@ func (room *ShengsiduRoom) Turn() {
 	current := room.expectDiscardPlayer
 	if p := room.discardPlayer; p != nil {
 		cards := p.GetSortedCards()
-		next := room.GetPlayer((current.SeatId + 1) % room.SeatNum())
+		next := room.GetPlayer((current.SeatId + 1) % room.NumSeat())
 		// 最后出的炸弹才给钱
 		if len(cards) == 0 || p == next {
 			typ, _, _ := room.helper.GetType(p.action)

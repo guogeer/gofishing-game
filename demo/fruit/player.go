@@ -1,10 +1,10 @@
 package fruit
 
 import (
+	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
-	. "third/errcode"
 
-	"github.com/guogeer/quasar/util"
+	"github.com/guogeer/quasar/utils"
 )
 
 // 座位上的玩家
@@ -55,7 +55,7 @@ func (ply *FruitPlayer) TryLeave() ErrCode {
 }
 
 func (ply *FruitPlayer) BeforeLeave() {
-	if ply.SeatId != service.NoSeat {
+	if ply.SeatId != roomutils.NoSeat {
 		ply.RoomObj.SitUp()
 	}
 }

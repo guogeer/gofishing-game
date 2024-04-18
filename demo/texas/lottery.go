@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/guogeer/quasar/config"
-	"github.com/guogeer/quasar/util"
+	"github.com/guogeer/quasar/utils"
 )
 
 var (

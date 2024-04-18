@@ -7,7 +7,6 @@ import (
 	"container/list"
 	"gofishing-game/service"
 	"math/rand"
-	. "third/errcode"
 	"time"
 
 	"github.com/guogeer/quasar/config"

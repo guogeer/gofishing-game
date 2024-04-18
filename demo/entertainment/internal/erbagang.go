@@ -4,6 +4,7 @@ import (
 	"container/list"
 	// "github.com/guogeer/quasar/log"
 	"gofishing-game/service"
+	"gofishing-game/service/roomutils"
 	"math/rand"
 	"third/cardutil"
 
@@ -219,7 +220,7 @@ type ErbagangWorld struct {
 
 func (w *ErbagangWorld) NewRoom(id, subId int) *service.Room {
 	room := &entertainmentRoom{
-		robSeat:         service.NoSeat,
+		robSeat:         roomutils.NoSeat,
 		dealerQueue:     list.New(),
 		chips:           []int64{100, 500, 1000, 5000, 10000},
 		helper:          &erbagangHelper{},

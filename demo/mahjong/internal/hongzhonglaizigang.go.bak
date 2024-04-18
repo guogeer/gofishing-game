@@ -50,8 +50,8 @@ func (mj *HongzhonglaizigangMahjong) OnEnter(comer *MahjongPlayer) {
 		data["Piao"] = hongzhonglaizigangPiaoOptions
 	}
 	if room.CanPlay(OptZiYouXuanPiao) && room.Status != service.RoomStatusFree {
-		all := make([]int, room.SeatNum())
-		for i := 0; i < room.SeatNum(); i++ {
+		all := make([]int, room.NumSeat())
+		for i := 0; i < room.NumSeat(); i++ {
 			if p := room.GetPlayer(i); p != nil {
 				obj := p.localObj.(*HongzhonglaizigangObj)
 				all[i] = obj.piao
@@ -101,7 +101,7 @@ func (mj *HongzhonglaizigangMahjong) startChoosePiao() {
 		"Index": hongzhonglaizigangPiaoOptions,
 		"Sec":   room.GetShowTime(room.deadline),
 	})
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		p := room.GetPlayer(i)
 		obj := p.localObj.(*HongzhonglaizigangObj)
 		obj.piao = -1
@@ -114,15 +114,15 @@ func (mj *HongzhonglaizigangMahjong) startChoosePiao() {
 func (mj *HongzhonglaizigangMahjong) OnChoosePiao() {
 	room := mj.room
 
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		p := room.GetPlayer(i)
 		obj := p.localObj.(*HongzhonglaizigangObj)
 		if obj.piao == -1 {
 			return
 		}
 	}
-	all := make([]int, room.SeatNum())
-	for i := 0; i < room.SeatNum(); i++ {
+	all := make([]int, room.NumSeat())
+	for i := 0; i < room.NumSeat(); i++ {
 		p := room.GetPlayer(i)
 		obj := p.localObj.(*HongzhonglaizigangObj)
 		all[i] = obj.piao
@@ -239,8 +239,8 @@ func (mj *HongzhonglaizigangMahjong) Award() {
 
 	// 胡牌
 	// 不允许一炮多响，所以最多只有一个人胡牌
-	bills := make([]Bill, room.SeatNum())
-	for i := 0; i < room.SeatNum(); i++ {
+	bills := make([]Bill, room.NumSeat())
+	for i := 0; i < room.NumSeat(); i++ {
 		p := room.GetPlayer(i)
 		detail := GoldDetail{
 			Seats:   1 << uint(p.SeatId()),
@@ -341,7 +341,7 @@ func (mj *HongzhonglaizigangMahjong) Award() {
 				effect = append(effect, boom)
 			} else {
 				// 自摸
-				for i := 0; i < room.SeatNum(); i++ {
+				for i := 0; i < room.NumSeat(); i++ {
 					if other := room.GetPlayer(i); p != other {
 						effect = append(effect, other)
 					}
@@ -382,9 +382,9 @@ func (mj *HongzhonglaizigangMahjong) Award() {
 				// log.Debug("test XX ", times, detail.Gold)
 			}
 			// 漂
-			/*if piao := room.piao(); piao > 0 && counter == room.SeatNum()-1 {
+			/*if piao := room.piao(); piao > 0 && counter == room.NumSeat()-1 {
 				addition2["PIAO"] = piao * counter
-				for i := 0; i < room.SeatNum(); i++ {
+				for i := 0; i < room.NumSeat(); i++ {
 					if other := room.GetPlayer(i); other != p {
 						bill := &bills[other.SeatId]
 						detail := &bill.Details[0]
@@ -398,7 +398,7 @@ func (mj *HongzhonglaizigangMahjong) Award() {
 		}
 	}
 	// 漂
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		addition2 := bills[i].Details[0].Addition2
 		// 对漂
 		if piao := room.piao(); piao > 0 {
@@ -412,7 +412,7 @@ func (mj *HongzhonglaizigangMahjong) Award() {
 func (mj *HongzhonglaizigangMahjong) GameOver() {
 	room := mj.room
 	mj.ghostCard = -1
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		obj := room.GetPlayer(i).localObj.(*HongzhonglaizigangObj)
 		obj.history = obj.history[:0]
 	}
@@ -705,7 +705,7 @@ func (obj *HongzhonglaizigangObj) IsAbleWin() bool {
 		}
 	} else {
 		// 自摸最高的
-		for i := 0; i < room.SeatNum(); i++ {
+		for i := 0; i < room.NumSeat(); i++ {
 			var otherTimes = 1
 			if other := room.GetPlayer(i); i != obj.SeatId() {
 				otherObj := other.localObj.(*HongzhonglaizigangObj)

@@ -2,7 +2,6 @@ package internal
 
 import (
 	"gofishing-game/service"
-	. "third/errcode"
 
 	"github.com/guogeer/quasar/cmd"
 	"github.com/guogeer/quasar/config"

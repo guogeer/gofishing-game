@@ -3,15 +3,15 @@ package threedice
 import (
 	"container/list"
 	"fmt"
+	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
 	"math/rand"
 	"third/cardutil"
-	. "third/errcode"
 	"time"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/util"
+	"github.com/guogeer/quasar/utils"
 )
 
 var (
@@ -73,7 +73,7 @@ func (room *ThreeDiceRoom) OnEnter(player *service.Player) {
 
 	// 自动坐下
 	seatId := room.GetEmptySeat()
-	if comer.SeatId == service.NoSeat && seatId != service.NoSeat && !comer.IsRobot() {
+	if comer.SeatId == roomutils.NoSeat && seatId != roomutils.NoSeat && !comer.IsRobot() {
 		comer.SitDown(seatId)
 	}
 
@@ -109,7 +109,7 @@ func (room *ThreeDiceRoom) OnEnter(player *service.Player) {
 	}
 
 	var seats []*ThreeDiceUserInfo
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil {
 			info := p.GetUserInfo(comer.Id == p.Id)
 			seats = append(seats, info)
@@ -322,7 +322,7 @@ func (room *ThreeDiceRoom) chooseDealer() {
 }
 
 func (room *ThreeDiceRoom) GetPlayer(seatId int) *ThreeDicePlayer {
-	if seatId < 0 || seatId >= room.SeatNum() {
+	if seatId < 0 || seatId >= room.NumSeat() {
 		return nil
 	}
 	if p := room.SeatPlayers[seatId]; p != nil {

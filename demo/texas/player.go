@@ -4,13 +4,13 @@ package texas
 
 import (
 	"fmt"
+	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
-	. "third/errcode"
 	"time"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/util"
+	"github.com/guogeer/quasar/utils"
 )
 
 const (
@@ -89,7 +89,7 @@ func (ply *TexasPlayer) AfterEnter() {
 	bankroll := ply.defaultBankroll()
 	// 选择过筹码的场次，第二次直接坐下
 	seatId := room.GetEmptySeat()
-	if seatId != service.NoSeat && ply.SeatId == service.NoSeat && bankroll > 0 {
+	if seatId != roomutils.NoSeat && ply.SeatId == roomutils.NoSeat && bankroll > 0 {
 		ply.SitDown(seatId)
 	}
 	ply.OnlineBoxObj().Look()
@@ -287,7 +287,7 @@ func (ply *TexasPlayer) AddBankroll(bankroll int64) {
 
 // 站起
 func (ply *TexasPlayer) SitUp() {
-	if ply.SeatId == service.NoSeat {
+	if ply.SeatId == roomutils.NoSeat {
 		return
 	}
 
@@ -494,7 +494,7 @@ func (ply *TexasPlayer) maxAllIn() int64 {
 	room := ply.Room()
 
 	var first, second int64
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil && p.IsPlaying() {
 			total := p.bankroll + p.totalBlind
 			if first <= total {

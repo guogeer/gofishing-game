@@ -1,13 +1,13 @@
 package xiaojiu
 
 import (
+	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
 	"math/rand"
-	. "third/errcode"
 	"time"
 
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/util"
+	"github.com/guogeer/quasar/utils"
 )
 
 const (
@@ -54,7 +54,7 @@ func (room *XiaojiuRoom) OnEnter(player *service.Player) {
 
 	// 自动坐下
 	seatId := room.GetEmptySeat()
-	if comer.SeatId == service.NoSeat && seatId != service.NoSeat {
+	if comer.SeatId == roomutils.NoSeat && seatId != roomutils.NoSeat {
 		comer.RoomObj.SitDown(seatId)
 
 		info := comer.GetUserInfo(false)
@@ -76,7 +76,7 @@ func (room *XiaojiuRoom) OnEnter(player *service.Player) {
 	}
 
 	var seats []*XiaojiuUserInfo
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil {
 			info := p.GetUserInfo(comer.Id == p.Id)
 			seats = append(seats, info)
@@ -108,7 +108,7 @@ func (room *XiaojiuRoom) OnLeave(player *service.Player) {
 func (room *XiaojiuRoom) Award() {
 	if n := room.RoomConfig.Int("biya"); n > 0 {
 		areaId := rand.Intn(len(room.areas))
-		for i := 0; i < room.SeatNum(); i++ {
+		for i := 0; i < room.NumSeat(); i++ {
 			if p := room.GetPlayer(i); p != nil && p != room.dealer {
 				var sum int64
 				for _, v := range p.areas {
@@ -190,7 +190,7 @@ func (room *XiaojiuRoom) Award() {
 	}
 
 	users := make([]UserResult, 0, 8)
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil && p != room.dealer {
 			p.winGold = 0
 			for k, gold := range p.areas {
@@ -218,7 +218,7 @@ func (room *XiaojiuRoom) Award() {
 		"Sec":       room.GetShowTime(room.deadline),
 	}
 	room.Broadcast("Award", data)
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil {
 			p.AddGold(p.winGold, guid, way)
 		}
@@ -235,7 +235,7 @@ func (room *XiaojiuRoom) GameOver() {
 	details := make([]UserDetail, 0, 8)
 	activeUsers := room.CountPlayersInSeat()
 	if room.TimesByLoop+1 == room.LimitTimes*room.TimesPerLoop*activeUsers {
-		for i := 0; i < room.SeatNum(); i++ {
+		for i := 0; i < room.NumSeat(); i++ {
 			if p := room.GetPlayer(i); p != nil {
 				details = append(details, UserDetail{UId: p.Id, Gold: p.Gold - p.OriginGold})
 			}
@@ -284,10 +284,10 @@ func (room *XiaojiuRoom) StartGame() {
 }
 
 func (room *XiaojiuRoom) chooseDealer() {
-	var dealerSeatId = service.NoSeat
+	var dealerSeatId = roomutils.NoSeat
 	var seats = make([]int, 0, 8)
 	var host = GetPlayer(room.HostId)
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil {
 			seats = append(seats, p.SeatId)
 		}
@@ -307,8 +307,8 @@ func (room *XiaojiuRoom) chooseDealer() {
 		}
 		if room.dealer != nil && room.continuousDealerTimes >= room.TimesPerLoop {
 			startSeatId := room.dealer.SeatId
-			for i := 0; i < room.SeatNum(); i++ {
-				seatId := (startSeatId + i + 1) % room.SeatNum()
+			for i := 0; i < room.NumSeat(); i++ {
+				seatId := (startSeatId + i + 1) % room.NumSeat()
 				if p := room.GetPlayer(seatId); p != nil {
 					dealerSeatId = seatId
 					break
@@ -317,7 +317,7 @@ func (room *XiaojiuRoom) chooseDealer() {
 		}
 		seats = seats[:0]
 	}
-	if dealerSeatId != service.NoSeat {
+	if dealerSeatId != roomutils.NoSeat {
 		room.continuousDealerTimes = 0
 		room.dealer = room.GetPlayer(dealerSeatId)
 		room.Broadcast("NewDealer", map[string]any{"DealerId": room.dealer.Id, "Seats": seats})
@@ -325,7 +325,7 @@ func (room *XiaojiuRoom) chooseDealer() {
 }
 
 func (room *XiaojiuRoom) GetPlayer(seatId int) *XiaojiuPlayer {
-	if seatId < 0 || seatId >= room.SeatNum() {
+	if seatId < 0 || seatId >= room.NumSeat() {
 		return nil
 	}
 	if p := room.SeatPlayers[seatId]; p != nil {

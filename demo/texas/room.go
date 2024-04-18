@@ -1,9 +1,9 @@
 package texas
 
 import (
+	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
 	"third/cardutil"
-	. "third/errcode"
 	"time"
 
 	"github.com/guogeer/quasar/config"
@@ -94,14 +94,14 @@ func (room *TexasRoom) OnEnter(player *service.Player) {
 	}
 
 	var seats []*TexasUserInfo
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil {
 			info := p.GetUserInfo(comer.Id == p.Id)
 			seats = append(seats, info)
 		}
 	}
 	data["SeatPlayers"] = seats
-	if comer.SeatId == service.NoSeat {
+	if comer.SeatId == roomutils.NoSeat {
 		data["PersonInfo"] = comer.GetUserInfo(true)
 	}
 
@@ -122,7 +122,7 @@ func (room *TexasRoom) OnLeave(player *service.Player) {
 	room.Room.OnLeave(player)
 
 	counter := 0
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil {
 			counter++
 		}
@@ -134,7 +134,7 @@ func (room *TexasRoom) OnLeave(player *service.Player) {
 	}
 
 	counter = 0
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil && p.RoomObj.ContinuousPlayTimes > 0 {
 			counter++
 		}
@@ -156,14 +156,14 @@ func (room *TexasRoom) OnCreate() {
 }
 
 func (room *TexasRoom) Award() {
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		p := room.GetPlayer(i)
 		if p != nil && p.IsPlaying() {
 			p.winGold = 0
 		}
 	}
 	// 自动亮牌
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil {
 			p.AutoPlay()
 		}
@@ -180,7 +180,7 @@ func (room *TexasRoom) Award() {
 			winners = append(winners, p)
 		} else {
 			var maxMatch []int
-			for k := 0; k < room.SeatNum(); k++ {
+			for k := 0; k < room.NumSeat(); k++ {
 				p := room.GetPlayer(k)
 				if p != nil && p.IsPlaying() && p.potId >= potId {
 					_, match := p.match()
@@ -190,7 +190,7 @@ func (room *TexasRoom) Award() {
 				}
 			}
 
-			for k := 0; k < room.SeatNum(); k++ {
+			for k := 0; k < room.NumSeat(); k++ {
 				p := room.GetPlayer(k)
 				if p != nil && p.IsPlaying() && p.potId >= potId {
 					_, match := p.match()
@@ -206,7 +206,7 @@ func (room *TexasRoom) Award() {
 			relations = append(relations, Relation{SeatId: p.SeatId, PotId: potId, Gold: gold})
 		}
 	}
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil {
 			p.AddBankroll(p.winGold)
 		}
@@ -221,7 +221,7 @@ func (room *TexasRoom) Award() {
 	}
 	users := make([]UserDetail, 0, 16)
 	folders := make([]UserDetail, 0, 16)
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil {
 			typ, match := p.match()
 			detail := UserDetail{
@@ -259,12 +259,12 @@ func (room *TexasRoom) GameOver() {
 
 	subId := room.GetSubId()
 	minBankroll, _ := config.Int("texasroom", subId, "MinBankroll")
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil && p.bankroll == 0 && p.Gold < minBankroll {
 			p.SitUp()
 		}
 	}
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil {
 			p.initBankroll()
 		}
@@ -284,7 +284,7 @@ func (room *TexasRoom) GameOver() {
 	if room.IsTypeTournament() {
 		cp := room.Tournament()
 		users := make([]*service.TournamentUser, 0, 16)
-		for i := 0; i < room.SeatNum(); i++ {
+		for i := 0; i < room.NumSeat(); i++ {
 			if p := room.GetPlayer(i); p != nil && p.RoomObj.IsReady() {
 				user := cp.Users[p.Id]
 				user.Gold = p.bankroll
@@ -301,7 +301,7 @@ func (room *TexasRoom) GameOver() {
 			room.OnAddBlind()
 		}
 
-		for i := 0; i < room.SeatNum(); i++ {
+		for i := 0; i < room.NumSeat(); i++ {
 			if p := room.GetPlayer(i); p != nil && p.bankroll == 0 {
 				if cp.IsAbleRebuy(room.blindLoop) || cp.IsAbleAddon(room.blindLoop) {
 					p.AddTimer(service.TimerEventFail, p.RoomObj.Fail, systemFailTime)
@@ -330,7 +330,7 @@ func (room *TexasRoom) StartGame() {
 
 	// only two players, no dealer
 	var counter int
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil && p.IsPlaying() {
 			counter++
 		}
@@ -362,14 +362,14 @@ func (room *TexasRoom) StartGame() {
 	room.allBlind[bb.SeatId] = bb.totalBlind
 
 	counter = 0 // 统计老玩家数量
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil && p.IsPlaying() && p.RoomObj.ContinuousPlayTimes > 0 {
 			counter++
 		}
 	}
 	subId := room.GetSubId()
 	minReadyNum, _ := config.Int("texasroom", subId, "BigBlind")
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil && p.IsPlaying() {
 			var gold int64
 			// 房间老玩家人数不少于开局人数，新玩家自动压大盲注
@@ -395,7 +395,7 @@ func (room *TexasRoom) StartGame() {
 	}
 
 	// start deal card
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil && p.IsPlaying() {
 			for k := 0; k < len(p.cards); k++ {
 				p.cards[k] = room.CardSet().Deal()
@@ -407,7 +407,7 @@ func (room *TexasRoom) StartGame() {
 		data := map[string]any{
 			"SmallBlindSeat": room.smallBlindSeat,
 			"BigBlindSeat":   room.bigBlindSeat,
-			"AllBlind":       room.allBlind[:room.SeatNum()],
+			"AllBlind":       room.allBlind[:room.NumSeat()],
 		}
 		p := player.GameAction.(*TexasPlayer)
 		if p.IsPlaying() {
@@ -419,7 +419,7 @@ func (room *TexasRoom) StartGame() {
 		p.WriteJSON("StartPlaying", data)
 	}
 
-	if seatId := room.NextSeat(room.bigBlindSeat); seatId == service.NoSeat {
+	if seatId := room.NextSeat(room.bigBlindSeat); seatId == roomutils.NoSeat {
 		room.NewRound()
 	} else {
 		room.activePlayer = room.GetPlayer(seatId)
@@ -428,7 +428,7 @@ func (room *TexasRoom) StartGame() {
 }
 
 func (room *TexasRoom) GetPlayer(seatId int) *TexasPlayer {
-	if seatId < 0 || seatId >= room.SeatNum() {
+	if seatId < 0 || seatId >= room.NumSeat() {
 		return nil
 	}
 	if p := room.SeatPlayers[seatId]; p != nil {
@@ -442,7 +442,7 @@ func (room *TexasRoom) OnTakeAction() {
 	// others fold except one
 	var counter int
 	var winner *TexasPlayer
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		p := room.GetPlayer(i)
 		if p != nil && p.IsPlaying() {
 			counter++
@@ -473,7 +473,7 @@ func (room *TexasRoom) OnTakeAction() {
 
 	round := true
 	maxBlind := maxInArray(room.allBlind[:])
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil && p.IsPlaying() {
 			if p.action == ActionNone || (p.action != ActionAllIn && p.totalBlind < maxBlind) {
 				round = false
@@ -499,7 +499,7 @@ func (room *TexasRoom) NewRound() {
 	}
 
 	activeUsers := 0
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		p := room.GetPlayer(i)
 		if p != nil && p.IsPlaying() && p.action != ActionAllIn {
 			activeUsers++
@@ -507,7 +507,7 @@ func (room *TexasRoom) NewRound() {
 	}
 
 	activeSeat := room.NextSeat(room.tempDealerSeat)
-	if activeUsers < 2 || activeSeat == service.NoSeat {
+	if activeUsers < 2 || activeSeat == roomutils.NoSeat {
 		dealNum = cap(room.cards) - len(room.cards)
 	}
 	if cardNum >= cap(room.cards) || room.winner != nil {
@@ -520,7 +520,7 @@ func (room *TexasRoom) NewRound() {
 
 	relations := make([]Relation, 0, 32)
 	// 弃牌玩家
-	for k := 0; k < room.SeatNum(); k++ {
+	for k := 0; k < room.NumSeat(); k++ {
 		bet := room.allBlind[k]
 		if p := room.GetPlayer(k); p != nil && bet > 0 && p.action == ActionFold {
 			room.allBlind[k] = 0
@@ -531,7 +531,7 @@ func (room *TexasRoom) NewRound() {
 		}
 	}
 
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil {
 			p.totalBlind = 0
 			p.action = ActionNone
@@ -540,22 +540,22 @@ func (room *TexasRoom) NewRound() {
 
 	tempNum := len(relations)
 	for {
-		minSeatId := service.NoSeat
-		for k := 0; k < room.SeatNum(); k++ {
+		minSeatId := roomutils.NoSeat
+		for k := 0; k < room.NumSeat(); k++ {
 			if room.allBlind[k] > 0 {
-				if minSeatId == service.NoSeat || room.allBlind[minSeatId] > room.allBlind[k] {
+				if minSeatId == roomutils.NoSeat || room.allBlind[minSeatId] > room.allBlind[k] {
 					minSeatId = k
 				}
 			}
 		}
-		if minSeatId == service.NoSeat {
+		if minSeatId == roomutils.NoSeat {
 			break
 		}
 		if len(relations) > tempNum {
 			room.potId++
 		}
 		minBlind := room.allBlind[minSeatId]
-		for k := 0; k < room.SeatNum(); k++ {
+		for k := 0; k < room.NumSeat(); k++ {
 			if room.allBlind[k] > 0 {
 				room.allBlind[k] -= minBlind
 				room.allPot[room.potId] += minBlind
@@ -608,14 +608,14 @@ func (room *TexasRoom) OnTurn() {
 }
 
 func (room *TexasRoom) NextSeat(seatId int) int {
-	for i := 0; i < room.SeatNum(); i++ {
-		nextId := (seatId + i + 1) % room.SeatNum()
+	for i := 0; i < room.NumSeat(); i++ {
+		nextId := (seatId + i + 1) % room.NumSeat()
 		next := room.GetPlayer(nextId)
 		if next != nil && next.IsPlaying() && next.bankroll > 0 {
 			return next.SeatId
 		}
 	}
-	return service.NoSeat
+	return roomutils.NoSeat
 }
 
 // 升盲

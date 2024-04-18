@@ -6,13 +6,12 @@ package shuiguoji
 import (
 	"gofishing-game/service"
 	"strings"
-	. "third/errcode"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
 	"github.com/guogeer/quasar/randutil"
 	"github.com/guogeer/quasar/script"
-	"github.com/guogeer/quasar/util"
+	"github.com/guogeer/quasar/utils"
 )
 
 const (

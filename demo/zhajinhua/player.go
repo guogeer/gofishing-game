@@ -3,14 +3,14 @@ package zhajinhua
 // 2017-9-5
 
 import (
+	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
-	. "third/errcode"
 	"third/gameutil"
 	"time"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/util"
+	"github.com/guogeer/quasar/utils"
 )
 
 const (
@@ -111,7 +111,7 @@ func (ply *ZhajinhuaPlayer) AfterEnter() {
 }
 
 func (ply *ZhajinhuaPlayer) BeforeLeave() {
-	if ply.SeatId != service.NoSeat {
+	if ply.SeatId != roomutils.NoSeat {
 		ply.SitUp()
 	}
 }
@@ -195,7 +195,7 @@ func (ply *ZhajinhuaPlayer) CompareCard(seatId int) {
 		loser, winner = other, ply
 	}
 	activeUsers := 0
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil && p.IsPlaying() {
 			activeUsers++
 		}
@@ -359,7 +359,7 @@ func (ply *ZhajinhuaPlayer) TakeAction(gold int64) {
 	times = 0
 	if ply.action == ActionRaise {
 		times = ply.raiseTimes + 1
-		for i := 0; i < room.SeatNum(); i++ {
+		for i := 0; i < room.NumSeat(); i++ {
 			if other := room.GetPlayer(i); other != nil && other.IsPlaying() {
 				other.callTimes = 0
 			}
@@ -469,8 +469,8 @@ func (ply *ZhajinhuaPlayer) Replay(messageId string, i interface{}) {
 	case "StartDealCard":
 		room := ply.Room()
 		data := i.(map[string]any)
-		all := make([][]int, room.SeatNum())
-		for k := 0; k < room.SeatNum(); k++ {
+		all := make([][]int, room.NumSeat())
+		for k := 0; k < room.NumSeat(); k++ {
 			if other := room.GetPlayer(k); other != nil && other.cards != nil {
 				all[k] = other.cards[:]
 			}
@@ -592,7 +592,7 @@ func (ply *ZhajinhuaPlayer) maxBet() int64 {
 	}
 
 	var currentChip int64
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil && p.IsPlaying() {
 			chip := p.Gold
 			if p.isLook == true {

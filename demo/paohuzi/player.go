@@ -4,7 +4,6 @@ import (
 	"gofishing-game/service"
 	"sort"
 	"third/cardutil"
-	. "third/errcode"
 
 	"github.com/guogeer/quasar/log"
 )
@@ -167,7 +166,7 @@ func (ply *PaohuziPlayer) Draw() {
 
 	isPass := true
 	meldCards := []int{drawCard, drawCard, drawCard, drawCard}
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		other := room.GetPlayer(i)
 		tips := make([]OperateTip, 0, 4)
 		// 吃
@@ -200,7 +199,7 @@ func (ply *PaohuziPlayer) Draw() {
 		}
 		other.Prompt()
 	}
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		other := room.GetPlayer(i)
 		if t := other.GetKongType(drawCard); t != -1 {
 			isPass = false
@@ -231,7 +230,7 @@ func (ply *PaohuziPlayer) GetKongType(c int) int {
 			return cardutil.PaohuziInvisibleKong
 		}
 		if c == m.Cards[0] && m.Type == cardutil.PaohuziVisibleTriplet {
-			for i := 0; i < room.SeatNum(); i++ {
+			for i := 0; i < room.NumSeat(); i++ {
 				if other := room.GetPlayer(i); other != nil && other.drawCard != -1 {
 					return cardutil.PaohuziVisibleKong
 				}
@@ -401,7 +400,7 @@ func (ply *PaohuziPlayer) Chow(chowCards [][3]int) {
 
 	if ply.drawCard != -1 {
 		// 下家
-		nextId := (ply.SeatId + 1) % room.SeatNum()
+		nextId := (ply.SeatId + 1) % room.NumSeat()
 		next := room.GetPlayer(nextId)
 		if _, ok := room.expectWinPlayers[next.Id]; !ok &&
 			room.expectPongPlayer != next &&
@@ -411,7 +410,7 @@ func (ply *PaohuziPlayer) Chow(chowCards [][3]int) {
 		}
 
 		// 上家
-		lastId := (ply.SeatId - 1 + room.SeatNum()) % room.SeatNum()
+		lastId := (ply.SeatId - 1 + room.NumSeat()) % room.NumSeat()
 		last := room.GetPlayer(lastId)
 		if ply != last {
 			last.unableChowCards[chowCard] = true
@@ -597,7 +596,7 @@ func (ply *PaohuziPlayer) Discard(discardCard int) {
 
 	isPass := true
 	meldCards := []int{discardCard, discardCard, discardCard, discardCard}
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		tips := make([]OperateTip, 0, 4)
 		if other := room.GetPlayer(i); other != ply {
 			// 吃
@@ -631,7 +630,7 @@ func (ply *PaohuziPlayer) Discard(discardCard int) {
 			other.Prompt()
 		}
 	}
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if other := room.GetPlayer(i); other != ply {
 			if t := other.GetKongType(discardCard); t != -1 {
 				isPass = false
@@ -717,7 +716,7 @@ func (ply *PaohuziPlayer) IsAbleChow() bool {
 		return false
 	}
 	// 上家出牌
-	lastId := (ply.SeatId + room.SeatNum() - 1) % room.SeatNum()
+	lastId := (ply.SeatId + room.NumSeat() - 1) % room.NumSeat()
 	if other := room.discardPlayer; other != nil && lastId != other.SeatId {
 		return false
 	}
@@ -759,7 +758,7 @@ func (ply *PaohuziPlayer) IsAblePong() bool {
 		return false
 	}
 	if ply.drawCard == -1 {
-		for i := 0; i < room.SeatNum(); i++ {
+		for i := 0; i < room.NumSeat(); i++ {
 			other := room.GetPlayer(i)
 			for _, c := range other.discardHistory {
 				if c == pongCard {

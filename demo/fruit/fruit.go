@@ -1,8 +1,6 @@
 package fruit
 
 import (
-	. "third/errcode"
-
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/util"
 )

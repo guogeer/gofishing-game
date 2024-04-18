@@ -3,13 +3,13 @@ package lottery
 // 2018-12-07
 
 import (
+	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
 	"third/cardutil"
-	. "third/errcode"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/util"
+	"github.com/guogeer/quasar/utils"
 )
 
 // 玩家信息
@@ -29,7 +29,7 @@ type lotteryPlayer struct {
 func (ply *lotteryPlayer) AfterEnter() {
 	room := ply.Room()
 	seatId := room.GetEmptySeat()
-	if seatId != service.NoSeat && ply.SeatId == service.NoSeat {
+	if seatId != roomutils.NoSeat && ply.SeatId == roomutils.NoSeat {
 		ply.SitDown(seatId)
 	}
 }
@@ -110,7 +110,7 @@ func (ply *lotteryPlayer) Bet(clientArea int, gold int64) {
 
 	way := service.ItemWay{Way: "sum.lottery_bet", SubId: subId}.String()
 	ply.AddGold(-gold, util.GUID(), way)
-	if ply.SeatId != service.NoSeat {
+	if ply.SeatId != roomutils.NoSeat {
 		room.Broadcast("Bet", response, ply.Id)
 	}
 }

@@ -9,7 +9,7 @@ import (
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
 	"github.com/guogeer/quasar/randutil"
-	"github.com/guogeer/quasar/util"
+	"github.com/guogeer/quasar/utils"
 )
 
 const (
@@ -73,14 +73,14 @@ func (room *lotteryRoom) OnEnter(player *service.Player) {
 	}
 
 	var seats []*lotteryUserInfo
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil {
 			info := p.GetUserInfo(comer.Id)
 			seats = append(seats, info)
 		}
 	}
 	data["SeatPlayers"] = seats
-	if comer.SeatId == service.NoSeat {
+	if comer.SeatId == roomutils.NoSeat {
 		data["PersonInfo"] = comer.GetUserInfo(comer.Id)
 	}
 	comer.WriteJSON("GetRoomInfo", data)
@@ -300,7 +300,7 @@ func (room *lotteryRoom) StartGame() {
 }
 
 func (room *lotteryRoom) GetPlayer(seatId int) *lotteryPlayer {
-	if seatId < 0 || seatId >= room.SeatNum() {
+	if seatId < 0 || seatId >= room.NumSeat() {
 		return nil
 	}
 	if p := room.SeatPlayers[seatId]; p != nil {

@@ -3,16 +3,14 @@ package fruit
 import (
 	"gofishing-game/service"
 	"math/rand"
-	. "third/errcode"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
+	"github.com/guogeer/quasar/util"
 
 	// "third/pb"
 	// "third/rpc"
 	"time"
-
-	"github.com/guogeer/quasar/util"
 )
 
 const (
@@ -75,7 +73,7 @@ func (room *FruitRoom) OnEnter(player *service.Player) {
 		data["BetUserNum"] = room.countBetUser()
 	}
 	var seats []SeatPlayerInfo
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil {
 			info := SeatPlayerInfo{SeatId: p.SeatId}
 			util.DeepCopy(&info.SimpleUserInfo, &p.UserInfo)
@@ -166,7 +164,7 @@ func (room *FruitRoom) Award() {
 	// 座位玩家中奖
 	var areas []SeatArea
 	var betArea [MaxBetArea]int64
-	for i := 0; i < room.SeatNum(); i++ {
+	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil {
 			for k, v := range p.fruitObj.BetArea {
 				if float64(v)*winArea[k] > 0 {

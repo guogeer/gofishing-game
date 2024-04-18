@@ -4,7 +4,6 @@ package sangong
 
 import (
 	"gofishing-game/service"
-	. "third/errcode"
 
 	"github.com/guogeer/quasar/log"
 )
