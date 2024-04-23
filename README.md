@@ -60,9 +60,9 @@ use (
 	./gofishing-game/cache
 	./gofishing-game/hall
 	./gofishing-game/login
-	./gofishing-game/demo/fingerguessing
-	./gofishing-game/demo/doudizhu
-	./gofishing-game/demo/mahjong
+	./gofishing-game/migrate/fingerguessing
+	./gofishing-game/migrate/doudizhu
+	./gofishing-game/migrate/mahjong
 	./gofishing-plate
 	./quasar
 	./quasar/gateway
@@ -77,9 +77,9 @@ use (
 go run ./gofishing-game/cache
 go run ./gofishing-game/hall
 go run ./gofishing-game/login
-go run ./gofishing-game/demo/fingerGuessing
-go run ./gofishing-game/demo/mahjong
-go run ./gofishing-game/demo/doudizhu
+go run ./gofishing-game/migrate/fingerGuessing
+go run ./gofishing-game/migrate/mahjong
+go run ./gofishing-game/migrate/doudizhu
 ```
 4、调试工具
 新增了client.html调试工具
