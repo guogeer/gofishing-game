@@ -2,8 +2,8 @@ package shuiguoji
 
 import (
 	"container/list"
-	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
+	"gofishing-game/service/roomutils"
 
 	"github.com/guogeer/quasar/log"
 )
@@ -78,7 +78,7 @@ func (room *shuiguojiRoom) OnEnter(player *service.Player) {
 	prizePool := room.GetPrizePool().Add(0)
 	data := map[string]any{
 		"Status":    room.Status,
-		"SubId":     room.GetSubId(),
+		"SubId":     room.SubId,
 		"PrizePool": prizePool,
 	}
 

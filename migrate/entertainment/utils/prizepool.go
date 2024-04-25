@@ -2,46 +2,52 @@ package utils
 
 import (
 	"fmt"
+	"gofishing-game/service"
 
 	"github.com/guogeer/quasar/config"
+	"github.com/guogeer/quasar/utils/randutils"
 )
 
+// 暗池
 type InvisiblePrizePool struct {
 	subId int
+	Cap   int64 `json:"cap,omitempty"`
+	Tax   int64 `json:"tax,omitempty"`
+}
+
+func NewInvisiblePrizePool(subId int) *InvisiblePrizePool {
+	pp := &InvisiblePrizePool{subId: subId}
+	key := fmt.Sprintf("invisible_prize_pool_%d", subId)
+	service.UpdateDict(key, pp)
+	return pp
 }
 
 // n>0：表示玩家赢取
 func (pp *InvisiblePrizePool) Add(n int64) {
-	res := -n
-	percent, _ := config.Float("entertainment", pp.subId, "InvisiblePrizePoolPercent")
+	value := -n
+	percent, _ := config.Float("entertainment", pp.subId, "invisiblePrizePoolPercent")
 
 	var tax int64
-	if res > 0 {
-		tax = int64(float64(res) * percent / 100)
-		res = res - tax
+	if value > 0 {
+		tax = int64(float64(value) * percent / 100)
+		value = value - tax
 	}
-	key := fmt.Sprintf("invisible_prize_pool_%d", pp.subId)
-	// old := ServiceConfig().Int(key)
-	// log.Debug("current invisible prize pool", old, res)
-	ServiceConfig().Add(key, res)
-	key = fmt.Sprintf("daily.invisible_prize_pool_%d_tax", pp.subId)
-	ServiceConfig().Add(key, tax)
+	pp.Cap += value
+	pp.Tax += tax
 }
 
 // -1：吐分
-//
-//	0：正常
-//	1：吃分
+// 0：正常
+// 1：吃分
 func (pp *InvisiblePrizePool) Check() int {
 	subId := pp.subId
-	line, _ := config.Int("entertainment", subId, "WarningLine")
+	line, _ := config.Int("entertainment", subId, "warningLine")
 
-	percent, _ := config.Float("entertainment", subId, "PrizePoolControlPercent")
-	if randutil.IsPercentNice(percent) == false {
+	percent, _ := config.Float("entertainment", subId, "prizePoolControlPercent")
+	if randutils.IsPercentNice(percent) == false {
 		return 0
 	}
-	key := fmt.Sprintf("invisible_prize_pool_%d", subId)
-	n := ServiceConfig().Int(key)
+	n := pp.Cap
 	switch {
 	case n <= -line:
 		return -1
@@ -56,8 +62,7 @@ func (pp *InvisiblePrizePool) IsValid(n int64) bool {
 	subId := pp.subId
 	line, _ := config.Int("entertainment", subId, "WarningLine")
 
-	key := fmt.Sprintf("invisible_prize_pool_%d", subId)
-	cur := ServiceConfig().Int(key)
+	cur := pp.Cap
 	if n-cur >= line {
 		return false
 	}
@@ -66,46 +71,39 @@ func (pp *InvisiblePrizePool) IsValid(n int64) bool {
 
 // 奖池
 type PrizePool struct {
-	Rank         []RankUserInfo
-	subId        int
-	prizePoolKey string
-	rankKey      string
-	lastPrizeKey string
-	rankLen      int
+	Rank      []RankUserInfo `json:"rank,omitempty"`
+	subId     int
+	rankLen   int
+	Cap       int64 `json:"cap,omitempty"`
+	LastPrize int64 `json:"lastPrize,omitempty"`
 }
 
 func NewPrizePool(subId int) *PrizePool {
 	pool := &PrizePool{
-		Rank:         make([]RankUserInfo, 0, 10),
-		rankLen:      3,
-		subId:        subId,
-		prizePoolKey: fmt.Sprintf("prize_pool_gold_%d", subId),
-		rankKey:      fmt.Sprintf("prize_pool_rank_%d", subId),
-		lastPrizeKey: fmt.Sprintf("last_prize_gold_%d", subId),
+		Rank:    make([]RankUserInfo, 0, 10),
+		rankLen: 3,
+		subId:   subId,
 	}
-	// 兼容水果机
-	if GetName() == "sgj" {
-		pool.prizePoolKey = "shuiguoji_prize_pool"
-	}
+	service.UpdateDict("entertainment_prize_pool", pool)
 	return pool
 }
 
 func (pool *PrizePool) Add(n int64) int64 {
-	newPrize := ServiceConfig().Add(pool.prizePoolKey, n)
+	pool.Cap += n
 
-	limit, _ := config.Int("entertainment", pool.subId, "PrizePoolLimit")
-	if limit > 0 && newPrize > limit {
-		return ServiceConfig().Add(pool.prizePoolKey, limit-newPrize)
+	limit, _ := config.Int("entertainment", pool.subId, "prizePoolLimit")
+	if limit > 0 && pool.Cap > limit {
+		pool.Cap = limit
 	}
-	return newPrize
+	return pool.Cap
 }
 
 func (pool *PrizePool) SetLastPrize(n int64) {
-	ServiceConfig().Set(pool.lastPrizeKey, n)
+	pool.LastPrize = n
 }
 
-func (pool *PrizePool) LastPrize() int64 {
-	return ServiceConfig().Add(pool.lastPrizeKey, 0)
+func (pool *PrizePool) GetLastPrize() int64 {
+	return pool.LastPrize
 }
 
 func (pool *PrizePool) ClearRank() {
@@ -114,10 +112,9 @@ func (pool *PrizePool) ClearRank() {
 	}
 }
 
-func (pool *PrizePool) UpdateRank(user *SimpleUserInfo, gold int64) {
+func (pool *PrizePool) UpdateRank(user service.UserInfo, gold int64) {
 	rankList := &RankList{top: pool.Rank, len: pool.rankLen}
 	if rankList.Update(user, gold) != nil {
 		pool.Rank = rankList.top
-		ServiceConfig().Set(pool.rankKey, pool.Rank)
 	}
 }

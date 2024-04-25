@@ -1,13 +1,13 @@
 package xiaojiu
 
 import (
-	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
+	"gofishing-game/service/roomutils"
 	"math/rand"
 	"time"
 
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/utils"
+	"github.com/guogeer/quasar/util"
 )
 
 const (
@@ -64,7 +64,7 @@ func (room *XiaojiuRoom) OnEnter(player *service.Player) {
 	// 玩家重连
 	data := map[string]any{
 		"Status":    room.Status,
-		"SubId":     room.GetSubId(),
+		"SubId":     room.SubId,
 		"Countdown": room.GetShowTime(room.deadline),
 		"Chips":     room.Chips(),
 	}

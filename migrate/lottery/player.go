@@ -3,13 +3,14 @@ package lottery
 // 2018-12-07
 
 import (
-	"gofishing-game/internal/errcode"
+	"gofishing-game/internal/gameutils"
 	"gofishing-game/service"
+	"gofishing-game/service/roomutils"
 	"third/cardutil"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/utils"
+	"github.com/guogeer/quasar/util"
 )
 
 // 玩家信息
@@ -59,14 +60,14 @@ func (ply *lotteryPlayer) GameOver() {
 
 func (ply *lotteryPlayer) Bet(clientArea int, gold int64) {
 	room := ply.Room()
-	subId := room.GetSubId()
+	subId := room.SubId
 	if room.Status != service.RoomStatusPlaying {
 		return
 	}
 	log.Infof("player %d bet area %d gold %d", ply.Id, clientArea, gold)
 
 	code := Ok
-	if ply.Gold < gold || gold <= 0 {
+	if ply.BagObj().NumItem(gameutils.ItemIdGold) < gold || gold <= 0 {
 		code = MoreGold
 	}
 	area := clientArea
@@ -83,8 +84,8 @@ func (ply *lotteryPlayer) Bet(clientArea int, gold int64) {
 	}
 	err := NewError(code)
 	// 最低押注金币要求
-	minBetNeedGold, _ := config.Int("entertainment", room.GetSubId(), "MinBetNeedGold")
-	if ply.Gold < minBetNeedGold {
+	minBetNeedGold, _ := config.Int("entertainment", room.SubId, "MinBetNeedGold")
+	if ply.BagObj().NumItem(gameutils.ItemIdGold) < minBetNeedGold {
 		err = NewError(MoreBetGold, minBetNeedGold)
 	}
 

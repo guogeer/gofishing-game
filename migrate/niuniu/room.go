@@ -1,15 +1,15 @@
 package niuniu
 
 import (
-	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
+	"gofishing-game/service/roomutils"
 	"math/rand"
 	"third/cardutil"
 	"time"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/utils"
+	"github.com/guogeer/quasar/util"
 )
 
 const (
@@ -71,7 +71,7 @@ type NiuNiuRoom struct {
 	dealer      *NiuNiuPlayer
 	nextDealers []*NiuNiuPlayer
 	deadline    time.Time
-	helper      *cardutil.NiuNiuHelper
+	helper      *nn_utils.NiuNiuHelper
 
 	isAbleEnd bool // 房主开始游戏
 	autoTimer *util.Timer
@@ -96,7 +96,7 @@ func (room *NiuNiuRoom) OnEnter(player *service.Player) {
 	// 玩家重连
 	data := map[string]any{
 		"Status":    room.Status,
-		"SubId":     room.GetSubId(),
+		"SubId":     room.SubId,
 		"Countdown": room.GetShowTime(room.deadline),
 	}
 

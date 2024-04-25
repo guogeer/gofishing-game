@@ -123,8 +123,8 @@ type entertainmentRoom struct {
 	cheatWinPercent   float64
 	multipleSamples   []int
 
-	invisiblePrizePool utils.InvisiblePrizePool // 暗池
-	prizePool          utils.PrizePool          // 奖池
+	invisiblePrizePool *utils.InvisiblePrizePool // 暗池
+	prizePool          *utils.PrizePool          // 奖池
 }
 
 func (room *entertainmentRoom) OnEnter(player *service.Player) {
@@ -138,7 +138,7 @@ func (room *entertainmentRoom) OnEnter(player *service.Player) {
 	loopLimit, _ := config.Int("entertainment", room.SubId, "DealerLoopLimit")
 	// 玩家重连
 	prize := room.GetPrizePool().Add(0)
-	lastPrize := room.GetPrizePool().LastPrize()
+	lastPrize := room.GetPrizePool().LastPrize
 	rank := room.GetPrizePool().Rank
 	data := map[string]any{
 		"status": room.Status,
@@ -269,12 +269,11 @@ type awardArgs struct {
 }
 
 func (room *entertainmentRoom) Award() {
+	service.SetRobotNoLog(true)
+
 	// 合并机器人的押注日志
-	var totalRobotBet int64
-	var guid = util.GUID()
-	var subId = room.SubId
-	var warningLine int64
-	config.Scan("entertainment", subId, "WarningLine", &warningLine)
+	var totalRobotBet, warningLine int64
+	config.Scan("entertainment", room.SubId, "WarningLine", &warningLine)
 	for _, player := range room.GetAllPlayers() {
 		p := player.GameAction.(*entertainmentPlayer)
 
@@ -350,7 +349,7 @@ func (room *entertainmentRoom) Award() {
 		if room.IsSystemDealer() {
 			var times, prizeNum int
 			var levels []float64
-			config.Scan("entertainment", subId, "SystemDealerWinPercent,Lv5WinPercent", &percent, &levels)
+			config.Scan("entertainment", room.SubId, "SystemDealerWinPercent,Lv5WinPercent", &percent, &levels)
 			for _, deal := range room.deals {
 				pct := room.entertainmentGame.winPrizePool(deal.Cards)
 				_, t := room.helper.count(deal.Cards)
@@ -360,7 +359,7 @@ func (room *entertainmentRoom) Award() {
 				}
 			}
 			args := &awardArgs{
-				SubId:      subId,
+				SubId:      room.SubId,
 				TotalTimes: times,
 				AreaNum:    areaNum,
 			}
@@ -373,7 +372,7 @@ func (room *entertainmentRoom) Award() {
 			}
 		}
 		if !room.IsSystemDealer() {
-			config.Scan("config", subId, "betGameUserDealerWinPercent", &percent)
+			config.Scan("config", room.SubId, "betGameUserDealerWinPercent", &percent)
 		}
 		if percent != 0 {
 			asc := &entertainmentAsc{array: room.deals, helper: room.helper}
@@ -614,10 +613,10 @@ func (room *entertainmentRoom) Award() {
 		&prizePoolPercent, &robotPercent,
 	)
 	largs := &awardArgs{
-		SubId:   subId,
+		SubId:   room.SubId,
 		AreaNum: areaNum,
 	}
-	ranklist := service.NewRankList(nil, largs.Top)
+	ranklist := utils.NewRankList(nil, largs.Top)
 
 	scale := float64(dealerRealLoseGold) / float64(dealerLoseGold)
 	for _, bill := range bills {
@@ -654,8 +653,7 @@ func (room *entertainmentRoom) Award() {
 			p.winGold += total + prize + bill.bet
 			p.winPrize += prize - prize1
 			p.fakeGold += bill.total + bill.prize
-			roomutils.GetRoomObj(p.Player).WinGold += total + prize + bill.bet
-			room.GetPrizePool().UpdateRank(p.SimpleInfo(0), bill.prize)
+			room.GetPrizePool().UpdateRank(p.UserInfo, bill.prize)
 
 			var add int64
 			var sub = bill.bet
@@ -678,7 +676,7 @@ func (room *entertainmentRoom) Award() {
 			copy(p.fakeAreas, bill.areas)
 
 			if rankgold := bill.total + bill.prize; rankgold > 0 {
-				ranklist.Update(base.GetSimpleInfo(0), rankgold)
+				ranklist.Update(base.UserInfo, rankgold)
 			}
 			if roomutils.GetRoomObj(p.Player).GetSeatIndex() == roomutils.NoSeat {
 				noSeatGold += bill.total + bill.prize
@@ -728,7 +726,7 @@ func (room *entertainmentRoom) Award() {
 		Areas []int64
 	}
 
-	script.Call("room.lua", "change_award_cards", subId, deals)
+	script.Call("room.lua", "change_award_cards", room.SubId, deals)
 	// 摇骰子
 	dice1, dice2 := rand.Intn(6)+1, rand.Intn(6)+1
 	for _, player := range room.GetAllPlayers() {
@@ -753,29 +751,20 @@ func (room *entertainmentRoom) Award() {
 		}
 		p.WriteJSON("Award", response)
 	}
-
+	var robot *entertainmentPlayer
 	var totalRobotAward int64
-	var awardWay = service.ItemWay{
-		Way:   "sys." + service.GetServerId() + "_award",
-		SubId: room.SubId,
-	}.String()
-	var tempAwardWay = service.ItemWay{
-		Way:   "sum." + service.GetServerId() + "_award",
-		SubId: room.SubId,
-	}.String()
 	for _, player := range room.GetAllPlayers() {
 		p := player.GameAction.(*entertainmentPlayer)
-		way := awardWay
 		if p.IsRobot == true {
 			robot = p
-			way = tempAwardWay
 			totalRobotAward += p.winGold
 		}
-		p.AddGold(p.winGold, guid, way)
+		p.BagObj().Add(gameutils.ItemIdGold, p.winGold, service.GetServerName()+"_award")
 	}
+	service.SetRobotNoLog(false)
 	if robot != nil {
-		robot.AddGoldLog(-totalRobotBet, guid, betWay)
-		robot.AddGoldLog(totalRobotAward, guid, awardWay)
+		service.AddSomeItemLog(robot.Id, []gameutils.Item{&gameutils.NumericItem{Id: gameutils.ItemIdGold, Num: -totalRobotBet}}, "robot_"+service.GetServerName()+"_bet")
+		service.AddSomeItemLog(robot.Id, []gameutils.Item{&gameutils.NumericItem{Id: gameutils.ItemIdGold, Num: -totalRobotAward}}, "robot"+service.GetServerName()+"_award")
 	}
 
 	room.GameOver()
@@ -878,9 +867,9 @@ func (room *entertainmentRoom) IsSystemDealer() bool {
 }
 
 func (room *entertainmentRoom) GetInvisiblePrizePool() *utils.InvisiblePrizePool {
-	return &room.invisiblePrizePool
+	return room.invisiblePrizePool
 }
 
 func (room *entertainmentRoom) GetPrizePool() *utils.PrizePool {
-	return &room.prizePool
+	return room.prizePool
 }

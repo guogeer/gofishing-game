@@ -1,8 +1,8 @@
 package zhajinhua
 
 import (
-	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
+	"gofishing-game/service/roomutils"
 	"math/rand"
 	"third/cardutil"
 	"third/gameutil"
@@ -11,7 +11,7 @@ import (
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
 	"github.com/guogeer/quasar/randutil"
-	"github.com/guogeer/quasar/utils"
+	"github.com/guogeer/quasar/util"
 )
 
 var (
@@ -70,7 +70,7 @@ func (room *ZhajinhuaRoom) OnEnter(player *service.Player) {
 	// 玩家重连
 	data := map[string]any{
 		"Status":        room.Status,
-		"SubId":         room.GetSubId(),
+		"SubId":         room.SubId,
 		"Countdown":     room.GetShowTime(room.deadline),
 		"CurrentLoop":   room.loop + 1,
 		"LookLoopLimit": room.lookLoopLimit,
@@ -126,7 +126,7 @@ func (room *ZhajinhuaRoom) OnCreate() {
 	}
 	// 最大轮数
 	{
-		n, ok := config.Int("zhajinhua_room", room.GetSubId(), "LoopLimit")
+		n, ok := config.Int("zhajinhua_room", room.SubId, "LoopLimit")
 		if ok == true {
 			room.loopLimit = int(n)
 		}
@@ -134,7 +134,7 @@ func (room *ZhajinhuaRoom) OnCreate() {
 	// 比牌轮数
 	{
 		room.compareLoopLimit = 1
-		n, ok := config.Int("zhajinhua_room", room.GetSubId(), "CompareLoopLimit")
+		n, ok := config.Int("zhajinhua_room", room.SubId, "CompareLoopLimit")
 		if ok == true {
 			room.compareLoopLimit = int(n)
 		}
@@ -142,14 +142,14 @@ func (room *ZhajinhuaRoom) OnCreate() {
 
 	// 闷牌轮数
 	{
-		n, ok := config.Int("zhajinhua_room", room.GetSubId(), "LookLoopLimit")
+		n, ok := config.Int("zhajinhua_room", room.SubId, "LookLoopLimit")
 		if ok == true {
 			room.lookLoopLimit = int(n)
 		}
 	}
 	// 最大押注
 	{
-		n, ok := config.Int("zhajinhua_room", room.GetSubId(), "MaxBet")
+		n, ok := config.Int("zhajinhua_room", room.SubId, "MaxBet")
 		room.maxBet = 0
 		if ok == true {
 			room.maxBet = n
@@ -232,7 +232,7 @@ func (room *ZhajinhuaRoom) Award() {
 		winner.winGold += gold
 	}
 
-	if tax, ok := config.Float("Room", room.GetSubId(), "TaxPercent"); ok {
+	if tax, ok := config.Float("Room", room.SubId, "TaxPercent"); ok {
 		winner.winGold = int64(float64(winner.winGold) * (100.0 - tax) / 100.0)
 	}
 
@@ -302,7 +302,7 @@ func (room *ZhajinhuaRoom) StartGame() {
 	}
 	// 初始化筹码
 	room.chips = []int64{1, 2, 3, 4, 5}
-	s, ok := config.String("zhajinhua_room", room.GetSubId(), "Chips")
+	s, ok := config.String("zhajinhua_room", room.SubId, "Chips")
 	if ok == true {
 		room.chips = nil
 		chips := util.ParseIntSlice(s)
@@ -332,9 +332,9 @@ func (room *ZhajinhuaRoom) StartGame() {
 		}
 	}
 	var samples []int64
-	percent, _ := config.Float("zhajinhua_room", room.GetSubId(), "CardControlPercent")
+	percent, _ := config.Float("zhajinhua_room", room.SubId, "CardControlPercent")
 	if randutil.IsPercentNice(percent) {
-		s, _ := config.String("zhajinhua_room", room.GetSubId(), "CardSamples")
+		s, _ := config.String("zhajinhua_room", room.SubId, "CardSamples")
 		samples = util.ParseIntSlice(s)
 	}
 
@@ -444,7 +444,7 @@ func (room *ZhajinhuaRoom) NewRound() {
 
 func (room *ZhajinhuaRoom) maxAutoTime() time.Duration {
 	d := maxAutoTime
-	t, ok := config.Duration("zhajinhua_room", room.GetSubId(), "AutoDuration")
+	t, ok := config.Duration("zhajinhua_room", room.SubId, "AutoDuration")
 	if ok == true {
 		d = t
 	}

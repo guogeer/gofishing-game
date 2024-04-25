@@ -9,13 +9,13 @@ import (
 )
 
 func init() {
-	cmd.Bind(ChooseTriCards, (*Args)(nil))
-	cmd.Bind(Bet, (*Args)(nil))
-	cmd.Bind(ChooseDealer, (*Args)(nil))
-	cmd.Bind(DoubleAndRob, (*Args)(nil))
-	cmd.Bind(SitDown, (*Args)(nil))
-	cmd.Bind(EndGame, (*Args)(nil))
-	cmd.Bind(SetAutoPlay, (*Args)(nil))
+	cmd.BindFunc(ChooseTriCards, (*Args)(nil))
+	cmd.BindFunc(Bet, (*Args)(nil))
+	cmd.BindFunc(ChooseDealer, (*Args)(nil))
+	cmd.BindFunc(DoubleAndRob, (*Args)(nil))
+	cmd.BindFunc(SitDown, (*Args)(nil))
+	cmd.BindFunc(EndGame, (*Args)(nil))
+	cmd.BindFunc(SetAutoPlay, (*Args)(nil))
 }
 
 type Args struct {
@@ -101,7 +101,7 @@ func SetAutoPlay(ctx *cmd.Context, iArgs interface{}) {
 		return
 	}
 	chips := ply.Chips()
-	if args.Times != 0 && util.InArray(chips, args.Times) == 0 {
+	if args.Times != 0 && utils.InArray(chips, args.Times) == 0 {
 		return
 	}
 	ply.autoTimes = args.Times

@@ -4,25 +4,24 @@ import (
 	"container/list"
 	"fmt"
 	"gofishing-game/internal/errcode"
+	"gofishing-game/internal/gameutils"
 	"gofishing-game/service"
-	"strings"
-	"third/gameutil"
+	"gofishing-game/service/roomutils"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/script"
-	"github.com/guogeer/quasar/utils"
+	"github.com/guogeer/quasar/util"
 )
 
-type Item = gameutils.Item
+var errTooMuchBet = errcode.New("bet_too_much", "too much bet")
+var errDealerMoreGold = errcode.New("dealer_more_gold", "dealer need more gold")
 
 // 座位上的玩家
 type userInfo struct {
-	service.SimpleUserInfo
-	// Gold   int64
-	SeatId          int
-	DealerLimitGold int64 `json:",omitempty"`
-	DealerGold      int64 `json:",omitempty"`
+	service.UserInfo
+	SeatId          int   `json:"seatId,omitempty"`
+	DealerLimitGold int64 `json:"dealerLimitGold,omitempty"`
+	DealerGold      int64 `json:"dealerGold,omitempty"`
 }
 
 // 押注类游戏的玩家
@@ -48,20 +47,14 @@ func (ply *entertainmentPlayer) TryEnter() errcode.Error {
 func (ply *entertainmentPlayer) BeforeEnter() {
 }
 
+func (ply *entertainmentPlayer) GetSeatId() int {
+	roomObj := roomutils.GetRoomObj(ply.Player)
+	return roomObj.GetSeatIndex()
+}
+
 func (ply *entertainmentPlayer) AfterEnter() {
 	// 自动坐下
 	room := ply.Room()
-	seatId := room.GetEmptySeat()
-	if ply.SeatId == roomutils.NoSeat && seatId != roomutils.NoSeat {
-		if err := ply.TrySitDown(seatId); err.Code == Ok {
-			ply.SitDown(seatId)
-		}
-	}
-	// OK
-	// 移除进入房间的通知
-	/*(msg := fmt.Sprintf("%s进来了", ply.Nickname)
-	room.Broadcast("Broadcast", map[string]any{"Info": msg, "Message": msg}, ply.Id)
-	*/
 	if len(ply.betAreas) != room.userAreaNum {
 		ply.betAreas = make([]int64, room.userAreaNum)
 	}
@@ -72,110 +65,29 @@ func (ply *entertainmentPlayer) AfterEnter() {
 
 func (ply *entertainmentPlayer) GetUserInfo(otherId int) *userInfo {
 	info := &userInfo{
-		SeatId:          ply.SeatId,
+		SeatId:          ply.GetSeatId(),
 		DealerGold:      ply.dealerGold,
 		DealerLimitGold: ply.dealerLimitGold,
 	}
-	simpleInfo := ply.GetSimpleInfo(otherId)
-	info.SimpleUserInfo = *simpleInfo
+	simpleInfo := ply.UserInfo
+	info.UserInfo = simpleInfo
 	return info
 }
 
-func (ply *entertainmentPlayer) TrySitDown(seatId int) errcode.Error {
-	room := ply.Room()
-	args := &struct {
-		SubId int
-		UId   int
-		Gold  int64
-		Code  int
-		Msg   string
-	}{
-		SubId: room.GetSubId(),
-		UId:   ply.Id,
-		Gold:  ply.Gold,
-	}
-	script.Call("room.lua", "try_sit_down", args)
-	if args.Code != 0 {
-		return Error{Code: ErrCode(args.Code), Msg: args.Msg}
-	}
-	if ply == room.dealer {
-		return NewError(Retry)
-	}
-	return NewError(Ok)
-}
-
-func (ply *entertainmentPlayer) SitDown(seatId int) {
-	err := NewError(Ok)
-	room := ply.Room()
-
-	defer func() {
-		info := ply.GetUserInfo(ply.Id)
-		data := map[string]any{
-			"Code": err.Code,
-			"Msg":  err.Msg,
-			"Info": &info,
-		}
-		ply.WriteJSON("SitDown", data)
-		if err.Code == Ok {
-			info = ply.GetUserInfo(0)
-			room.Broadcast("SitDown", data, ply.Id)
-		}
-	}()
-
-	err = ply.TrySitDown(seatId)
-	if err.Code != Ok {
-		return
-	}
-	// 抢座
-	other := room.GetPlayer(seatId)
-	if other != nil {
-		// 本人已坐下，或者房间不可抢座
-		if ply == other || room.robSeat != seatId {
-			err = NewError(Retry)
-			return
-		}
-		// 金币不足
-		if ply.Gold < other.Gold {
-			err = NewError(MoreGold)
-			return
-		}
-
-		other.RoomObj.SitUp()
-	}
-
-	if code := ply.RoomObj.TrySitDown(seatId); code != Ok {
-		err = NewError(code)
-		return
-	}
-
-	// OK
-	if other != nil {
-		room.robSeat = roomutils.NoSeat
-	}
-}
-
-func (ply *entertainmentPlayer) TryLeave() ErrCode {
+func (ply *entertainmentPlayer) TryLeave() errcode.Error {
 	// 游戏中
 	room := ply.Room()
-	if room.Status != service.RoomStatusFree {
+	if room.Status != 0 {
 		// 庄家
 		if room.dealer == ply {
-			return PlayingInGame
+			return errcode.New("playing_in_game", "playing in game")
 		}
 		// 玩家已下注
 		if ply.totalBet() > 0 {
-			return AlreadyBet
+			return errcode.New("bet_already", "bet_already")
 		}
 	}
-	if ply.IsRobotAD() {
-		return Retry
-	}
-	return Ok
-}
-
-// 机器人头像广告位
-func (ply *entertainmentPlayer) IsRobotAD() bool {
-	return ply.SeatId != -1 && ply.IsRobot && strings.HasSuffix(ply.Icon, "AD.jpg")
+	return nil
 }
 
 func (ply *entertainmentPlayer) BeforeLeave() {
@@ -205,90 +117,82 @@ func (ply *entertainmentPlayer) Bet(area int, gold int64) {
 	room := ply.Room()
 
 	// 游戏未开始
-	if room.Status != service.RoomStatusPlaying {
+	if room.Status != roomutils.RoomStatusPlaying {
 		return
 	}
-	err := NewError(Ok)
+	var err errcode.Error
 	// 无效的数据
 	if area < 0 || area >= len(ply.betAreas) || gold <= 0 {
-		err = NewError(Retry)
+		err = errcode.Retry
 	}
 	// 庄家不可投注
 	if room.dealer == ply {
-		err = NewError(Retry)
+		err = errcode.Retry
 	}
-	if gold > ply.Gold {
-		err = NewError(MoreGold)
+	if !ply.BagObj().IsEnough(gameutils.ItemIdGold, gold) {
+		err = errcode.MoreItem(gameutils.ItemIdGold)
 	}
 	{
 		total := ply.totalBet()
-		percent, ok := config.Float("entertainment", room.GetSubId(), "MaxBetPercent")
-		if ok && total+gold > int64(percent*float64(total+ply.Gold)/100) {
-			err = NewError(TooMuchBet)
+		percent, ok := config.Float("entertainment", room.SubId, "MaxBetPercent")
+		if ok && total+gold > int64(percent*float64(total+ply.BagObj().NumItem(gameutils.ItemIdGold))/100) {
+			err = errTooMuchBet
 		}
-		maxBet, _ := config.Int("entertainment", room.GetSubId(), "MaxBetLimit")
+		maxBet, _ := config.Int("entertainment", room.SubId, "MaxBetLimit")
 		if maxBet > 0 && total+gold > maxBet {
-			err = NewError(TooMuchBet)
+			err = errTooMuchBet
 		}
 	}
 	{
 		sum := room.totalBet()
-		percent, ok := config.Float("entertainment", room.GetSubId(), "AllUserBetPercent")
+		percent, ok := config.Float("entertainment", room.SubId, "AllUserBetPercent")
 		if ok == true && room.dealer != nil && float64(sum+gold) > float64(room.dealer.dealerGold)*percent/100 {
-			err = NewError(DealerMoreGold)
+			err = errDealerMoreGold
 		}
 	}
 	{
 		// 最低押注金币要求
-		minBetNeedGold, ok := config.Int("entertainment", room.GetSubId(), "MinBetNeedGold")
-		if ok == true && ply.Gold < minBetNeedGold {
+		minBetNeedGold, ok := config.Int("entertainment", room.SubId, "MinBetNeedGold")
+		if ok == true && ply.BagObj().NumItem(gameutils.ItemIdGold) < minBetNeedGold {
 			scale, _ := config.Int("web", "ExchangeScale", "Value")
 			if scale < 1 {
 				scale = 1
 			}
-			err = NewError(MoreBetGold, minBetNeedGold/scale)
+			err = errcode.MoreItem(gameutils.ItemIdGold)
 		}
 	}
 
 	data := map[string]any{
-		"Code": err.Code,
-		"Msg":  err.Msg,
-		"UId":  ply.Id,
-		"Area": area,
-		"Gold": gold,
+		"uid":  ply.Id,
+		"area": area,
+		"gold": gold,
 	}
 
 	betArgs := &struct {
-		SubId  int
-		Name   string
-		UId    int
-		Gold   int64
-		Area   int
-		Bet    int64
-		BigBet int64
-		Code   int
-		Msg    string
+		SubId  int    `json:"subId,omitempty"`
+		Name   string `json:"name,omitempty"`
+		Uid    int    `json:"uid,omitempty"`
+		Gold   int64  `json:"gold,omitempty"`
+		Area   int    `json:"area,omitempty"`
+		Bet    int64  `json:"bet,omitempty"`
+		BigBet int64  `json:"bigBet,omitempty"`
+		Code   int    `json:"code,omitempty"`
+		Msg    string `json:"msg,omitempty"`
 	}{
-		Name:  service.GetName(),
-		UId:   ply.Id,
-		Gold:  ply.Gold,
+		Name:  service.GetServerName(),
+		Uid:   ply.Id,
+		Gold:  ply.BagObj().NumItem(gameutils.ItemIdGold),
 		Bet:   gold,
 		Area:  area,
-		SubId: ply.GetSubId(),
+		SubId: ply.Room().SubId,
 	}
-	script.Call("room.lua", "try_bet", betArgs)
-	if betArgs.Code != 0 {
-		err = Error{Code: ErrCode(betArgs.Code), Msg: betArgs.Msg}
-	}
-	if betArgs.BigBet > 0 {
-		data["Info"] = ply.GetSimpleInfo(0)
-	}
+
 	ply.WriteJSON("Bet", data)
 
 	if !ply.IsRobot {
 		log.Infof("player %d bet area %d gold %d", ply.Id, area, gold)
 	}
-	if err.Code != Ok {
+	if err != nil {
 		return
 	}
 
@@ -342,8 +246,8 @@ func (ply *entertainmentPlayer) ApplyDealer() {
 	if e := ply.applyElement; e != nil {
 		code = Retry
 	}
-	minDealerGold, _ := config.Int("entertainment", room.GetSubId(), "MinDealerGold")
-	if ply.Gold < minDealerGold {
+	minDealerGold, _ := config.Int("entertainment", room.SubId, "MinDealerGold")
+	if ply.BagObj().NumItem(gameutils.ItemIdGold) < minDealerGold {
 		code = MoreGold
 	}
 	if ply.IsRobotAD() {
@@ -372,7 +276,7 @@ func (ply *entertainmentPlayer) CancelDealer() {
 	}
 
 	code := Ok
-	limit, _ := config.Int("entertainment", room.GetSubId(), "ForceCancelDealerGold")
+	limit, _ := config.Int("entertainment", room.SubId, "ForceCancelDealerGold")
 	if false && room.dealer == ply && room.dealer.dealerGold < limit {
 		code = DealerNeedMoreGold
 	}
@@ -460,8 +364,8 @@ func (ply *entertainmentPlayer) Room() *entertainmentRoom {
 	return nil
 }
 
-func (ply *entertainmentPlayer) OnAddItems(items []*Item, guid, way string) {
-	ply.Player.OnAddItems(items, guid, way)
+func (ply *entertainmentPlayer) OnAddItems(items []gameutils.Item, way string) {
+	ply.Player.OnAddItems(items, way)
 	for _, item := range items {
 		if item.Id == gameutil.ItemIdGold {
 			ply.dealerGold += item.Num

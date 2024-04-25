@@ -55,7 +55,7 @@ func (ent *bairenzhajinhua) StartDealCard() {
 	helper := gZhajinhuaHelper
 
 	var samples []int
-	config.Scan("entertainment", room.GetSubId(), "CardSamples", &samples)
+	config.Scan("entertainment", room.SubId, "CardSamples", &samples)
 	if len(samples) > 0 {
 		start := rand.Intn(len(room.deals))
 		for i := range room.deals {

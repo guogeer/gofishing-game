@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"gofishing-game/service"
 	"math/rand"
 	"sort"
 
@@ -26,9 +27,10 @@ func HelpDealer(data sort.Interface, percent float64) {
 }
 
 type RankUserInfo struct {
-	SimpleUserInfo
-	Award string
-	Prize int64 `json:",omitempty"`
+	service.UserInfo
+	Gold  int64  `json:"gold,omitempty"`
+	Award string `json:"award,omitempty"`
+	Prize int64  `json:",omitempty"`
 }
 
 type RankList struct {
@@ -53,7 +55,7 @@ func (lst *RankList) Top() []RankUserInfo {
 	return lst.top
 }
 
-func (lst *RankList) Update(user *SimpleUserInfo, gold int64) *RankUserInfo {
+func (lst *RankList) Update(user service.UserInfo, gold int64) *RankUserInfo {
 	if gold == 0 {
 		return nil
 	}
@@ -93,7 +95,7 @@ func (lst *RankList) Update(user *SimpleUserInfo, gold int64) *RankUserInfo {
 		rank[k+1] = rank[k]
 	}
 	if pos < len(rank) {
-		rank[pos] = RankUserInfo{SimpleUserInfo: *user}
+		rank[pos] = RankUserInfo{UserInfo: user}
 		rank[pos].Gold = gold
 		rank[pos].Prize = gold
 		lst.top = rank

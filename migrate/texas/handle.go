@@ -204,8 +204,8 @@ func RecommendRooms(ctx *cmd.Context, data interface{}) {
 	var roomList []TexasRoomInfo
 	for _, room := range rooms {
 		texasRoom := room.CardRoom().(*TexasRoom)
-		minBankroll, _ := config.Int("texasroom", room.GetSubId(), "MinBankroll")
-		maxBankroll, _ := config.Int("texasroom", room.GetSubId(), "MaxBankroll")
+		minBankroll, _ := config.Int("texasroom", room.SubId, "MinBankroll")
+		maxBankroll, _ := config.Int("texasroom", room.SubId, "MaxBankroll")
 		info := TexasRoomInfo{
 			Id:          texasRoom.Id,
 			SubId:       texasRoom.GetSubId(),

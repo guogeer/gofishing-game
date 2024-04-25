@@ -60,7 +60,7 @@ func (room *FruitRoom) OnEnter(player *service.Player) {
 	data := map[string]any{
 		"Code":      Ok,
 		"Status":    room.Status,
-		"SubId":     room.GetSubId(),
+		"SubId":     room.SubId,
 		"Chips":     room.Chips,
 		"Countdown": room.GetShowTime(room.Deadline),
 		"Fruits":    AllFruits,
@@ -194,8 +194,8 @@ func (room *FruitRoom) Award() {
 	var totalRobotBet, totalRobotWin int64
 
 	bigWinner := &BigWinner{}
-	betWay := service.ItemWay{Way: "sys.fruit_bet", SubId: room.GetSubId()}.String()
-	tempBetWay := service.ItemWay{Way: "sum.fruit_bet", SubId: room.GetSubId()}.String()
+	betWay := service.ItemWay{Way: "sys.fruit_bet", SubId: room.SubId}.String()
+	tempBetWay := service.ItemWay{Way: "sum.fruit_bet", SubId: room.SubId}.String()
 	for _, player := range room.AllPlayers {
 		p := player.GameAction.(*FruitPlayer)
 		way := betWay
@@ -224,8 +224,8 @@ func (room *FruitRoom) Award() {
 		data["BigWinner"] = bigWinner
 	}
 
-	awardWay := service.ItemWay{Way: "sys.fruit_award", SubId: room.GetSubId()}.String()
-	tempAwardWay := service.ItemWay{Way: "sum.fruit_award", SubId: room.GetSubId()}.String()
+	awardWay := service.ItemWay{Way: "sys.fruit_award", SubId: room.SubId}.String()
+	tempAwardWay := service.ItemWay{Way: "sum.fruit_award", SubId: room.SubId}.String()
 	for _, player := range room.AllPlayers {
 		p := player.GameAction.(*FruitPlayer)
 

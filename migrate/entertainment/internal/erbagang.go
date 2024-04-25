@@ -92,7 +92,7 @@ func (ent *erbagang) OnEnter(player *entertainmentPlayer) {
 }
 
 func (ent *erbagang) winPrizePool(cards []int) float64 {
-	subId := ent.room.GetSubId()
+	subId := ent.room.SubId
 	if cards[0] != cards[1] {
 		return 0.0
 	}
@@ -114,7 +114,7 @@ func (ent *erbagang) StartDealCard() {
 	room := ent.room
 
 	var samples []int
-	config.Scan("entertainment", room.GetSubId(), "CardSamples", &samples)
+	config.Scan("entertainment", room.SubId, "CardSamples", &samples)
 
 	start := rand.Intn(len(room.deals))
 	for i := range room.deals {

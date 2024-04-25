@@ -5,6 +5,7 @@ package texas
 import (
 	"container/heap"
 	"container/list"
+	"gofishing-game/internal/gameutils"
 	"gofishing-game/service"
 	"third/cardutil"
 	"third/errcode"
@@ -12,7 +13,7 @@ import (
 	"time"
 
 	"github.com/guogeer/quasar/config"
-	"github.com/guogeer/quasar/utils"
+	"github.com/guogeer/quasar/util"
 )
 
 var (
@@ -119,7 +120,7 @@ func init() {
 }
 
 func (sys *LotterySystem) Bet(ply *TexasPlayer, areaId int, gold int64) errcode.ErrCode {
-	if ply.Gold < gold {
+	if ply.BagObj().NumItem(gameutils.ItemIdGold) < gold {
 		return errcode.MoreGold
 	}
 	if areaId < 0 || areaId >= len(sys.areas) {

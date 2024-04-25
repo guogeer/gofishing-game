@@ -1,6 +1,8 @@
 package fruit
 
 import (
+	"gofishing-game/internal/gameutils"
+
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/util"
 )
@@ -41,13 +43,13 @@ func (fruitObj *FruitObj) Bet(area int, gold int64) {
 	if area < 0 || area >= len(fruitObj.BetArea) || gold <= 0 {
 		code = Retry
 	}
-	if ply.Gold < gold {
+	if ply.BagObj().NumItem(gameutils.ItemIdGold) < gold {
 		code = MoreGold
 	}
 
 	s, _ := config.String("config", "FruitGoldLimit", "Value")
 	limit := util.ParseIntSlice(s)
-	if len(limit) > 0 && ply.Gold < limit[0] {
+	if len(limit) > 0 && ply.BagObj().NumItem(gameutils.ItemIdGold) < limit[0] {
 		code = MoreGold
 	}
 	if len(limit) > 1 && fruitObj.AllBet+gold > limit[1] {

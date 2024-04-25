@@ -1,10 +1,11 @@
 package fruit
 
 import (
-	"gofishing-game/internal/errcode"
+	"gofishing-game/internal/gameutils"
 	"gofishing-game/service"
+	"gofishing-game/service/roomutils"
 
-	"github.com/guogeer/quasar/utils"
+	"github.com/guogeer/quasar/util"
 )
 
 // 座位上的玩家
@@ -38,7 +39,7 @@ func (ply *FruitPlayer) SitDown(seatId int) {
 		util.DeepCopy(&info.SimpleUserInfo, &ply.UserInfo)
 		room.Broadcast("SitDown", map[string]any{"Code": code, "Msg": code.String(), "Info": info})
 	}()
-	if ply.Gold < 100000 {
+	if ply.BagObj().NumItem(gameutils.ItemIdGold) < 100000 {
 		code = FruitSitDownMoreGold
 		return
 	}

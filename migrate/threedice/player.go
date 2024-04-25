@@ -5,6 +5,7 @@ package threedice
 
 import (
 	"container/list"
+	"gofishing-game/internal/gameutils"
 	"gofishing-game/service"
 	"math/rand"
 	"time"
@@ -95,7 +96,7 @@ func (ply *ThreeDicePlayer) RobDealer(gold int64) {
 	log.Debugf("player %d rob dealer gold %d", ply.Id, gold)
 
 	code := Ok
-	if gold > ply.Gold {
+	if gold > ply.BagObj().NumItem(gameutils.ItemIdGold) {
 		code = MoreGold
 	}
 	if room.Status != service.RoomStatusRobDealer {
@@ -127,7 +128,7 @@ func (ply *ThreeDicePlayer) Bet(area int, gold int64) {
 	if ply == room.dealer {
 		return
 	}
-	if gold < 0 || ply.Gold < gold || area < 0 || area >= len(ply.areas) {
+	if gold < 0 || ply.BagObj().NumItem(gameutils.ItemIdGold) < gold || area < 0 || area >= len(ply.areas) {
 		return
 	}
 	if room.Status != service.RoomStatusPlaying {
@@ -170,7 +171,7 @@ func (ply *ThreeDicePlayer) SitDown(seatId int) {
 	room := ply.Room()
 
 	sitDownRequiredGold, _ := config.Int("threedice", "SitDownRequiredGold", "Value")
-	if ply.Gold < sitDownRequiredGold {
+	if ply.BagObj().NumItem(gameutils.ItemIdGold) < sitDownRequiredGold {
 		return
 	}
 	if code := ply.RoomObj.SitDown(seatId); code != Ok {

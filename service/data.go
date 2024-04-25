@@ -13,9 +13,8 @@ import (
 	"gofishing-game/internal/pb"
 	"gofishing-game/internal/rpc"
 
-	"google.golang.org/protobuf/proto"
-
 	"github.com/guogeer/quasar/log"
+	"google.golang.org/protobuf/proto"
 )
 
 type EnumDataReset int
@@ -39,12 +38,10 @@ type loadSaver interface {
 type dataObj struct {
 	player *Player
 
-	loadSavers []loadSaver
-	period     time.Duration
-	saveTimer  *utils.Timer
-	// offlinePos int32
-	offline *pb.OfflineBin
-
+	loadSavers      []loadSaver
+	period          time.Duration
+	saveTimer       *utils.Timer
+	offline         *pb.OfflineBin
 	lastDayUpdateTs int64
 }
 
@@ -140,32 +137,37 @@ func (obj *dataObj) Save(data any) {
 	bin.Global.LastDayUpdateTs = obj.lastDayUpdateTs
 }
 
-type serviceDict struct {
-	isLoad bool
-	values map[string]any
+type globalDictItem struct {
+	Data            any   `json:"data,omitempty"`
+	LastDayUpdateTs int64 `json:"lastDayUpdateTs,omitempty"`
 }
 
-var gServiceDict serviceDict
+// 全局数据
+type GlobalDict struct {
+	values map[string]*globalDictItem
+}
 
-func (dict *serviceDict) load() {
-	dict.isLoad = true
-	for key, value := range dict.values {
-		Dict, err := rpc.CacheClient().QueryDict(context.Background(), &pb.QueryDictReq{Key: key})
+var globalData GlobalDict
+
+func (gdata *GlobalDict) load() {
+	for key, value := range gdata.values {
+		resp, err := rpc.CacheClient().QueryDict(context.Background(), &pb.QueryDictReq{Key: key})
 		if err != nil {
 			log.Fatalf("load service dict %s error: %v", key, err)
 		}
-		if len(Dict.Value) == 0 {
+		if len(resp.Value) == 0 {
 			continue
 		}
-		if err := json.Unmarshal([]byte(Dict.Value), value); err != nil {
+		if err := json.Unmarshal([]byte(resp.Value), value); err != nil {
 			log.Fatalf("parse service dict %s error: %v", key, err)
 		}
 	}
+	gdata.updateNewDay()
 }
 
-func (dict *serviceDict) save() {
+func (gdata *GlobalDict) save() {
 	var reqs []*pb.UpdateDictReq
-	for key, value := range dict.values {
+	for key, value := range gdata.values {
 		buf, _ := json.Marshal(value)
 		reqs = append(reqs, &pb.UpdateDictReq{Key: key, Value: buf})
 	}
@@ -176,16 +178,26 @@ func (dict *serviceDict) save() {
 	}()
 }
 
-func (dict *serviceDict) Add(key string, value any) {
-	if dict.isLoad {
-		panic("please add dict value before load")
+func (gdata *GlobalDict) Add(key string, value any) {
+	if gdata.values == nil {
+		gdata.values = map[string]*globalDictItem{}
 	}
-	if dict.values == nil {
-		dict.values = map[string]any{}
+	gdata.values[key] = &globalDictItem{
+		Data: value,
 	}
-	dict.values[key] = value
+}
+
+func (gdata *GlobalDict) updateNewDay() {
+	for _, value := range gdata.values {
+		if time.Now().Truncate(24*time.Hour) != time.Unix(value.LastDayUpdateTs, 0).Truncate(24*time.Hour) {
+			value.LastDayUpdateTs = time.Now().Unix()
+			if h, ok := value.Data.(reseter); ok {
+				h.Reset(DataResetPerDay)
+			}
+		}
+	}
 }
 
 func UpdateDict(key string, value any) {
-	gServiceDict.Add(key, value)
+	globalData.Add(key, value)
 }

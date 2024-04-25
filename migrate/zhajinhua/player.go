@@ -3,14 +3,15 @@ package zhajinhua
 // 2017-9-5
 
 import (
-	"gofishing-game/internal/errcode"
+	"gofishing-game/internal/gameutils"
 	"gofishing-game/service"
+	"gofishing-game/service/roomutils"
 	"third/gameutil"
 	"time"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/utils"
+	"github.com/guogeer/quasar/util"
 )
 
 const (
@@ -186,7 +187,7 @@ func (ply *ZhajinhuaPlayer) CompareCard(seatId int) {
 	if other == nil || other.IsPlaying() == false {
 		return
 	}
-	if ply.compareGold <= 0 || ply.compareGold > ply.Gold {
+	if ply.compareGold <= 0 || ply.compareGold > ply.BagObj().NumItem(gameutils.ItemIdGold) {
 		return
 	}
 
@@ -281,7 +282,7 @@ func (ply *ZhajinhuaPlayer) TakeAction(gold int64) {
 	}
 
 	maxBet := ply.maxBet()
-	log.Debugf("player %d gold %d bet %d max bet %d", ply.Id, ply.Gold, gold, maxBet)
+	log.Debugf("player %d gold %d bet %d max bet %d", ply.Id, ply.BagObj().NumItem(gameutils.ItemIdGold), gold, maxBet)
 	if gold >= 0 && room.activePlayer != ply {
 		return
 	}
@@ -295,7 +296,7 @@ func (ply *ZhajinhuaPlayer) TakeAction(gold int64) {
 	if maxBet > 0 && gold > maxBet {
 		return
 	}
-	if !room.IsTypeScore() && gold > ply.Gold {
+	if !room.IsTypeScore() && gold > ply.BagObj().NumItem(gameutils.ItemIdGold) {
 		code := MoreGold
 		ply.WriteJSON("TakeAction", map[string]any{"Code": code, "Msg": code.String(), "UId": ply.Id})
 
@@ -508,8 +509,8 @@ func (ply *ZhajinhuaPlayer) Chips() ([]int64, int64, int64) {
 		call := room.currentChip
 		if ply.isLook == true {
 			call *= 2
-			if ply.Gold+1 == call {
-				call = ply.Gold
+			if ply.BagObj().NumItem(gameutils.ItemIdGold)+1 == call {
+				call = ply.BagObj().NumItem(gameutils.ItemIdGold)
 			}
 		}
 	}
@@ -586,7 +587,7 @@ func (ply *ZhajinhuaPlayer) maxBet() int64 {
 		return chips[n-1]
 	}
 
-	maxBet := ply.Gold
+	maxBet := ply.BagObj().NumItem(gameutils.ItemIdGold)
 	if room.maxBet > 0 && maxBet < room.maxBet {
 		maxBet = room.maxBet
 	}
@@ -613,8 +614,8 @@ func (ply *ZhajinhuaPlayer) maxBet() int64 {
 	}
 	if ply.isLook == true {
 		maxBet = 2 * maxBet
-		if !room.IsTypeScore() && ply.Gold+1 == maxBet {
-			maxBet = ply.Gold
+		if !room.IsTypeScore() && ply.BagObj().NumItem(gameutils.ItemIdGold)+1 == maxBet {
+			maxBet = ply.BagObj().NumItem(gameutils.ItemIdGold)
 		}
 	}
 	return maxBet

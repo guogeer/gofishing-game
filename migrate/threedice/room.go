@@ -3,15 +3,14 @@ package threedice
 import (
 	"container/list"
 	"fmt"
-	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
+	"gofishing-game/service/roomutils"
 	"math/rand"
 	"third/cardutil"
 	"time"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/utils"
 )
 
 var (
@@ -80,7 +79,7 @@ func (room *ThreeDiceRoom) OnEnter(player *service.Player) {
 	// 玩家重连
 	data := map[string]any{
 		"Status":     room.Status,
-		"SubId":      room.GetSubId(),
+		"SubId":      room.SubId,
 		"Countdown":  room.GetShowTime(room.deadline),
 		"Chips":      room.Chips(),
 		"History":    room.GetLastHistory(40),

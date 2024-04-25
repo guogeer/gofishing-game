@@ -22,6 +22,7 @@ var (
 	gAllPlayers      map[int]*Player    // 所有玩家
 
 	defaultWorld World
+	isRobotNoLog bool
 )
 
 // 在线人数
@@ -68,11 +69,10 @@ func init() {
 
 func CreateWorld(w World) {
 	defaultWorld = w
-	gServiceDict.load()
 }
 
 func tick10s() {
-	gServiceDict.save()
+	globalData.save()
 }
 
 func Broadcast2Game(messageId string, data any) {
@@ -172,6 +172,10 @@ func AddItems(uid int, items []gameutils.Item, way string) {
 	}
 }
 
+func SetRobotNoLog(noLog bool) {
+	isRobotNoLog = noLog
+}
+
 func AddSomeItemLog(uid int, items []gameutils.Item, way string) {
 	if len(items) == 0 {
 		return
@@ -183,6 +187,9 @@ func AddSomeItemLog(uid int, items []gameutils.Item, way string) {
 	}
 
 	if p := GetPlayer(uid); p != nil {
+		if p.IsRobot && isRobotNoLog {
+			return
+		}
 		for _, pbItem := range pbItems {
 			pbItem.Balance = p.BagObj().NumItem(int(pbItem.Id))
 		}
@@ -205,6 +212,7 @@ func tick1d() {
 	for _, player := range gAllPlayers {
 		player.dataObj.updateNewDay()
 	}
+	globalData.updateNewDay()
 }
 
 type GameOnlineSegment struct {

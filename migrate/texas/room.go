@@ -1,8 +1,8 @@
 package texas
 
 import (
-	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
+	"gofishing-game/service/roomutils"
 	"third/cardutil"
 	"time"
 
@@ -70,7 +70,7 @@ func (room *TexasRoom) OnEnter(player *service.Player) {
 	// 玩家重连
 	data := map[string]any{
 		"Status":    room.Status,
-		"SubId":     room.GetSubId(),
+		"SubId":     room.SubId,
 		"Countdown": room.GetShowTime(room.deadline),
 	}
 	if room.dealerSeat >= 0 {
@@ -149,7 +149,7 @@ func (room *TexasRoom) OnCreate() {
 	room.Room.OnCreate()
 
 	if !room.IsTypeTournament() {
-		subId := room.GetSubId()
+		subId := room.SubId
 		room.smallBlind, _ = config.Int("texasroom", subId, "SmallBlind")
 		room.bigBlind, _ = config.Int("texasroom", subId, "BigBlind")
 	}
@@ -257,7 +257,7 @@ func (room *TexasRoom) GameOver() {
 	}
 	room.Room.GameOver()
 
-	subId := room.GetSubId()
+	subId := room.SubId
 	minBankroll, _ := config.Int("texasroom", subId, "MinBankroll")
 	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil && p.bankroll == 0 && p.Gold < minBankroll {
@@ -367,7 +367,7 @@ func (room *TexasRoom) StartGame() {
 			counter++
 		}
 	}
-	subId := room.GetSubId()
+	subId := room.SubId
 	minReadyNum, _ := config.Int("texasroom", subId, "BigBlind")
 	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil && p.IsPlaying() {

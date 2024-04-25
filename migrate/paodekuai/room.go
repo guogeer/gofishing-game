@@ -1,19 +1,18 @@
 package paodekuai
 
 import (
-	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
+	"gofishing-game/service/roomutils"
 	"math/rand"
 	"third/cardutil"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
+	"github.com/guogeer/quasar/util"
 
 	// "third/pb"
 	// "third/rpc"
 	"time"
-
-	"github.com/guogeer/quasar/utils"
 	// "golang.org/x/net/context"
 )
 
@@ -84,7 +83,7 @@ func (room *PaodekuaiRoom) OnEnter(player *service.Player) {
 	// 玩家重连
 	data := map[string]any{
 		"Status":    room.Status,
-		"SubId":     room.GetSubId(),
+		"SubId":     room.SubId,
 		"Countdown": room.GetShowTime(room.autoTime),
 	}
 
@@ -179,7 +178,7 @@ func (room *PaodekuaiRoom) Award() {
 
 	guid := util.GUID()
 	way := service.GetName()
-	unit, _ := config.Int("Room", room.GetSubId(), "Unit")
+	unit, _ := config.Int("Room", room.SubId, "Unit")
 
 	winPlayer := room.winPlayer
 	winSeatId := winPlayer.SeatId

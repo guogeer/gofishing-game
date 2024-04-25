@@ -2,6 +2,7 @@ package niuniu
 
 import (
 	"gofishing-game/service"
+	"gofishing-game/service/roomutils"
 
 	"github.com/guogeer/quasar/log"
 )
@@ -301,7 +302,7 @@ func (ply *NiuNiuPlayer) additionChip() int {
 }
 
 func (ply *NiuNiuPlayer) Room() *NiuNiuRoom {
-	if room := ply.RoomObj.CardRoom(); room != nil {
+	if room := roomutils.GetRoomObj(ply.Player).CustomRoom(); room != nil {
 		return room.(*NiuNiuRoom)
 	}
 	return nil
@@ -320,7 +321,7 @@ func (ply *NiuNiuPlayer) Chips() []int {
 	if ply == room.dealer {
 		return nil
 	}
-	if ply.RoomObj.IsReady() == false {
+	if roomutils.GetRoomObj(ply.Player).IsReady() == false {
 		return nil
 	}
 

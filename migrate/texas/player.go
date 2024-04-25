@@ -4,13 +4,14 @@ package texas
 
 import (
 	"fmt"
-	"gofishing-game/internal/errcode"
+	"gofishing-game/internal/gameutils"
 	"gofishing-game/service"
+	"gofishing-game/service/roomutils"
 	"time"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/utils"
+	"github.com/guogeer/quasar/util"
 )
 
 const (
@@ -239,9 +240,9 @@ func (ply *TexasPlayer) SitDown(seatId int) {
 			ply.WriteJSON("SitDown", map[string]any{"Code": code, "Msg": code.String(), "UId": ply.Id})
 		}
 	}()
-	subId := room.GetSubId()
+	subId := room.SubId
 	minBankroll, _ := config.Int("texasroom", subId, "MinBankroll")
-	if ply.Gold < minBankroll {
+	if ply.BagObj().NumItem(gameutils.ItemIdGold) < minBankroll {
 		code = MoreGold
 		return
 	}
@@ -258,7 +259,7 @@ func (ply *TexasPlayer) SitDown(seatId int) {
 
 func (ply *TexasPlayer) initBankroll() {
 	room := ply.Room()
-	subId := room.GetSubId()
+	subId := room.SubId
 
 	var bankroll int64
 	if room.IsTypeTournament() {
@@ -270,8 +271,8 @@ func (ply *TexasPlayer) initBankroll() {
 		if bankroll < minBankroll {
 			bankroll = minBankroll
 		}
-		if bankroll > ply.Gold {
-			bankroll = ply.Gold
+		if bankroll > ply.BagObj().NumItem(gameutils.ItemIdGold) {
+			bankroll = ply.BagObj().NumItem(gameutils.ItemIdGold)
 		}
 		ply.AddGold(-bankroll, util.GUID(), "user.texas")
 	}
@@ -313,7 +314,7 @@ func (ply *TexasPlayer) Room() *TexasRoom {
 
 func (ply *TexasPlayer) ChooseBankroll(gold int64) {
 	room := ply.Room()
-	subId := room.GetSubId()
+	subId := room.SubId
 	minBankroll, _ := config.Int("texasroom", subId, "MinBankroll")
 	maxBankroll, _ := config.Int("texasroom", subId, "MaxBankroll")
 	if minBankroll != 0 && minBankroll > gold {
@@ -335,7 +336,7 @@ func (ply *TexasPlayer) ChooseBankroll(gold int64) {
 func (ply *TexasPlayer) defaultBankroll() int64 {
 	room := ply.Room()
 	obj := ply.BaseObj()
-	subId := room.GetSubId()
+	subId := room.SubId
 
 	dataKey := fmt.Sprintf("texas.bankroll_%d", subId)
 	return obj.Int64(dataKey)
@@ -449,7 +450,7 @@ func (ply *TexasPlayer) Rebuy() {
 		return
 	}
 	tournament := room.Tournament()
-	if tournament.RebuyFee > ply.Gold {
+	if tournament.RebuyFee > ply.BagObj().NumItem(gameutils.ItemIdGold) {
 		return
 	}
 	if ply.rebuyBlind+ply.bankroll > tournament.Bankroll {
@@ -472,7 +473,7 @@ func (ply *TexasPlayer) Addon() {
 		return
 	}
 	tournament := room.Tournament()
-	if tournament.AddonFee > ply.Gold {
+	if tournament.AddonFee > ply.BagObj().NumItem(gameutils.ItemIdGold) {
 		return
 	}
 	if ply.addonBlind+ply.bankroll > tournament.Bankroll*2 {

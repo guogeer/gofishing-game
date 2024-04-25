@@ -151,7 +151,7 @@ func ChangeDealerGold(ctx *cmd.Context, iArgs interface{}) {
 
 	e := NewError(Ok)
 	room := ply.Room()
-	minDealerGold, _ := config.Int("entertainment", room.GetSubId(), "MinDealerGold")
+	minDealerGold, _ := config.Int("entertainment", room.SubId, "MinDealerGold")
 	if args.Gold < minDealerGold {
 		e = NewError(Retry)
 	}

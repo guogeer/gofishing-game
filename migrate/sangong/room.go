@@ -1,15 +1,15 @@
 package sangong
 
 import (
-	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
+	"gofishing-game/service/roomutils"
 	"math/rand"
 	"third/cardutil"
 	"time"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/utils"
+	"github.com/guogeer/quasar/util"
 )
 
 const (
@@ -68,7 +68,7 @@ func (room *SangongRoom) OnEnter(player *service.Player) {
 	// 玩家重连
 	data := map[string]any{
 		"Status":    room.Status,
-		"SubId":     room.GetSubId(),
+		"SubId":     room.SubId,
 		"Countdown": room.GetShowTime(room.deadline),
 	}
 
@@ -111,7 +111,7 @@ func (room *SangongRoom) OnCreate() {
 func (room *SangongRoom) Award() {
 	guid := util.GUID()
 	way := "user." + service.GetName()
-	unit, _ := config.Int("Room", room.GetSubId(), "Unit")
+	unit, _ := config.Int("Room", room.SubId, "Unit")
 
 	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil {

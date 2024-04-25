@@ -70,7 +70,7 @@ func Start() {
 		Name: GetServerName(),
 		Addr: addr,
 	})
-
+	globalData.load()
 	log.Infof("server id %s name %s start ok.", GetServerId(), GetServerName())
 
 	for {

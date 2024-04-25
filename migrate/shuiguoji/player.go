@@ -4,6 +4,7 @@ package shuiguoji
 // Guogeer 2018-02-08
 
 import (
+	"gofishing-game/internal/gameutils"
 	"gofishing-game/service"
 	"strings"
 
@@ -11,7 +12,7 @@ import (
 	"github.com/guogeer/quasar/log"
 	"github.com/guogeer/quasar/randutil"
 	"github.com/guogeer/quasar/script"
-	"github.com/guogeer/quasar/utils"
+	"github.com/guogeer/quasar/util"
 )
 
 const (
@@ -118,7 +119,7 @@ func (ply *shuiguojiPlayer) Bet(line int, chip int64) {
 	}
 
 	isValidChip := false
-	s, _ := config.String("entertainment", room.GetSubId(), "Chips")
+	s, _ := config.String("entertainment", room.SubId, "Chips")
 	chips := util.ParseIntSlice(s)
 	for _, c := range chips {
 		if chip == c {
@@ -126,13 +127,13 @@ func (ply *shuiguojiPlayer) Bet(line int, chip int64) {
 		}
 	}
 	gold := int64(line) * chip
-	if oldFreeTimes <= 0 && (!isValidChip || gold > ply.Gold) {
+	if oldFreeTimes <= 0 && (!isValidChip || gold > ply.BagObj().NumItem(gameutils.ItemIdGold)) {
 		return
 	}
 
 	// OK
 	ply.chip, ply.line, ply.guid = chip, line, guid
-	way := service.ItemWay{Way: "sys.sgj_bet", SubId: room.GetSubId()}.String()
+	way := service.ItemWay{Way: "sys.sgj_bet", SubId: room.SubId}.String()
 	if oldFreeTimes == 0 {
 		ply.AddGold(-gold, util.GUID(), way)
 	}
@@ -143,7 +144,7 @@ func (ply *shuiguojiPlayer) Bet(line int, chip int64) {
 	ss := defaultSamples
 	check := ply.Room().GetInvisiblePrizePool().Check()
 	if check == 0 {
-		ss1, _ := config.String("entertainment", room.GetSubId(), "CardSamples")
+		ss1, _ := config.String("entertainment", room.SubId, "CardSamples")
 		if len(util.ParseStrings(ss)) == len(util.ParseStrings(ss1)) {
 			ss = ss1
 		}
@@ -255,7 +256,7 @@ func (ply *shuiguojiPlayer) Bet(line int, chip int64) {
 				bonus = 0
 			}
 		}
-		warnLine, _ := config.Int("entertainment", room.GetSubId(), "WarningLine")
+		warnLine, _ := config.Int("entertainment", room.SubId, "WarningLine")
 		if winGold+winPrize-losePrize > warnLine {
 			continue
 		}
@@ -283,9 +284,9 @@ func (ply *shuiguojiPlayer) Bet(line int, chip int64) {
 		winPrize = losePrize + oldPrizePool
 	}
 	if gold < winGold {
-		percent, _ := config.Float("Room", room.GetSubId(), "TaxPercent")
+		percent, _ := config.Float("Room", room.SubId, "TaxPercent")
 		tax = int64(float64(winGold-gold) * percent / 100)
-		percent, _ = config.Float("entertainment", room.GetSubId(), "PrizePoolPercent")
+		percent, _ = config.Float("entertainment", room.SubId, "PrizePoolPercent")
 		losePrize = int64(float64(winGold-gold) * percent / 100)
 	}
 	if winPrize > 0 {
@@ -294,7 +295,7 @@ func (ply *shuiguojiPlayer) Bet(line int, chip int64) {
 			"WinPrize": winPrize,
 			"Rank":     0,
 			"Nickname": ply.Nickname,
-			"SubId":    room.GetSubId(),
+			"SubId":    room.SubId,
 		}
 		script.Call("room.lua", "notify_prize_pool", largs)
 	}
@@ -323,7 +324,7 @@ func (ply *shuiguojiPlayer) Bet(line int, chip int64) {
 	ply.RoomObj.WinGold += winGold + winPrize - losePrize - tax
 	ply.Room().GetInvisiblePrizePool().Add(winGold + winPrize - gold - tax)
 	ply.WriteJSON("Bet", data)
-	way = service.ItemWay{Way: "sys.sgj_win", SubId: room.GetSubId()}.String()
+	way = service.ItemWay{Way: "sys.sgj_win", SubId: room.SubId}.String()
 	ply.AddGold(winGold+winPrize-losePrize-tax, guid, way)
 	if ply.freeTimes == 0 {
 		ply.totalWinGold = 0

@@ -3,13 +3,14 @@ package lottery
 import (
 	"container/list"
 	"gofishing-game/service"
+	"gofishing-game/service/roomutils"
 	"third/cardutil"
 	"time"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
 	"github.com/guogeer/quasar/randutil"
-	"github.com/guogeer/quasar/utils"
+	"github.com/guogeer/quasar/util"
 )
 
 const (
@@ -59,7 +60,7 @@ func (room *lotteryRoom) OnEnter(player *service.Player) {
 	// 玩家重连
 	data := map[string]any{
 		"Status":    room.Status,
-		"SubId":     room.GetSubId(),
+		"SubId":     room.SubId,
 		"Countdown": room.GetShowTime(room.deadline),
 		"History":   room.history,
 		"Odds":      room.odds,
@@ -92,7 +93,7 @@ func (room *lotteryRoom) countPrize(gold int64, typ int) int64 {
 
 // 发牌
 func (room *lotteryRoom) Award() {
-	subId := room.GetSubId()
+	subId := room.SubId
 
 	defaultCardSamples := util.ParseIntSlice(defaultSamples)
 	s, _ := config.String("entertainment", subId, "CardSamples")
@@ -159,7 +160,7 @@ func (room *lotteryRoom) Award() {
 		Users: make(map[int]UserRecord),
 		Ts:    ts,
 	}
-	pct, _ := config.Float("Room", room.GetSubId(), "TaxPercent")
+	pct, _ := config.Float("Room", room.SubId, "TaxPercent")
 	for _, player := range room.AllPlayers {
 		p := player.GameAction.(*lotteryPlayer)
 
@@ -278,7 +279,7 @@ func (room *lotteryRoom) StartGame() {
 	var points []string
 	var d = 60 * time.Second
 
-	subId := room.GetSubId()
+	subId := room.SubId
 	room.Room.StartGame()
 	config.Scan("entertainment", subId,
 		"Chips,Odds,UserBetDuration",

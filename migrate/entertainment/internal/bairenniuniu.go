@@ -4,6 +4,7 @@ import (
 	"container/list"
 	"gofishing-game/migrate/entertainment/utils"
 	"gofishing-game/service"
+	"gofishing-game/service/roomutils"
 	"math/rand"
 
 	"github.com/guogeer/quasar/log"
