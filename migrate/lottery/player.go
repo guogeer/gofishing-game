@@ -3,6 +3,7 @@ package lottery
 // 2018-12-07
 
 import (
+	"gofishing-game/internal/errcode"
 	"gofishing-game/internal/gameutils"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
@@ -72,10 +73,10 @@ func (ply *lotteryPlayer) Bet(clientArea int, gold int64) {
 	}
 	area := clientArea
 	if area <= 0 || area >= len(ply.areas) {
-		code = Retry
+		code = errcode.Retry
 	}
 	if gold%room.Unit() != 0 {
-		code = Retry
+		code = errcode.Retry
 	}
 
 	chips := room.chips

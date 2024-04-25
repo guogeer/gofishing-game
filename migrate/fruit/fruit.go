@@ -1,6 +1,7 @@
 package fruit
 
 import (
+	"gofishing-game/internal/errcode"
 	"gofishing-game/internal/gameutils"
 
 	"github.com/guogeer/quasar/config"
@@ -33,15 +34,15 @@ func (fruitObj *FruitObj) Bet(area int, gold int64) {
 	ply := fruitObj.player
 	room := ply.Room()
 	if room == nil {
-		code = Retry
+		code = errcode.Retry
 		return
 	}
 
 	if room.Status != RoomStatusPlaying {
-		code = Retry
+		code = errcode.Retry
 	}
 	if area < 0 || area >= len(fruitObj.BetArea) || gold <= 0 {
-		code = Retry
+		code = errcode.Retry
 	}
 	if ply.BagObj().NumItem(gameutils.ItemIdGold) < gold {
 		code = MoreGold

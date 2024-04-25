@@ -237,35 +237,31 @@ func (ply *entertainmentPlayer) GetLastHistory(n int) {
 
 // 申请当庄
 func (ply *entertainmentPlayer) ApplyDealer() {
-	code := Ok
+	var e errcode.Error
+
 	room := ply.Room()
 	// 玩家已申请或已当庄
 	if room.dealer == ply {
-		code = Retry
+		e = errcode.Retry
 	}
-	if e := ply.applyElement; e != nil {
-		code = Retry
+	if ply.applyElement != nil {
+		e = errcode.Retry
 	}
 	minDealerGold, _ := config.Int("entertainment", room.SubId, "MinDealerGold")
 	if ply.BagObj().NumItem(gameutils.ItemIdGold) < minDealerGold {
-		code = MoreGold
-	}
-	if ply.IsRobotAD() {
-		code = Retry
+		e = errcode.MoreItem(gameutils.ItemIdGold)
 	}
 
 	uid := ply.Id
 	data := map[string]any{
-		"Code": code,
-		"Msg":  code.String(),
-		"UId":  uid,
+		"UId": uid,
 	}
-	ply.WriteJSON("ApplyDealer", data)
-	// OK
-	if code == Ok {
-		ply.applyElement = room.dealerQueue.PushBack(ply)
-		room.Broadcast("ApplyDealer", data, ply.Id)
+	ply.WriteErr("applyDealer", e, data)
+	if e != nil {
+		return
 	}
+	ply.applyElement = room.dealerQueue.PushBack(ply)
+	room.Broadcast("ApplyDealer", data, ply.Id)
 }
 
 func (ply *entertainmentPlayer) CancelDealer() {

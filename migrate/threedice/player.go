@@ -5,6 +5,7 @@ package threedice
 
 import (
 	"container/list"
+	"gofishing-game/internal/errcode"
 	"gofishing-game/internal/gameutils"
 	"gofishing-game/service"
 	"math/rand"
@@ -100,7 +101,7 @@ func (ply *ThreeDicePlayer) RobDealer(gold int64) {
 		code = MoreGold
 	}
 	if room.Status != service.RoomStatusRobDealer {
-		code = Retry
+		code = errcode.Retry
 	}
 	minDealer, maxDealer := room.dealerRequiredGold()
 	if gold < minDealer {
@@ -110,7 +111,7 @@ func (ply *ThreeDicePlayer) RobDealer(gold int64) {
 		code = TooMuchGold
 	}
 	if e := ply.robDealerElement; e != nil {
-		code = Retry
+		code = errcode.Retry
 	}
 	ply.WriteJSON("RobDealer", map[string]any{"Code": code, "Msg": code.String(), "UId": ply.Id, "Gold": gold})
 	if code == Ok {
