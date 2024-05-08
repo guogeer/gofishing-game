@@ -11,6 +11,7 @@
 - 开放跑得快（×）
 - 开放十三水demo（×）
 - 开放压大小（×）
+- 优化demo。支持九宫格方式展示
 
 
 ### 命名风格
@@ -37,7 +38,8 @@ protoc --proto_path=./ --go-grpc_out=./ --go-grpc_opt=paths=source_relative --go
 ```
 2、安装依赖的服务
 ```sh
-go install github.com/guogeer/quasar/...
+go install github.com/guogeer/quasar/gateway@latest
+go install github.com/guogeer/quasar/router@latest
 # 若未设置$GOPATH
 cp ~/go/bin/gateway gateway_server
 cp ~/go/bin/router router_server
