@@ -163,7 +163,7 @@ func (room *ZhajinhuaRoom) Award() {
 	guid := util.GUID()
 	for i := 0; i < room.NumSeat(); i++ {
 		p := room.GetPlayer(i)
-		if p != nil && p.RoomObj.IsReady() {
+		if p != nil && roomutils.GetRoomObj(p.Player).IsReady() {
 			p.winGold = 0
 		}
 	}
@@ -244,7 +244,7 @@ func (room *ZhajinhuaRoom) Award() {
 	}
 	users := make([]UserDetail, 0, room.NumSeat())
 	for i := 0; i < room.NumSeat(); i++ {
-		if p := room.GetPlayer(i); p != nil && p.RoomObj.IsReady() {
+		if p := room.GetPlayer(i); p != nil && roomutils.GetRoomObj(p.Player).IsReady() {
 			typ, _ := room.helper.GetType(p.cards[:])
 			detail := UserDetail{UId: p.Id, Cards: p.cards[:], CardType: typ, ExtraGold: p.extraGold}
 			users = append(users, detail)
@@ -327,7 +327,7 @@ func (room *ZhajinhuaRoom) StartGame() {
 	activeSeats := make([]int, 0, 8)
 	for i := 0; i < room.NumSeat(); i++ {
 		p := room.GetPlayer(i)
-		if p != nil && p.RoomObj.IsReady() {
+		if p != nil && roomutils.GetRoomObj(p.Player).IsReady() {
 			activeSeats = append(activeSeats, i)
 		}
 	}
@@ -343,7 +343,7 @@ func (room *ZhajinhuaRoom) StartGame() {
 	for i := range activeSeats {
 		k := (start + i) % len(activeSeats)
 		p := room.GetPlayer(activeSeats[k])
-		if p != nil && p.RoomObj.IsReady() {
+		if p != nil && roomutils.GetRoomObj(p.Player).IsReady() {
 			cards := make([]int, room.helper.Size())
 			if len(samples) > 1 {
 				typ := randutil.Array(samples)

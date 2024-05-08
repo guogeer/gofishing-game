@@ -135,7 +135,7 @@ func (room *TexasRoom) OnLeave(player *service.Player) {
 
 	counter = 0
 	for i := 0; i < room.NumSeat(); i++ {
-		if p := room.GetPlayer(i); p != nil && p.RoomObj.ContinuousPlayTimes > 0 {
+		if p := room.GetPlayer(i); p != nil && roomutils.GetRoomObj(p.Player).ContinuousPlayTimes > 0 {
 			counter++
 		}
 	}
@@ -285,7 +285,7 @@ func (room *TexasRoom) GameOver() {
 		cp := room.Tournament()
 		users := make([]*service.TournamentUser, 0, 16)
 		for i := 0; i < room.NumSeat(); i++ {
-			if p := room.GetPlayer(i); p != nil && p.RoomObj.IsReady() {
+			if p := room.GetPlayer(i); p != nil && roomutils.GetRoomObj(p.Player).IsReady() {
 				user := cp.Users[p.Id]
 				user.Gold = p.bankroll
 				users = append(users, user)
@@ -304,9 +304,9 @@ func (room *TexasRoom) GameOver() {
 		for i := 0; i < room.NumSeat(); i++ {
 			if p := room.GetPlayer(i); p != nil && p.bankroll == 0 {
 				if cp.IsAbleRebuy(room.blindLoop) || cp.IsAbleAddon(room.blindLoop) {
-					p.AddTimer(service.TimerEventFail, p.RoomObj.Fail, systemFailTime)
+					p.AddTimer(service.TimerEventFail, roomutils.GetRoomObj(p.Player).Fail, systemFailTime)
 				} else {
-					p.RoomObj.Fail()
+					roomutils.GetRoomObj(p.Player).Fail()
 				}
 			}
 		}
@@ -363,7 +363,7 @@ func (room *TexasRoom) StartGame() {
 
 	counter = 0 // 统计老玩家数量
 	for i := 0; i < room.NumSeat(); i++ {
-		if p := room.GetPlayer(i); p != nil && p.IsPlaying() && p.RoomObj.ContinuousPlayTimes > 0 {
+		if p := room.GetPlayer(i); p != nil && p.IsPlaying() && roomutils.GetRoomObj(p.Player).ContinuousPlayTimes > 0 {
 			counter++
 		}
 	}
@@ -373,7 +373,7 @@ func (room *TexasRoom) StartGame() {
 		if p := room.GetPlayer(i); p != nil && p.IsPlaying() {
 			var gold int64
 			// 房间老玩家人数不少于开局人数，新玩家自动压大盲注
-			t := p.RoomObj.ContinuousPlayTimes
+			t := roomutils.GetRoomObj(p.Player).ContinuousPlayTimes
 			if counter >= int(minReadyNum) && t == 0 && room.continuousLoop > 0 {
 				gold = room.bigBlind
 				if p == bb {

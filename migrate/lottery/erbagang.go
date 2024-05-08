@@ -1,16 +1,17 @@
-package internal
+package lottery
 
 import (
 	"container/list"
-	// "github.com/guogeer/quasar/log"
+	"gofishing-game/internal/cardutils"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"math/rand"
-	"third/cardutil"
+	"slices"
+	"strings"
 
 	"github.com/guogeer/quasar/config"
-	"github.com/guogeer/quasar/randutil"
-	"github.com/guogeer/quasar/util"
+	"github.com/guogeer/quasar/utils"
+	"github.com/guogeer/quasar/utils/randutils"
 )
 
 var (
@@ -85,10 +86,10 @@ func (h erbagangHelper) Less(fromCards, toCards []int) bool {
 }
 
 type erbagang struct {
-	room *entertainmentRoom
+	room *lotteryRoom
 }
 
-func (ent *erbagang) OnEnter(player *entertainmentPlayer) {
+func (ent *erbagang) OnEnter(player *lotteryPlayer) {
 }
 
 func (ent *erbagang) winPrizePool(cards []int) float64 {
@@ -97,7 +98,7 @@ func (ent *erbagang) winPrizePool(cards []int) float64 {
 		return 0.0
 	}
 	var a []float64
-	config.Scan("entertainment", subId, "CTPrizePoolPercent", &a)
+	config.Scan("lottery", subId, "CTPrizePoolPercent", &a)
 	if cards[0] == 100 && len(a) > 0 {
 		return a[0]
 	}
@@ -114,7 +115,7 @@ func (ent *erbagang) StartDealCard() {
 	room := ent.room
 
 	var samples []int
-	config.Scan("entertainment", room.SubId, "CardSamples", &samples)
+	config.Scan("lottery", room.SubId, "CardSamples", &samples)
 
 	start := rand.Intn(len(room.deals))
 	for i := range room.deals {
@@ -133,13 +134,13 @@ func (ent *erbagang) StartDealCard() {
 		switch typ {
 		case 0: // 1-9点
 			var single []int
-			for _, c := range cardutil.GetAllCards() {
+			for _, c := range cardutils.GetAllCards() {
 				if table[c] > 0 {
 					single = append(single, c)
 				}
 			}
 			if len(single) > 1 {
-				randutil.ShuffleN(single, 2)
+				randutils.ShuffleN(single, 2)
 				res = single[:2]
 			}
 		case 1: // 豹子
@@ -180,13 +181,13 @@ func (ent *erbagang) Cheat(multiples int) []int {
 	var cards []int
 	if multiples > 0 {
 		validCards = validCards[:0]
-		for _, c := range cardutil.GetAllCards() {
+		for _, c := range cardutils.GetAllCards() {
 			if remainingCards[c] > 0 {
 				validCards = append(validCards, c)
 			}
 		}
 		if len(validCards) > 1 {
-			randutil.ShuffleN(validCards, 2)
+			randutils.ShuffleN(validCards, 2)
 			cards = []int{validCards[0], validCards[1]}
 		}
 	}
@@ -218,28 +219,28 @@ func (ent *erbagang) Cheat(multiples int) []int {
 type ErbagangWorld struct {
 }
 
-func (w *ErbagangWorld) NewRoom(id, subId int) *service.Room {
-	room := &entertainmentRoom{
+func (w *ErbagangWorld) NewRoom(subId int) *roomutils.Room {
+	room := &lotteryRoom{
 		robSeat:         roomutils.NoSeat,
 		dealerQueue:     list.New(),
 		chips:           []int64{100, 500, 1000, 5000, 10000},
 		helper:          &erbagangHelper{},
 		multipleSamples: []int{0, 330000, 870000, 990000, 1000000},
 	}
-	room.Room = service.NewRoom(id, subId, room)
-	room.entertainmentGame = &erbagang{
+	room.Room = roomutils.NewRoom(subId, room)
+	room.lotteryGame = &erbagang{
 		room: room,
 	}
 	room.userAreaNum = 3
-	tags, _ := config.String("Room", subId, "Tags")
-	if config.IsPart(tags, "area_4") {
+	tags, _ := config.String("room", subId, "Tags")
+	if a := strings.Split(tags, ","); slices.Contains(a, "area_4") {
 		room.userAreaNum = 4
 	}
 
 	for i := 0; i < len(room.last); i++ {
 		room.last[i] = -1
 	}
-	deals := make([]entertainmentDeal, room.userAreaNum+1)
+	deals := make([]lotteryDeal, room.userAreaNum+1)
 	for i := range deals {
 		deals[i].Cards = make([]int, 2)
 	}
@@ -248,7 +249,7 @@ func (w *ErbagangWorld) NewRoom(id, subId int) *service.Room {
 
 	// room.StartGame()
 	// 定时同步
-	util.NewTimer(room.OnTime, syncTime)
+	utils.NewTimer(room.OnTime, syncTime)
 	return room.Room
 }
 
@@ -257,7 +258,7 @@ func (w *ErbagangWorld) GetName() string {
 }
 
 func (w *ErbagangWorld) NewPlayer() *service.Player {
-	p := &entertainmentPlayer{}
+	p := &lotteryPlayer{}
 	p.Player = service.NewPlayer(p)
 	p.betAreas = make([]int64, 3)
 	return p.Player

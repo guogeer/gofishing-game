@@ -1,9 +1,11 @@
 package niuniu
 
 import (
+	"gofishing-game/internal/cardutils"
+	"gofishing-game/migrate/internal/cardrule"
 	"gofishing-game/service"
+	"gofishing-game/service/roomutils"
 	"strings"
-	"third/cardutil"
 	"time"
 
 	"github.com/guogeer/quasar/config"
@@ -12,7 +14,7 @@ import (
 type NiuNiuWorld struct{}
 
 func init() {
-	service.CreateWorld("牛牛", &NiuNiuWorld{})
+	service.CreateWorld(&NiuNiuWorld{})
 
 	var cards []int
 	for color := 0; color < 4; color++ {
@@ -22,16 +24,16 @@ func init() {
 		}
 	}
 
-	cardutil.GetCardSystem().Init(cards)
+	cardutils.GetCardSystem().Init(cards)
 }
 
-func (w *NiuNiuWorld) NewRoom(id, subId int) *service.Room {
+func (w *NiuNiuWorld) NewRoom(subId int) *roomutils.Room {
 	r := &NiuNiuRoom{
-		helper: cardutil.NewNiuNiuHelper(),
+		helper: cardrule.NewNiuNiuHelper(),
 	}
-	r.Room = service.NewRoom(id, subId, r)
+	r.Room = roomutils.NewRoom(subId, r)
 
-	r.SetRestartTime(8 * time.Second)
+	r.SetFreeDuration(8 * time.Second)
 
 	r.SetPlay(OptNiuNiuShangZhuang)
 	r.SetNoPlay(OptGuDingShangZhuang)
@@ -60,8 +62,8 @@ func (w *NiuNiuWorld) NewRoom(id, subId int) *service.Room {
 	r.SetNoPlay(OptZuiDaQiangZhuang3)
 	r.SetNoPlay(OptZuiDaQiangZhuang4)
 
-	r.SetPlay(service.OptAutoPlay)                    // 自动代打
-	r.SetNoPlay(service.OptForbidEnterAfterGameStart) // 游戏开始后禁止进入游戏
+	r.SetPlay(roomutils.OptAutoPlay)                    // 自动代打
+	r.SetNoPlay(roomutils.OptForbidEnterAfterGameStart) // 游戏开始后禁止进入游戏
 
 	roomName, _ := config.String("Room", subId, "RoomName")
 	if strings.Contains(roomName, "耒阳") {
@@ -77,7 +79,7 @@ func (w *NiuNiuWorld) NewRoom(id, subId int) *service.Room {
 }
 
 func (w *NiuNiuWorld) GetName() string {
-	return "dmnn"
+	return "niuniu"
 }
 
 func (w *NiuNiuWorld) NewPlayer() *service.Player {

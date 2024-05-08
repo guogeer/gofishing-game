@@ -1,36 +1,12 @@
-package utils
+package cardcontrol
 
-import (
-	"gofishing-game/service"
-	"math/rand"
-	"sort"
-
-	"github.com/guogeer/quasar/utils/randutils"
-)
-
-// /////////////////////////////////////////////////////////
-// 庄家作弊
-func HelpDealer(data sort.Interface, percent float64) {
-	var rank int
-	for i := 0; i+1 < data.Len(); i++ {
-		if randutils.IsPercentNice(percent) {
-			rank++
-		}
-	}
-	sort.Sort(data)
-	data.Swap(rank, data.Len()-1)
-	for i := 0; i+1 < data.Len(); i++ {
-		end := data.Len() - 1 - i
-		t := rand.Intn(end)
-		data.Swap(t, end-1)
-	}
-}
+import "gofishing-game/service"
 
 type RankUserInfo struct {
 	service.UserInfo
 	Gold  int64  `json:"gold,omitempty"`
 	Award string `json:"award,omitempty"`
-	Prize int64  `json:",omitempty"`
+	Prize int64  `json:"prize,omitempty"`
 }
 
 type RankList struct {

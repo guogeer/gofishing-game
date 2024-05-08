@@ -2,6 +2,7 @@ package fruit
 
 import (
 	"gofishing-game/service"
+	"gofishing-game/service/roomutils"
 
 	"github.com/guogeer/quasar/cmd"
 	"github.com/guogeer/quasar/log"
@@ -77,5 +78,5 @@ func SitUp(ctx *cmd.Context, iArgs interface{}) {
 	if ply == nil {
 		return
 	}
-	ply.RoomObj.SitUp()
+	roomutils.GetRoomObj(ply.Player).SitUp()
 }

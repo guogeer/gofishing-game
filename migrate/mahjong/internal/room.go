@@ -392,7 +392,7 @@ func (room *MahjongRoom) OnChooseColor() {
 }
 
 func (room *MahjongRoom) OnLeave(player *service.Player) {
-	// seatId := ply.RoomObj.SeatId
+	// seatId := roomutils.GetRoomObj(ply.Player).SeatId
 	// room.Room.OnLeave(player)
 
 	p := player.GameAction.(*MahjongPlayer)

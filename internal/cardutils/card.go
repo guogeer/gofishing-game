@@ -10,10 +10,11 @@ package cardutils
 
 import (
 	"fmt"
-	"quasar/log"
-	"quasar/utils/randutils"
 	"strconv"
 	"strings"
+
+	"github.com/guogeer/quasar/log"
+	"github.com/guogeer/quasar/utils/randutils"
 )
 
 var (
@@ -146,6 +147,15 @@ func (cs *CardSet) Shuffle() {
 	cs.dealNum = 0
 }
 
+func (cs *CardSet) GetRemainingCards() []int {
+	var cards [512]int
+	for i := cs.dealNum; i < len(cs.randCards); i++ {
+		c := cs.randCards[i]
+		cards[c]++
+	}
+	return cards[:]
+}
+
 // 发牌
 func (cs *CardSet) Deal() int {
 	sys := GetCardSystem()
@@ -195,20 +205,6 @@ func IsCardGhost(c int) bool {
 
 func GetAllCards() []int {
 	return defaultCardSystem.GetAllCards()
-}
-
-// 格式化扑克
-func Format(cards []int) string {
-	output := "[]int{"
-	for i, c := range cards {
-		if i == 0 {
-			output += fmt.Sprintf("0x%02x", c)
-		} else {
-			output += fmt.Sprintf(",0x%02x", c)
-		}
-	}
-	output += "}"
-	return output
 }
 
 // 移动到末尾去
@@ -267,4 +263,22 @@ func IsColorValid(color int) bool {
 }
 func (sys *CardSystem) IsColorValid(color int) bool {
 	return sys.IsCardValid(10*color + 1)
+}
+
+// 格式化扑克
+func Format(cards []int) string {
+	output := "[]int{"
+	for i, c := range cards {
+		if i == 0 {
+			output += fmt.Sprintf("0x%02x", c)
+		} else {
+			output += fmt.Sprintf(",0x%02x", c)
+		}
+	}
+	output += "}"
+	return output
+}
+
+func Print(cards []int) {
+	fmt.Println(Format(cards))
 }

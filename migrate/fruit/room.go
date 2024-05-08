@@ -2,6 +2,7 @@ package fruit
 
 import (
 	"gofishing-game/service"
+	"gofishing-game/service/roomutils"
 	"math/rand"
 
 	"github.com/guogeer/quasar/config"
@@ -215,7 +216,7 @@ func (room *FruitRoom) Award() {
 			bigWinner.WinGold = gold
 			bigWinner.Info = p.GetSimpleInfo(0)
 		}
-		p.RoomObj.WinGold += gold
+		roomutils.GetRoomObj(p.Player).WinGold += gold
 		p.winGold = int64(float64(gold) * (1.0 - systemTax))
 	}
 

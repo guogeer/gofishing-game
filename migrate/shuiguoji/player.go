@@ -6,6 +6,7 @@ package shuiguoji
 import (
 	"gofishing-game/internal/gameutils"
 	"gofishing-game/service"
+	"gofishing-game/service/roomutils"
 	"strings"
 
 	"github.com/guogeer/quasar/config"
@@ -119,7 +120,7 @@ func (ply *shuiguojiPlayer) Bet(line int, chip int64) {
 	}
 
 	isValidChip := false
-	s, _ := config.String("entertainment", room.SubId, "Chips")
+	s, _ := config.String("lottery", room.SubId, "Chips")
 	chips := util.ParseIntSlice(s)
 	for _, c := range chips {
 		if chip == c {
@@ -144,7 +145,7 @@ func (ply *shuiguojiPlayer) Bet(line int, chip int64) {
 	ss := defaultSamples
 	check := ply.Room().GetInvisiblePrizePool().Check()
 	if check == 0 {
-		ss1, _ := config.String("entertainment", room.SubId, "CardSamples")
+		ss1, _ := config.String("lottery", room.SubId, "CardSamples")
 		if len(util.ParseStrings(ss)) == len(util.ParseStrings(ss1)) {
 			ss = ss1
 		}
@@ -256,7 +257,7 @@ func (ply *shuiguojiPlayer) Bet(line int, chip int64) {
 				bonus = 0
 			}
 		}
-		warnLine, _ := config.Int("entertainment", room.SubId, "WarningLine")
+		warnLine, _ := config.Int("lottery", room.SubId, "WarningLine")
 		if winGold+winPrize-losePrize > warnLine {
 			continue
 		}
@@ -286,7 +287,7 @@ func (ply *shuiguojiPlayer) Bet(line int, chip int64) {
 	if gold < winGold {
 		percent, _ := config.Float("Room", room.SubId, "TaxPercent")
 		tax = int64(float64(winGold-gold) * percent / 100)
-		percent, _ = config.Float("entertainment", room.SubId, "PrizePoolPercent")
+		percent, _ = config.Float("lottery", room.SubId, "PrizePoolPercent")
 		losePrize = int64(float64(winGold-gold) * percent / 100)
 	}
 	if winPrize > 0 {
@@ -320,8 +321,8 @@ func (ply *shuiguojiPlayer) Bet(line int, chip int64) {
 	if oldFreeTimes == 1 {
 		data["TotalGold"] = ply.totalWinGold
 	}
-	ply.RoomObj.BetGold += gold
-	ply.RoomObj.WinGold += winGold + winPrize - losePrize - tax
+	roomutils.GetRoomObj(ply.Player).BetGold += gold
+	roomutils.GetRoomObj(ply.Player).WinGold += winGold + winPrize - losePrize - tax
 	ply.Room().GetInvisiblePrizePool().Add(winGold + winPrize - gold - tax)
 	ply.WriteJSON("Bet", data)
 	way = service.ItemWay{Way: "sys.sgj_win", SubId: room.SubId}.String()
@@ -345,7 +346,7 @@ func (ply *shuiguojiPlayer) GetUserInfo(otherId int) *shuiguojiUserInfo {
 }
 
 func (ply *shuiguojiPlayer) Room() *shuiguojiRoom {
-	if room := ply.RoomObj.CardRoom(); room != nil {
+	if room := roomutils.GetRoomObj(ply.Player).CardRoom(); room != nil {
 		return room.(*shuiguojiRoom)
 	}
 	return nil

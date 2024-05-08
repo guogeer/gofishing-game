@@ -1,8 +1,8 @@
-package internal
+package lottery
 
 import (
 	"container/list"
-	"gofishing-game/migrate/entertainment/utils"
+	"gofishing-game/migrate/internal/cardrule"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"math/rand"
@@ -11,7 +11,7 @@ import (
 	"github.com/guogeer/quasar/utils"
 )
 
-var gNiuNiuHelper = utils.NewNiuNiuHelper()
+var gNiuNiuHelper = cardrule.NewNiuNiuHelper()
 var gNiuNiuMultiples = []int{1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 3,
 	0, // 五小牛
 	5, // 炸弹牛
@@ -21,9 +21,9 @@ var gNiuNiuMultiples = []int{1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 3,
 
 func init() {
 	helper := gNiuNiuHelper
-	helper.SetOption(utils.NNZhaDanNiu)
-	helper.SetOption(utils.NNWuHuaNiu)
-	helper.SetOption(utils.NNSiHuaNiu)
+	helper.SetOption(cardrule.NNZhaDanNiu)
+	helper.SetOption(cardrule.NNWuHuaNiu)
+	helper.SetOption(cardrule.NNSiHuaNiu)
 }
 
 type bairenniuniuHelper struct{}
@@ -41,10 +41,10 @@ func (h *bairenniuniuHelper) count(cards []int) (int, int) {
 }
 
 type bairenniuniu struct {
-	room *entertainmentRoom
+	room *lotteryRoom
 }
 
-func (ent *bairenniuniu) OnEnter(player *entertainmentPlayer) {
+func (ent *bairenniuniu) OnEnter(player *lotteryPlayer) {
 }
 
 func (ent *bairenniuniu) StartDealCard() {
@@ -83,28 +83,28 @@ func (ent *bairenniuniu) Cheat(multiples int) []int {
 	return nil
 }
 
-type BairenniuniuWorld struct {
-	helper *utils.NiuNiuHelper
+type bairenniuniuWorld struct {
+	helper *cardrule.NiuNiuHelper
 }
 
-func (w *BairenniuniuWorld) NewRoom(id, subId int) *roomutils.Room {
-	room := &entertainmentRoom{
+func (w *bairenniuniuWorld) NewRoom(subId int) *roomutils.Room {
+	room := &lotteryRoom{
 		robSeat:         roomutils.NoSeat,
 		betAreas:        make([]int64, 4),
 		dealerQueue:     list.New(),
 		helper:          &bairenniuniuHelper{},
 		multipleSamples: []int{0, 0, 330000, 870000, 980000, 1000000},
 	}
-	room.Room = roomutils.NewRoom(id, subId, room)
+	room.Room = roomutils.NewRoom(subId, room)
 
-	room.entertainmentGame = &bairenniuniu{
+	room.lotteryGame = &bairenniuniu{
 		room: room,
 	}
 
 	for i := 0; i < len(room.last); i++ {
 		room.last[i] = -1
 	}
-	deals := make([]entertainmentDeal, 5)
+	deals := make([]lotteryDeal, 5)
 	for i := range deals {
 		deals[i].Cards = make([]int, 5)
 	}
@@ -113,12 +113,12 @@ func (w *BairenniuniuWorld) NewRoom(id, subId int) *roomutils.Room {
 	return room.Room
 }
 
-func (w *BairenniuniuWorld) GetName() string {
+func (w *bairenniuniuWorld) GetName() string {
 	return "brnn"
 }
 
-func (w *BairenniuniuWorld) NewPlayer() *service.Player {
-	p := &entertainmentPlayer{}
+func (w *bairenniuniuWorld) NewPlayer() *service.Player {
+	p := &lotteryPlayer{}
 	p.Player = service.NewPlayer(p)
 	p.betAreas = make([]int64, 4)
 	return p.Player

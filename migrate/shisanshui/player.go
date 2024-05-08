@@ -2,6 +2,7 @@ package shisanshui
 
 import (
 	"gofishing-game/service"
+	"gofishing-game/service/roomutils"
 	"third/cardutil"
 	"time"
 
@@ -29,7 +30,7 @@ type ShisanshuiPlayer struct {
 
 func (ply *ShisanshuiPlayer) TryLeave() ErrCode {
 	room := ply.Room()
-	if room.Status != service.RoomStatusFree && ply.RoomObj.IsReady() {
+	if room.Status != service.RoomStatusFree && roomutils.GetRoomObj(ply.Player).IsReady() {
 		return Retry
 	}
 	return Ok
@@ -53,7 +54,7 @@ func (ply *ShisanshuiPlayer) GetUserInfo(self bool) *ShisanshuiUserInfo {
 	info := &ShisanshuiUserInfo{}
 	info.UserInfo = ply.UserInfo
 	info.SeatId = ply.SeatId
-	info.IsReady = ply.RoomObj.IsReady()
+	info.IsReady = roomutils.GetRoomObj(ply.Player).IsReady()
 
 	if self == true {
 		info.Cards = ply.cards
@@ -79,7 +80,7 @@ func (ply *ShisanshuiPlayer) GetSortedCards() []int {
 
 func (ply *ShisanshuiPlayer) SplitCards(cards []int) {
 	log.Debugf("player %d split cards %v", ply.Id, cards)
-	if ply.RoomObj.IsReady() == false {
+	if roomutils.GetRoomObj(ply.Player).IsReady() == false {
 		return
 	}
 	if len(cards) != len(ply.cards) || ply.splitCards[0] > 0 {
@@ -132,7 +133,7 @@ func (ply *ShisanshuiPlayer) Timeout(fn func(), d time.Duration) {
 }
 
 func (ply *ShisanshuiPlayer) Room() *ShisanshuiRoom {
-	if room := ply.RoomObj.CardRoom(); room != nil {
+	if room := roomutils.GetRoomObj(ply.Player).CardRoom(); room != nil {
 		return room.(*ShisanshuiRoom)
 	}
 	return nil

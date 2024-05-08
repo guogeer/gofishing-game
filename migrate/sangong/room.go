@@ -247,7 +247,7 @@ func (room *SangongRoom) GameOver() {
 func (room *SangongRoom) readyPlayers() []*SangongPlayer {
 	all := make([]*SangongPlayer, 0, 16)
 	for i := 0; i < room.NumSeat(); i++ {
-		if p := room.GetPlayer(i); p != nil && p.RoomObj.IsReady() {
+		if p := room.GetPlayer(i); p != nil && roomutils.GetRoomObj(p.Player).IsReady() {
 			all = append(all, p)
 		}
 	}
@@ -302,7 +302,7 @@ func (room *SangongRoom) AutoFinish() {
 		data := map[string]any{
 			"Sec": sec,
 		}
-		if p.RoomObj.IsReady() {
+		if roomutils.GetRoomObj(p.Player).IsReady() {
 			data["Cards"] = p.cards
 		}
 		p.WriteJSON("StartLookCard", data)

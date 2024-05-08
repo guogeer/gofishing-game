@@ -47,6 +47,7 @@ type RoomObj struct {
 	// TODO 待实现
 	isReady       bool
 	isObjectClone bool
+	OriginGold    int64 // TODO 未初始化
 }
 
 func GetRoomObj(player *service.Player) *RoomObj {

@@ -1,4 +1,4 @@
-package utils
+package cardrule
 
 import (
 	"gofishing-game/internal/cardutils"

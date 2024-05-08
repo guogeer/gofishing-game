@@ -2,332 +2,871 @@ package lottery
 
 import (
 	"container/list"
+	"gofishing-game/internal/cardutils"
+	"gofishing-game/internal/gameutils"
+	"gofishing-game/migrate/internal/cardcontrol"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
-	"third/cardutil"
+	"math/rand"
+	"sort"
 	"time"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/randutil"
-	"github.com/guogeer/quasar/util"
+	"github.com/guogeer/quasar/script"
+	"github.com/guogeer/quasar/utils"
+	"github.com/guogeer/quasar/utils/randutils"
 )
 
 const (
-	defaultSamples = "685-180-75-56-3-1-0"
+	syncTime = 1500 * time.Millisecond
 )
 
-var gNextTurnType = -1 // 手动控制下一轮结果
-var lotteryOdds = []float64{0, 1.25, 5, 12.5, 17.5, 190, 250, 5000}
+var isNextTurnSystemControl = false // 下一把系统作弊
 
-type UserRecord struct {
-	Prize  int64
-	Areas  []int64
-	Areas2 []int64 // 增加散牌押注区域
-	Type   int
-	Ts     int64
+func RandInArray(a []int) int {
+	return randutils.Index(a)
 }
 
-type AwardRecord struct {
-	WinUsers int
-	BetUsers int
-	Prize    int64
-	Cards    []int
-	Type     int
-	Ts       int64
-	Users    map[int]UserRecord `json:"-"`
+func GetPlayer(id int) *lotteryPlayer {
+	if p := service.GetPlayer(id); p != nil {
+		return p.GameAction.(*lotteryPlayer)
+	}
+	return nil
+}
+
+func sortArrayValues(a []int) []int {
+	table := make(map[int]bool)
+	for _, v := range a {
+		table[v] = true
+	}
+
+	values := make([]int, 0, 8)
+	for v := range table {
+		values = append(values, v)
+	}
+	sort.IntSlice(values).Sort()
+	return values
+}
+
+type lotteryDeal struct {
+	Type int // 兼容，三个字段同一个含义
+
+	Times        int
+	PrizePercent float64 // 奖池瓜分比例
+	Prize        int64   // 奖金
+	Cards        []int
+}
+
+// 押注的游戏，如万人场、水果机，骰子场
+type lotteryGame interface {
+	OnEnter(*lotteryPlayer)
+
+	// 开牌
+	StartDealCard()
+	Cheat(int) []int
+	winPrizePool([]int) float64
+}
+
+type lotteryHelper interface {
+	count(cards []int) (int, int)
+	Less(fromCards, toCards []int) bool
+}
+
+// 升序
+type lotteryAsc struct {
+	array  []lotteryDeal
+	helper lotteryHelper
+}
+
+func (asc *lotteryAsc) Len() int {
+	return len(asc.array)
+}
+
+func (asc *lotteryAsc) Swap(i, j int) {
+	a := asc.array
+	a[i], a[j] = a[j], a[i]
+}
+
+func (asc *lotteryAsc) Less(i, j int) bool {
+	a := asc.array
+	return asc.helper.Less(a[i].Cards, a[j].Cards)
 }
 
 type lotteryRoom struct {
-	*service.Room
+	*roomutils.Room
 
+	betAreas     []int64 // 各区域押注
+	userBetAreas []int64 // 各区域玩家押注
+	chips        []int64 // 筹码
+	last         [64]int // 历史记录
+	lasti        int     // 历史记录索引
+	userAreaNum  int     // 玩家押注区域数量
+
+	visiblePrizePool int64 // 明池
+
+	dealer            *lotteryPlayer
+	dealerQueue       *list.List
 	deadline          time.Time
-	helper            *cardutil.ZhajinhuaHelper
-	areas, robotAreas [cardutil.ZhajinhuaTypeAll]int64
-	history           []int
-	awards            list.List
-	isFishing         bool // 代号时时乐捕鱼
-	chips             []int64
-	odds              []float64
+	delayCancelDealer bool // 自动下庄
+
+	robSeat     int // 抢座
+	lotteryGame lotteryGame
+
+	autoTimer         *time.Timer
+	deals, cheatDeals []lotteryDeal
+	helper            lotteryHelper
+	dealerLoop        int // 当庄轮数
+	cheatWinPercent   float64
+	multipleSamples   []int
+
+	invisiblePrizePool *cardcontrol.InvisiblePrizePool // 暗池
+	prizePool          *cardcontrol.PrizePool          // 奖池
 }
 
 func (room *lotteryRoom) OnEnter(player *service.Player) {
-	room.Room.OnEnter(player)
-
 	comer := player.GameAction.(*lotteryPlayer)
+
 	log.Infof("player %d enter room %d", comer.Id, room.Id)
 
+	minDealerGold, _ := config.Int("lottery", room.SubId, "MinDealerGold")
+	forceCancelDealerGold, _ := config.Int("lottery", room.SubId, "ForceCancelDealerGold")
+	percent, _ := config.Float("lottery", room.SubId, "AllUserBetPercent")
+	loopLimit, _ := config.Int("lottery", room.SubId, "DealerLoopLimit")
 	// 玩家重连
+	prize := room.GetPrizePool().Add(0)
+	lastPrize := room.GetPrizePool().LastPrize
+	rank := room.GetPrizePool().Rank
 	data := map[string]any{
-		"Status":    room.Status,
-		"SubId":     room.SubId,
-		"Countdown": room.GetShowTime(room.deadline),
-		"History":   room.history,
-		"Odds":      room.odds,
-	}
-	if room.awards.Len() > 0 {
-		award := room.awards.Back().Value.(*AwardRecord)
-		data["LastRecord"] = award
-	}
-	if room.Status == service.RoomStatusPlaying {
-		data["BetAreas"] = room.areas
+		"status": room.Status,
+		"subId":  room.SubId,
+		"chips":  room.chips,
+		// 奖池
+		"prizePool":             prize,
+		"lastPrize":             lastPrize,
+		"rank":                  rank,
+		"countdown":             room.Countdown(),
+		"minDealerGold":         minDealerGold,
+		"forceCancelDealerGold": forceCancelDealerGold,
+		"allUserBetPercent":     percent,
+		"currentDealerLoop":     room.dealerLoop,
+		"dealerLoopLimit":       loopLimit,
+
+		"robSeat":      room.robSeat,
+		"myBetAreas":   comer.betAreas,
+		"roomBetAreas": room.betAreas,
+		"dealer":       0,
 	}
 
-	var seats []*lotteryUserInfo
+	// 庄家ID
+	if room.dealer != nil {
+		data["dealer"] = room.dealer.GetUserInfo(comer.Id)
+	}
+	// 当前排队上庄前10位
+	data["DealerQueue"] = comer.dealerQueue()
+
+	// 座位上的玩家
+	var seats []*userInfo
 	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil {
 			info := p.GetUserInfo(comer.Id)
 			seats = append(seats, info)
 		}
 	}
-	data["SeatPlayers"] = seats
-	if comer.SeatId == roomutils.NoSeat {
-		data["PersonInfo"] = comer.GetUserInfo(comer.Id)
+	data["seatPlayers"] = seats
+	if roomutils.GetRoomObj(comer.Player).GetSeatIndex() == roomutils.NoSeat {
+		data["personInfo"] = comer.GetUserInfo(comer.Id)
 	}
-	comer.WriteJSON("GetRoomInfo", data)
+	comer.SetClientValue("roomInfo", data)
+
+	p := player.GameAction.(*lotteryPlayer)
+	room.lotteryGame.OnEnter(p)
 }
 
-func (room *lotteryRoom) countPrize(gold int64, typ int) int64 {
-	return int64(float64(gold) * room.odds[typ])
+func (room *lotteryRoom) OnBet(area int, gold int64) {
+	room.betAreas[area] += gold
 }
 
-// 发牌
+func (room *lotteryRoom) StartGame() {
+	room.Room.StartGame()
+	if room.userBetAreas == nil {
+		room.userBetAreas = make([]int64, len(room.betAreas))
+	}
+	if room.cheatDeals == nil {
+		room.cheatDeals = make([]lotteryDeal, len(room.deals))
+		for i := range room.cheatDeals {
+			room.cheatDeals[i].Cards = make([]int, len(room.deals[i].Cards))
+		}
+	}
+
+	config.Scan("lottery", room.SubId, "Chips", &room.chips)
+
+	log.Debugf("room %d start game", room.Id)
+
+	// 清理金币不够上庄的玩家
+	minDealerGold, _ := config.Int("lottery", room.SubId, "MinDealerGold")
+	for e := room.dealerQueue.Front(); e != nil; {
+		p := e.Value.(*lotteryPlayer)
+
+		e = e.Next()
+		if !p.BagObj().IsEnough(gameutils.ItemIdGold, minDealerGold) {
+			p.CancelDealer()
+		}
+	}
+	//  推选庄家
+	if front := room.dealerQueue.Front(); room.dealer == nil && front != nil {
+		room.dealer = front.Value.(*lotteryPlayer)
+		room.dealer.dealerGold = room.dealer.dealerLimitGold
+		if room.dealer.dealerGold > room.dealer.BagObj().NumItem(gameutils.ItemIdGold) {
+			room.dealer.dealerGold = room.dealer.BagObj().NumItem(gameutils.ItemIdGold)
+		}
+		if room.dealer.dealerGold == 0 {
+			room.dealer.dealerGold = room.dealer.BagObj().NumItem(gameutils.ItemIdGold)
+		}
+		// 庄家有座位需要先站立
+		if roomutils.GetRoomObj(room.dealer.Player).GetSeatIndex() != roomutils.NoSeat {
+			roomutils.GetRoomObj(room.dealer.Player).SitUp()
+		}
+		// room.dealer.RoomObj.IsVisible = true
+		room.Broadcast("newDealer", map[string]any{
+			"info": room.dealer.GetUserInfo(room.dealer.Id),
+		})
+		// 2018-01-25 上庄后，队列暂时不清除庄家
+		// room.dealerQueue.Remove(front)
+		// room.dealer.applyElement = nil
+	}
+
+	// 是否有空位
+	if room.GetEmptySeat() == roomutils.NoSeat {
+		seatId := roomutils.NoSeat
+		for i := 0; i < room.NumSeat(); i++ {
+			if p := room.GetPlayer(i); p != nil {
+				if seatId == roomutils.NoSeat || p.BagObj().NumItem(gameutils.ItemIdGold) < room.GetPlayer(seatId).BagObj().NumItem(gameutils.ItemIdGold) {
+					seatId = i
+				}
+			}
+		}
+		if seatId != roomutils.NoSeat {
+			room.robSeat = seatId
+		}
+	}
+
+	room.Broadcast("startGame", map[string]any{
+		"coutdown": room.Countdown(),
+		"robSeat":  room.robSeat,
+	})
+}
+
+type awardArgs struct {
+	SubId      int `json:"subId,omitempty"`
+	AreaNum    int `json:"areaNum,omitempty"`
+	TotalTimes int `json:"totalTimes,omitempty"`
+	Level      int `json:"level,omitempty"`
+	Top        int `json:"top,omitempty"`
+}
+
 func (room *lotteryRoom) Award() {
-	subId := room.SubId
+	service.SetRobotNoLog(true)
 
-	defaultCardSamples := util.ParseIntSlice(defaultSamples)
-	s, _ := config.String("entertainment", subId, "CardSamples")
-	cardSamples := defaultCardSamples
-	if s != "" {
-		cardSamples = util.ParseIntSlice(s)
-	}
-	validCards := room.CardSet().GetRemainingCards()
-	check := room.GetInvisiblePrizePool().Check()
+	// 合并机器人的押注日志
+	var totalRobotBet, warningLine int64
+	config.Scan("lottery", room.SubId, "WarningLine", &warningLine)
+	for _, player := range room.GetAllPlayers() {
+		p := player.GameAction.(*lotteryPlayer)
 
-	var totalBet, robotBet int64
-	for _, n := range room.areas {
-		totalBet += n
-	}
-	for _, n := range room.robotAreas {
-		robotBet += n
+		totalBet := p.totalBet()
+		if p.IsRobot == true {
+			totalRobotBet += totalBet
+		}
+		service.AddSomeItemLog(0, []gameutils.Item{&gameutils.NumericItem{Id: gameutils.ItemIdGold, Num: -totalRobotBet}}, service.GetServerId()+"robot_bet")
 	}
 
-	cards := []int{0x02, 0x15, 0x27}
+	deals := room.deals
+	areaNum := len(room.betAreas)
+	dealerAreaId := areaNum
+
+	retry, maxRetry := 0, 100
 	ipp := room.GetInvisiblePrizePool()
-	for retry := 0; retry < 100; retry++ {
-		if retry > 66 {
-			cardSamples = defaultCardSamples
+	check := ipp.Check()
+	for retry = 0; retry < maxRetry; retry++ {
+		room.CardSet().Shuffle()
+		for i := range room.deals {
+			for k := range room.deals[i].Cards {
+				room.deals[i].Cards[k] = 0
+				room.cheatDeals[i].Cards[k] = 0
+			}
 		}
-		typ := randutil.Index(cardSamples) + 1
-		if gNextTurnType > 0 {
-			typ = gNextTurnType
+		room.lotteryGame.StartDealCard()
+
+		var faildeals int
+		for i := 0; i < len(deals); i++ {
+			cards := deals[i].Cards
+			if cards[0] == 0 {
+				faildeals++
+			}
 		}
-		cheatCards := room.helper.Cheat(typ, validCards)
-		if len(cheatCards) == 0 {
+		if retry < maxRetry/10*7 && retry < maxRetry-1 && faildeals > 0 {
 			continue
 		}
-		cards = append(cards[:0], cheatCards...)
-		if gNextTurnType > 0 {
+
+		// 按照暗池发牌
+		totalBet := room.totalUserBet()
+		if room.IsSystemDealer() && totalBet != 0 {
+			k := dealerAreaId
+			gold := room.visiblePrizePool
+			if false && gold > 0 {
+				k = rand.Intn(len(room.betAreas))
+			}
+			if isNextTurnSystemControl {
+				multipleSamples := room.multipleSamples
+				multiples := randutils.Index(multipleSamples)
+				cards := room.lotteryGame.Cheat(multiples)
+				if cards != nil {
+					copy(room.cheatDeals[k].Cards, cards)
+					log.Infof("prize pool control area %d cards %v", k, cards)
+				}
+			}
+			isNextTurnSystemControl = false
+		}
+		// 部分未发牌的区域，随机发牌
+		for i := 0; i < len(deals); i++ {
+			cards := deals[i].Cards
+			if cards[0] > 0 {
+				continue
+			}
+
+			for k := 0; k < len(cards); k++ {
+				cards[k] = room.CardSet().Deal()
+			}
+			log.Warn("try rand cards", cards)
+		}
+
+		// 系统当庄作弊
+		percent := 0.0
+		if room.IsSystemDealer() {
+			var times, prizeNum int
+			var levels []float64
+			config.Scan("lottery", room.SubId, "SystemDealerWinPercent,Lv5WinPercent", &percent, &levels)
+			for _, deal := range room.deals {
+				pct := room.lotteryGame.winPrizePool(deal.Cards)
+				_, t := room.helper.count(deal.Cards)
+				times += t
+				if pct > 0 {
+					prizeNum++
+				}
+			}
+			args := &awardArgs{
+				SubId:      room.SubId,
+				TotalTimes: times,
+				AreaNum:    areaNum,
+			}
+			script.Call("room.lua", "fix_room_award", args)
+			if args.Level >= len(levels) {
+				args.Level = len(levels) - 1
+			}
+			if args.Level >= 0 && prizeNum == 0 {
+				percent = levels[args.Level]
+			}
+		}
+		if !room.IsSystemDealer() {
+			config.Scan("config", room.SubId, "betGameUserDealerWinPercent", &percent)
+		}
+		if percent != 0 {
+			asc := &lotteryAsc{array: room.deals, helper: room.helper}
+			cardcontrol.HelpDealer(asc, percent+room.cheatWinPercent)
+		}
+
+		for i := range room.cheatDeals {
+			if room.cheatDeals[i].Cards[0] > 0 && room.helper.Less(room.deals[i].Cards, room.cheatDeals[i].Cards) {
+				copy(room.deals[i].Cards, room.cheatDeals[i].Cards)
+			}
+		}
+
+		// 测试用例
+		testSample := cardutils.GetSample()
+		if testSample != nil {
+			room.CardSet().Shuffle()
+			for i := 0; i < len(deals); i++ {
+				cards := room.deals[i].Cards
+				for k := 0; k < len(cards); k++ {
+					cards[k] = room.CardSet().Deal()
+				}
+			}
+		}
+
+		// 发牌后
+		prizeAreas := 0
+		isRetry := false
+		totalPrize := room.GetPrizePool().Add(0)
+		minBet, _ := config.Int("lottery", room.SubId, "MinPrizePoolBet")
+		for i := range room.deals {
+			pct := room.lotteryGame.winPrizePool(room.deals[i].Cards)
+			if pct > 100.0 {
+				pct = 100.0
+			}
+
+			typ, multiples := room.helper.count(room.deals[i].Cards)
+			room.deals[i].Type = typ
+			room.deals[i].Times = multiples
+			room.deals[i].PrizePercent = pct
+			room.deals[i].Prize = int64(pct / 100.0 * float64(totalPrize))
+			if deals[i].Prize > 0 && minBet > 0 && i < areaNum {
+				if total := room.totalBet(); total < minBet {
+					isRetry = true
+				}
+			}
+			// 系统当庄不开奖池
+			if i == areaNum && room.dealer == nil {
+				room.deals[i].Prize = 0
+			}
+			// 没人押注奖池不开奖
+			if i < areaNum && room.betAreas[i] == 0 {
+				room.deals[i].Prize = 0
+			}
+			if room.deals[i].Prize > 0 {
+				prizeAreas++
+			}
+		}
+		if prizeAreas > 1 {
+			isRetry = true
+		}
+
+		for i := 0; i < areaNum; i++ {
+			if room.helper.Less(deals[dealerAreaId].Cards, deals[i].Cards) == false {
+				deals[i].Times = -deals[dealerAreaId].Times
+			}
+		}
+
+		var systemWinGold int64
+		for i := range room.betAreas {
+			times := int64(room.deals[i].Times)
+			if room.IsSystemDealer() {
+				systemWinGold += -times * room.userBetAreas[i]
+			} else {
+				systemWinGold += times * (room.betAreas[i] - room.userBetAreas[i])
+			}
+		}
+		// 测试用例
+		if testSample != nil {
 			break
 		}
 
-		userAreaBet := room.areas[typ] - room.robotAreas[typ]
-		winGold := room.countPrize(userAreaBet, typ)
-		// 暗池不够赔重新发牌
-		userWinGold := winGold - totalBet + robotBet
-		if !ipp.IsValid(userWinGold) {
+		if isRetry == true {
 			continue
 		}
-		if check == -1 && userWinGold < 0 {
+		// log.Debug("=========", check, systemWinGold)
+		if !ipp.IsValid(-systemWinGold) {
+			continue
+		}
+		// log.Debug("========= ok", check, systemWinGold)
+		if check < 0 && systemWinGold >= 0 {
 			break
 		}
-		if check == 1 && userWinGold > 0 {
+		if check > 0 && systemWinGold <= 0 {
 			break
 		}
 		if check == 0 {
 			break
 		}
 	}
-
-	ts := time.Now().Unix()
-	typ, _ := room.helper.GetType(cards)
-
-	prize := room.countPrize(room.areas[typ], typ)
-	awardData := &AwardRecord{
-		Type:  typ,
-		Cards: cards,
-		Prize: prize,
-		Users: make(map[int]UserRecord),
-		Ts:    ts,
+	// 增加牌型日志观察，监控系统
+	log.Infof("try %d times, deal cards result:", retry)
+	for _, deal := range room.deals {
+		log.Info(deal.Cards)
 	}
-	pct, _ := config.Float("Room", room.SubId, "TaxPercent")
-	for _, player := range room.AllPlayers {
-		p := player.GameAction.(*lotteryPlayer)
 
-		userBet := p.areas[0] * 0
-		for _, n := range p.areas {
-			userBet += n
-		}
-		obj := p.RoomObj
-		obj.BetGold += userBet
-		if p.areas[typ] > 0 {
-			awardData.WinUsers++
+	var lastPrize int64
+	for _, deal := range room.deals {
+		lastPrize += deal.Prize
+	}
+	if lastPrize > 0 {
+		room.GetPrizePool().ClearRank()
+		room.GetPrizePool().SetLastPrize(lastPrize)
+	}
 
-			gold := room.countPrize(p.areas[typ], typ)
-			tax := int64(float64(gold-userBet) * pct / 100)
-			p.winGold = gold - tax
-			obj.WinGold += gold - tax
-		}
-		if userBet > 0 {
-			awardData.BetUsers++
-			awardUser := UserRecord{Prize: p.winGold}
-			awardUser.Areas = append(awardUser.Areas, p.areas[2:]...)
-			awardUser.Areas2 = append(awardUser.Areas2, p.areas[:]...)
-			awardData.Users[p.Id] = awardUser
-		}
-		if p.IsRobot == false {
-			room.GetInvisiblePrizePool().Add(p.winGold - userBet)
+	bitMap := 0
+	for i := 0; i < areaNum; i++ {
+		if deals[i].Times < 0 {
+			bitMap |= 1 << uint(i)
 		}
 	}
-	room.awards.PushBack(awardData)
-	if room.awards.Len() > 40 {
-		front := room.awards.Front()
-		room.awards.Remove(front)
-	}
-	room.history = append(room.history, typ)
-	if n := 40; len(room.history) > n {
-		for i := 0; i < n; i++ {
-			room.history[i] = room.history[i+1]
-		}
-		room.history = room.history[:n]
-	}
-	log.Infof("room award cards %v type %d", cards, typ)
+	room.last[room.lasti] = bitMap
+	room.lasti = (room.lasti + 1) % len(room.last)
+	// 结算前，强制同步一次桌面筹码
 	room.Sync()
 
-	restartTime := room.RestartTime()
-	room.deadline = time.Now().Add(restartTime)
-	util.NewTimer(room.StartGame, restartTime)
-
-	result := make([]int, 0, 8)
-	for i := 0; i < cardutil.ZhajinhuaTypeAll; i++ {
-		result = append(result, i)
+	// 庄家收入
+	var dealerWinGold, dealerLoseGold int64
+	type Bill struct {
+		uid               int
+		bet               int64
+		total             int64
+		prize             int64
+		isDealer          bool
+		isRobot           bool
+		areas, prizeAreas []int64
 	}
-	result[1], result[typ] = result[typ], result[1]
-	randutil.Shuffle(result[2:])
-	room.Broadcast("Award", map[string]any{
-		"Sec":    room.GetShowTime(room.deadline),
-		"Record": awardData,
-		"Result": result[1:],
-	})
-	// 机器人日志合并
+	// 玩家赢或输
+	var bills = make([]*Bill, 0, 64)
+	for _, player := range room.GetAllPlayers() {
+		p := player.GameAction.(*lotteryPlayer)
+
+		bill := &Bill{
+			uid:        p.Id,
+			isRobot:    p.IsRobot,
+			areas:      make([]int64, areaNum),
+			prizeAreas: make([]int64, areaNum),
+		}
+		for k, gold := range p.betAreas {
+			doubleGold := int64(deals[k].Times) * gold
+			bill.total += doubleGold
+			bill.bet += gold // 无论输赢，押注的筹码都得算上
+			bill.areas[k] = doubleGold
+			// 奖池
+			if sum := room.betAreas[k]; sum > 0 {
+				f := float64(gold) / float64(sum) * float64(deals[k].Prize)
+				bill.prizeAreas[k] = int64(f)
+				bill.prize += bill.prizeAreas[k]
+			}
+		}
+
+		total := bill.total
+		//  玩家输的金币不能超过所有金币
+		if sum := p.BagObj().NumItem(gameutils.ItemIdGold) + p.totalBet(); total+bill.prize+sum < 0 {
+			total = -sum - bill.prize
+		}
+
+		if total > 0 {
+			dealerLoseGold += total
+		} else {
+			dealerWinGold += -total
+		}
+		bill.total = total
+		bills = append(bills, bill)
+	}
+
+	type Area struct {
+		SeatId int
+		Area   int
+		Gold   int64
+	}
+
+	var areas []Area
+	var totalTax int64
+	var betAreas = make([]int64, areaNum)
+
+	// 玩家当庄
+	dealerRealLoseGold := dealerLoseGold
+	dealerBill := &Bill{
+		total:      dealerWinGold - dealerRealLoseGold,
+		isDealer:   true,
+		areas:      make([]int64, areaNum),
+		prizeAreas: make([]int64, areaNum),
+	}
+	if room.dealer != nil {
+		prize := deals[dealerAreaId].Prize
+		gold := dealerWinGold + room.dealer.dealerGold + prize
+		if dealerLoseGold > gold {
+			dealerRealLoseGold = gold
+		}
+		dealerBill.uid = room.dealer.Id
+		dealerBill.isRobot = room.dealer.IsRobot
+		dealerBill.prize = prize
+		dealerBill.total = dealerWinGold - dealerRealLoseGold
+	}
+	bills = append(bills, dealerBill)
+
+	dealerWinGold = dealerWinGold - dealerRealLoseGold + dealerBill.prize
+	for i := 0; i < room.NumSeat(); i++ {
+		if p := room.GetPlayer(i); p != nil {
+			for k, gold := range p.betAreas {
+				if gold != 0 {
+					areas = append(areas, Area{SeatId: i, Area: k, Gold: gold})
+					betAreas[k] += gold
+				}
+			}
+		}
+	}
+	// 无座玩家押注
+	for k, gold := range betAreas {
+		if sub := room.betAreas[k] - gold; sub > 0 {
+			areas = append(areas, Area{SeatId: roomutils.NoSeat, Area: k, Gold: sub})
+		}
+	}
+
+	type seatInfo struct {
+		SeatId int
+		Gold   int64
+		Prize  int64 `json:",omitempty"`
+	}
+
+	// 没有座位的玩家金币
+	var details []seatInfo
+	var noSeatGold, addPrizePool int64
+	var taxPercent, prizePoolPercent, robotPercent float64
+	config.Scan("room", room.SubId, "taxPercent", &taxPercent)
+	config.Scan("config", room.SubId,
+		"prizePoolPercent,RTPrizePoolPercent",
+		&prizePoolPercent, &robotPercent,
+	)
+	largs := &awardArgs{
+		SubId:   room.SubId,
+		AreaNum: areaNum,
+	}
+	ranklist := cardcontrol.NewRankList(nil, largs.Top)
+
+	scale := float64(dealerRealLoseGold) / float64(dealerLoseGold)
+	for _, bill := range bills {
+		uid := bill.uid
+		total := bill.total
+		prize := bill.prize
+		if bill.bet == 0 && !bill.isDealer {
+			continue
+		}
+		// 赢取金币
+		if total > 0 && !bill.isDealer {
+			total = int64(float64(total) * scale)
+		}
+		bill.total = total
+
+		percent := prizePoolPercent
+		if bill.isRobot == true {
+			percent = robotPercent
+		}
+		var tax1, prize1, tax2, prize2 int64
+		if total > 0 {
+			tax1 = int64(taxPercent * float64(total) / 100)
+			prize1 = int64(percent * float64(total) / 100)
+			tax2 = int64(0 * float64(prize) / 100)
+			prize2 = int64(0 * float64(prize) / 100)
+			totalTax += tax1 + tax2
+			addPrizePool += prize1 + prize2
+			total -= tax1 + prize1
+			prize -= tax2 + prize2
+		}
+
+		if base := service.GetPlayer(uid); base != nil {
+			p := base.GameAction.(*lotteryPlayer)
+			p.winGold += total + prize + bill.bet
+			p.winPrize += prize - prize1
+			p.fakeGold += bill.total + bill.prize
+			room.GetPrizePool().UpdateRank(p.UserInfo, bill.prize)
+
+			var add int64
+			var sub = bill.bet
+			for k := range bill.areas {
+				if bill.areas[k] < 0 {
+					add += bill.areas[k]
+				} else {
+					sub += -bill.areas[k]
+					dealerBill.areas[k] += -bill.areas[k]
+				}
+			}
+			for k := range bill.areas {
+				if !bill.isDealer && add > 0 && bill.areas[k] > 0 {
+					f := float64(bill.areas[k]) / float64(add) * float64(bill.total+sub)
+					bill.areas[k] = int64(f + 0.5)
+					dealerBill.areas[k] -= bill.areas[k]
+					bill.areas[k] += bill.prizeAreas[k]
+				}
+			}
+			copy(p.fakeAreas, bill.areas)
+
+			if rankgold := bill.total + bill.prize; rankgold > 0 {
+				ranklist.Update(base.UserInfo, rankgold)
+			}
+			if roomutils.GetRoomObj(p.Player).GetSeatIndex() == roomutils.NoSeat {
+				noSeatGold += bill.total + bill.prize
+			} else {
+				seat := seatInfo{
+					SeatId: roomutils.GetRoomObj(p.Player).GetSeatIndex(),
+					Gold:   bill.total + bill.prize,
+					Prize:  bill.prize,
+				}
+				details = append(details, seat)
+			}
+		}
+	}
+	if room.dealer != nil {
+		copy(room.dealer.fakeAreas, dealerBill.areas)
+	}
+	// 暗池控制牌型
+	var userWinGold = -room.totalUserBet()
+	for _, player := range room.GetAllPlayers() {
+		p := player.GameAction.(*lotteryPlayer)
+		if p.IsRobot == false {
+			userWinGold += p.winGold - p.winPrize
+		}
+	}
+	ipp.Add(userWinGold) // 暗池
+	oldPrize := room.GetPrizePool().Add(0)
+	newPrize := room.GetPrizePool().Add(addPrizePool - lastPrize) // 奖池
+	if oldPrize > newPrize {
+		for rankid, rankuser := range room.GetPrizePool().Rank {
+			largs := map[string]any{
+				"UId":      rankuser.Id,
+				"Nickname": rankuser.Nickname,
+				"SubId":    room.SubId,
+				"WinPrize": rankuser.Prize,
+				"Rank":     rankid,
+			}
+			script.Call("room.lua", "notify_prize_pool", largs)
+		}
+	}
+
+	if noSeatGold != 0 {
+		details = append(details, seatInfo{SeatId: roomutils.NoSeat, Gold: noSeatGold})
+	}
+
+	type PersonInfo struct {
+		Gold  int64
+		Areas []int64
+	}
+
+	script.Call("room.lua", "change_award_cards", room.SubId, deals)
+	// 摇骰子
+	dice1, dice2 := rand.Intn(6)+1, rand.Intn(6)+1
+	for _, player := range room.GetAllPlayers() {
+		p := player.GameAction.(*lotteryPlayer)
+		response := map[string]any{
+			"tax":        totalTax,
+			"deal":       deals,
+			"dices":      dice1*10 + dice2,
+			"details":    details,
+			"betAreas":   areas,
+			"personInfo": PersonInfo{Gold: p.fakeGold, Areas: p.fakeAreas},
+			"dealer":     PersonInfo{Gold: dealerWinGold, Areas: dealerBill.areas},
+			"countdown":  room.Countdown(),
+			"top":        ranklist.Top(),
+		}
+		if newPrize != oldPrize {
+			response["PrizePool"] = newPrize
+		}
+		if lastPrize > 0 {
+			response["LastPrize"] = lastPrize
+			response["Rank"] = room.GetPrizePool().Rank
+		}
+		p.WriteJSON("Award", response)
+	}
 	var robot *lotteryPlayer
-	var robotBetNum, robotWinNum int64
-
-	guid := util.GUID()
-	tway := service.ItemWay{Way: "sum.lottery_bet", SubId: subId}.String()
-	sway := service.ItemWay{Way: "sys.lottery_bet", SubId: subId}.String()
-	for _, player := range room.AllPlayers {
-		way := sway
-		sum := int64(0)
+	var totalRobotAward int64
+	for _, player := range room.GetAllPlayers() {
 		p := player.GameAction.(*lotteryPlayer)
-		for _, bet := range p.areas {
-			sum += bet
-		}
-		if p.IsRobot {
-			way = tway
+		if p.IsRobot == true {
 			robot = p
-			robotBetNum += sum
+			totalRobotAward += p.winGold
 		}
-		p.AddGoldLog(-sum, guid, way)
+		p.BagObj().Add(gameutils.ItemIdGold, p.winGold, service.GetServerName()+"_award")
 	}
+	service.SetRobotNoLog(false)
 	if robot != nil {
-		robot.AddGoldLog(-robotBetNum, guid, sway)
-	}
-
-	tway = service.ItemWay{Way: "sum.lottery_award", SubId: subId}.String()
-	sway = service.ItemWay{Way: "sys.lottery_award", SubId: subId}.String()
-	for _, player := range room.AllPlayers {
-		way := sway
-		p := player.GameAction.(*lotteryPlayer)
-		if p.IsRobot {
-			way = tway
-			robotWinNum += p.winGold
-		}
-		p.AddGold(p.winGold, guid, way)
-	}
-	if robot != nil {
-		robot.AddGoldLog(robotWinNum, guid, sway)
+		service.AddSomeItemLog(robot.Id, []gameutils.Item{&gameutils.NumericItem{Id: gameutils.ItemIdGold, Num: -totalRobotBet}}, "robot_"+service.GetServerName()+"_bet")
+		service.AddSomeItemLog(robot.Id, []gameutils.Item{&gameutils.NumericItem{Id: gameutils.ItemIdGold, Num: -totalRobotAward}}, "robot"+service.GetServerName()+"_award")
 	}
 
 	room.GameOver()
 }
 
 func (room *lotteryRoom) GameOver() {
+	// 玩家当庄
+	if room.dealer != nil {
+		room.dealerLoop++
+		// 玩家自动下庄或金币不足或当庄轮数超过限制
+
+		var loop int
+		var limit int64
+		config.Scan("lottery", room.SubId, "DealerLoopLimit,ForceCancelDealerGold", &loop, &limit)
+		if room.dealer.dealerGold < limit || room.delayCancelDealer || (loop > 0 && room.dealerLoop >= loop) {
+			room.dealer.CancelDealer()
+		}
+	}
+
+	for _, player := range room.GetAllPlayers() {
+		p := player.GameAction.(*lotteryPlayer)
+		if p.totalBet() == 0 {
+			p.continuousBetTimes = 0
+		} else {
+			p.continuousBetTimes++
+		}
+	}
 	room.Room.GameOver()
 
-	for i := range room.areas {
-		room.areas[i] = 0
+	for i := range room.betAreas {
+		room.betAreas[i] = 0
 	}
-	for i := range room.robotAreas {
-		room.robotAreas[i] = 0
+	for i := range room.userBetAreas {
+		room.userBetAreas[i] = 0
 	}
-	gNextTurnType = -1
+
+	room.cheatWinPercent = 0
+	room.robSeat = roomutils.NoSeat
+	room.CardSet().Shuffle()
 }
 
-func (room *lotteryRoom) StartGame() {
-	var odds []float64
-	var points []string
-	var d = 60 * time.Second
+func (room *lotteryRoom) OnTime() {
+	room.Sync()
+	utils.NewTimer(room.OnTime, syncTime)
+}
 
-	subId := room.SubId
-	room.Room.StartGame()
-	config.Scan("entertainment", subId,
-		"Chips,Odds,UserBetDuration",
-		&room.chips, &odds, &points,
-	)
-	room.odds = append([]float64{0}, odds...)
-	if len(room.odds) != len(lotteryOdds) {
-		room.odds = lotteryOdds
+func (room *lotteryRoom) Sync() {
+	data := map[string]any{
+		"onlines":  len(room.GetAllPlayers()),
+		"betAreas": room.betAreas[:],
 	}
+	room.Broadcast("sync", data)
+}
 
-	if t := service.RandSeconds(points); t > 0 {
-		d = t
+func (room *lotteryRoom) GetLast(n int) []int {
+	var last []int
+	N := len(room.last)
+	for i := (N - n + room.lasti) % N; i != room.lasti; i = (i + 1) % N {
+		d := room.last[i]
+		if d >= 0 {
+			last = append(last, d)
+		}
 	}
-	room.deadline = time.Now().Add(d)
-	room.Broadcast("StartGame", map[string]any{
-		"Sec": room.GetShowTime(room.deadline),
-	})
-	util.NewTimer(room.Award, d)
+	// 反转
+	for i := 0; 2*i < len(last); i++ {
+		k := len(last) - 1 - i
+		last[i], last[k] = last[k], last[i]
+	}
+	return last
 }
 
 func (room *lotteryRoom) GetPlayer(seatId int) *lotteryPlayer {
 	if seatId < 0 || seatId >= room.NumSeat() {
 		return nil
 	}
-	if p := room.SeatPlayers[seatId]; p != nil {
+	if p := room.GetPlayer(seatId); p != nil {
 		return p.GameAction.(*lotteryPlayer)
 	}
 	return nil
 }
 
-func (room *lotteryRoom) Sync() {
-	sub := room.GetSubWorld()
+func (room *lotteryRoom) totalBet() int64 {
+	var sum int64
+	for _, gold := range room.betAreas {
+		sum += gold
+	}
+	return sum
+}
 
-	total := 0
-	for _, player := range room.AllPlayers {
-		p := player.GameAction.(*lotteryPlayer)
-		for _, n := range p.areas {
-			if n > 0 {
-				total++
-				break
-			}
-		}
+func (room *lotteryRoom) totalUserBet() int64 {
+	var sum int64
+	for _, gold := range room.userBetAreas {
+		sum += gold
 	}
-	data := map[string]any{
-		"Onlines":   sub.FakeOnline,
-		"BetAreas":  room.areas[2:],
-		"BetAreas2": room.areas[:], // 增加散牌可押注
-		"BetUsers":  total,
-	}
-	room.Broadcast("Sync", data)
+	return sum
+}
+
+func (room *lotteryRoom) IsSystemDealer() bool {
+	return room.dealer == nil || room.dealer.IsRobot
+}
+
+func (room *lotteryRoom) GetInvisiblePrizePool() *cardcontrol.InvisiblePrizePool {
+	return room.invisiblePrizePool
+}
+
+func (room *lotteryRoom) GetPrizePool() *cardcontrol.PrizePool {
+	return room.prizePool
 }

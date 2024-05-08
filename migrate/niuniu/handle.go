@@ -8,20 +8,20 @@ import (
 	"github.com/guogeer/quasar/utils"
 )
 
-func init() {
-	cmd.BindFunc(ChooseTriCards, (*Args)(nil))
-	cmd.BindFunc(Bet, (*Args)(nil))
-	cmd.BindFunc(ChooseDealer, (*Args)(nil))
-	cmd.BindFunc(DoubleAndRob, (*Args)(nil))
-	cmd.BindFunc(SitDown, (*Args)(nil))
-	cmd.BindFunc(EndGame, (*Args)(nil))
-	cmd.BindFunc(SetAutoPlay, (*Args)(nil))
-}
-
-type Args struct {
+type niuniuArgs struct {
 	Ans      bool
 	Times    int
 	TriCards [3]int
+}
+
+func init() {
+	cmd.BindFunc(ChooseTriCards, (*niuniuArgs)(nil))
+	cmd.BindFunc(Bet, (*niuniuArgs)(nil))
+	cmd.BindFunc(ChooseDealer, (*niuniuArgs)(nil))
+	cmd.BindFunc(DoubleAndRob, (*niuniuArgs)(nil))
+	cmd.BindFunc(SitDown, (*niuniuArgs)(nil))
+	cmd.BindFunc(EndGame, (*niuniuArgs)(nil))
+	cmd.BindFunc(SetAutoPlay, (*niuniuArgs)(nil))
 }
 
 func GetPlayerByContext(ctx *cmd.Context) *NiuNiuPlayer {
@@ -32,7 +32,7 @@ func GetPlayerByContext(ctx *cmd.Context) *NiuNiuPlayer {
 }
 
 func ChooseTriCards(ctx *cmd.Context, iArgs interface{}) {
-	args := iArgs.(*Args)
+	args := iArgs.(*niuniuArgs)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
 		log.Debug("player is nil")
@@ -42,7 +42,7 @@ func ChooseTriCards(ctx *cmd.Context, iArgs interface{}) {
 }
 
 func Bet(ctx *cmd.Context, iArgs interface{}) {
-	args := iArgs.(*Args)
+	args := iArgs.(*niuniuArgs)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
 		log.Debug("player is nil")
@@ -52,7 +52,7 @@ func Bet(ctx *cmd.Context, iArgs interface{}) {
 }
 
 func ChooseDealer(ctx *cmd.Context, iArgs interface{}) {
-	args := iArgs.(*Args)
+	args := iArgs.(*niuniuArgs)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
 		log.Debug("player is nil")
@@ -62,7 +62,7 @@ func ChooseDealer(ctx *cmd.Context, iArgs interface{}) {
 }
 
 func DoubleAndRob(ctx *cmd.Context, iArgs interface{}) {
-	args := iArgs.(*Args)
+	args := iArgs.(*niuniuArgs)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
 		log.Debug("player is nil")
@@ -94,7 +94,7 @@ func EndGame(ctx *cmd.Context, iArgs interface{}) {
 }
 
 func SetAutoPlay(ctx *cmd.Context, iArgs interface{}) {
-	args := iArgs.(*Args)
+	args := iArgs.(*niuniuArgs)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
 		log.Debug("player is nil")

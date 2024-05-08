@@ -1,20 +1,21 @@
-package internal
+package lottery
 
 // 扎金花押注场
 import (
 	"container/list"
+	"gofishing-game/internal/cardutils"
+	"gofishing-game/migrate/internal/cardrule"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"math/rand"
-	"third/cardutil"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/randutil"
-	"github.com/guogeer/quasar/util"
+	"github.com/guogeer/quasar/utils"
+	"github.com/guogeer/quasar/utils/randutils"
 )
 
-var gZhajinhuaHelper = cardutil.NewZhajinhuaHelper()
+var gZhajinhuaHelper = cardrule.NewZhajinhuaHelper()
 var gZhajinhuaMultiples = []int{
 	0,
 	1, // 散牌
@@ -40,10 +41,10 @@ func (h bairenzhajinhuaHelper) Less(fromCards, toCards []int) bool {
 }
 
 type bairenzhajinhua struct {
-	room *entertainmentRoom
+	room *lotteryRoom
 }
 
-func (ent *bairenzhajinhua) OnEnter(player *entertainmentPlayer) {
+func (ent *bairenzhajinhua) OnEnter(player *lotteryPlayer) {
 }
 
 func (ent *bairenzhajinhua) winPrizePool(cards []int) float64 {
@@ -55,14 +56,14 @@ func (ent *bairenzhajinhua) StartDealCard() {
 	helper := gZhajinhuaHelper
 
 	var samples []int
-	config.Scan("entertainment", room.SubId, "CardSamples", &samples)
+	config.Scan("lottery", room.SubId, "cardSamples", &samples)
 	if len(samples) > 0 {
 		start := rand.Intn(len(room.deals))
 		for i := range room.deals {
 			k := (start + i) % len(room.deals)
 
 			cards := room.deals[k].Cards
-			typ := randutil.Array(samples)
+			typ := randutils.Index(samples)
 			// log.Debug("cheat type", typ)
 			table := room.CardSet().GetRemainingCards()
 			if a := helper.Cheat(typ, table); a != nil {
@@ -94,7 +95,7 @@ func (ent *bairenzhajinhua) Cheat(multiples int) []int {
 			if cards := helper.Cheat(t, table); cards != nil {
 				room.CardSet().Cheat(cards...)
 				log.Debug("current type", t)
-				cardutil.Print(cards)
+				cardutils.Print(cards)
 				return cards
 			}
 		}
@@ -104,26 +105,26 @@ func (ent *bairenzhajinhua) Cheat(multiples int) []int {
 }
 
 type BairenzhajinhuaWorld struct {
-	helper *cardutil.ZhajinhuaHelper
+	helper *cardrule.ZhajinhuaHelper
 }
 
-func (w *BairenzhajinhuaWorld) NewRoom(id, subId int) *service.Room {
-	room := &entertainmentRoom{
+func (w *BairenzhajinhuaWorld) NewRoom(subId int) *roomutils.Room {
+	room := &lotteryRoom{
 		robSeat:         roomutils.NoSeat,
 		betAreas:        make([]int64, 4),
 		dealerQueue:     list.New(),
 		helper:          &bairenzhajinhuaHelper{},
 		multipleSamples: []int{0, 0, 310000, 790000, 990000, 1000000},
 	}
-	room.Room = service.NewRoom(id, subId, room)
-	room.entertainmentGame = &bairenzhajinhua{
+	room.Room = roomutils.NewRoom(subId, room)
+	room.lotteryGame = &bairenzhajinhua{
 		room: room,
 	}
 
 	for i := 0; i < len(room.last); i++ {
 		room.last[i] = -1
 	}
-	deals := make([]entertainmentDeal, 5)
+	deals := make([]lotteryDeal, 5)
 	for i := range deals {
 		deals[i].Cards = make([]int, 3)
 	}
@@ -131,7 +132,7 @@ func (w *BairenzhajinhuaWorld) NewRoom(id, subId int) *service.Room {
 
 	// room.StartGame()
 	// 定时同步
-	util.NewTimer(room.OnTime, syncTime)
+	utils.NewTimer(room.OnTime, syncTime)
 	return room.Room
 }
 
@@ -140,7 +141,7 @@ func (w *BairenzhajinhuaWorld) GetName() string {
 }
 
 func (w *BairenzhajinhuaWorld) NewPlayer() *service.Player {
-	p := &entertainmentPlayer{}
+	p := &lotteryPlayer{}
 	p.Player = service.NewPlayer(p)
 	p.betAreas = make([]int64, 4)
 	return p.Player

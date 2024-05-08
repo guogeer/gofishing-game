@@ -2,6 +2,7 @@ package shengsidu
 
 import (
 	"gofishing-game/service"
+	"gofishing-game/service/roomutils"
 	"third/cardutil"
 	"time"
 
@@ -72,7 +73,7 @@ func (ply *ShengsiduPlayer) GetUserInfo(self bool) *ShengsiduUserInfo {
 	info.UserInfo = ply.UserInfo
 	// info.UId = ply.GetCharObj().Id
 	info.SeatId = ply.SeatId
-	info.IsReady = ply.RoomObj.IsReady()
+	info.IsReady = roomutils.GetRoomObj(ply.Player).IsReady()
 	info.Cards = ply.GetSortedCards()
 	info.BoomTimes = ply.boomTimes
 	info.Action = ply.action
@@ -289,7 +290,7 @@ func (ply *ShengsiduPlayer) Pass() {
 }
 
 func (ply *ShengsiduPlayer) Room() *ShengsiduRoom {
-	if room := ply.RoomObj.CardRoom(); room != nil {
+	if room := roomutils.GetRoomObj(ply.Player).CardRoom(); room != nil {
 		return room.(*ShengsiduRoom)
 	}
 	return nil

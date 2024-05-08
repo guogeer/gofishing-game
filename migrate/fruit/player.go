@@ -43,7 +43,7 @@ func (ply *FruitPlayer) SitDown(seatId int) {
 		code = FruitSitDownMoreGold
 		return
 	}
-	if code = ply.RoomObj.TrySitDown(seatId); code != Ok {
+	if code = roomutils.GetRoomObj(ply.Player).TrySitDown(seatId); code != Ok {
 		return
 	}
 }
@@ -57,13 +57,13 @@ func (ply *FruitPlayer) TryLeave() ErrCode {
 
 func (ply *FruitPlayer) BeforeLeave() {
 	if ply.SeatId != roomutils.NoSeat {
-		ply.RoomObj.SitUp()
+		roomutils.GetRoomObj(ply.Player).SitUp()
 	}
 }
 
 /*
 	func (ply *FruitPlayer) OnAddItem(itemId int, itemNum int64, guid, way string) {
-		ply.RoomObj.OnAddItem(itemId, itemNum, guid, way)
+		roomutils.GetRoomObj(ply.Player).OnAddItem(itemId, itemNum, guid, way)
 	}
 */
 func (ply *FruitPlayer) GameOver() {
@@ -71,7 +71,7 @@ func (ply *FruitPlayer) GameOver() {
 }
 
 func (ply *FruitPlayer) Room() *FruitRoom {
-	if room := ply.RoomObj.CardRoom(); room != nil {
+	if room := roomutils.GetRoomObj(ply.Player).CardRoom(); room != nil {
 		return room.(*FruitRoom)
 	}
 	return nil

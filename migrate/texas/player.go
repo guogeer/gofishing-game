@@ -109,7 +109,7 @@ func (ply *TexasPlayer) BeforeLeave() {
 }
 
 func (ply *TexasPlayer) IsPlaying() bool {
-	return ply.RoomObj.IsReady() && ply.action != ActionFold
+	return roomutils.GetRoomObj(ply.Player).IsReady() && ply.action != ActionFold
 }
 
 func (ply *TexasPlayer) initGame() {
@@ -212,7 +212,7 @@ func (ply *TexasPlayer) GetUserInfo(self bool) *TexasUserInfo {
 	info.SeatId = ply.SeatId
 	info.Action = ply.action
 	info.IsShow = ply.isShow
-	info.IsReady = ply.RoomObj.IsReady()
+	info.IsReady = roomutils.GetRoomObj(ply.Player).IsReady()
 	info.Bankroll = ply.bankroll
 	info.DefaultBankroll = ply.defaultBankroll()
 
@@ -246,14 +246,14 @@ func (ply *TexasPlayer) SitDown(seatId int) {
 		code = MoreGold
 		return
 	}
-	if code := ply.RoomObj.SitDown(seatId); code != Ok {
+	if code := roomutils.GetRoomObj(ply.Player).SitDown(seatId); code != Ok {
 		return
 	}
 	// OK
 	info := ply.GetUserInfo(false)
 	room.Broadcast("SitDown", map[string]any{"Code": Ok, "UId": ply.Id, "Info": info})
 	ply.initBankroll()
-	ply.RoomObj.Ready()
+	roomutils.GetRoomObj(ply.Player).Ready()
 	ply.OnlineBoxObj().Start()
 }
 
@@ -301,12 +301,12 @@ func (ply *TexasPlayer) SitUp() {
 	// 回收筹码
 	ply.AddGold(ply.bankroll, util.GUID(), "user.texas_back")
 	ply.bankroll = 0
-	ply.RoomObj.SitUp()
+	roomutils.GetRoomObj(ply.Player).SitUp()
 	ply.OnlineBoxObj().Stop()
 }
 
 func (ply *TexasPlayer) Room() *TexasRoom {
-	if room := ply.RoomObj.CardRoom(); room != nil {
+	if room := roomutils.GetRoomObj(ply.Player).CardRoom(); room != nil {
 		return room.(*TexasRoom)
 	}
 	return nil

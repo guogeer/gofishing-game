@@ -4,6 +4,7 @@ package sangong
 
 import (
 	"gofishing-game/service"
+	"gofishing-game/service/roomutils"
 
 	"github.com/guogeer/quasar/log"
 )
@@ -57,7 +58,7 @@ func (ply *SangongPlayer) initGame() {
 
 // 算牌
 func (ply *SangongPlayer) Finish() {
-	if ply.RoomObj.IsReady() == false {
+	if roomutils.GetRoomObj(ply.Player).IsReady() == false {
 		return
 	}
 	if ply.IsDone() == true {
@@ -87,7 +88,7 @@ func (ply *SangongPlayer) GameOver() {
 }
 
 func (ply *SangongPlayer) Bet(chip int) {
-	if ply.RoomObj.IsReady() == false {
+	if roomutils.GetRoomObj(ply.Player).IsReady() == false {
 		return
 	}
 
@@ -112,7 +113,7 @@ func (ply *SangongPlayer) Bet(chip int) {
 }
 
 func (ply *SangongPlayer) ChooseDealer(b bool) {
-	if ply.RoomObj.IsReady() == false {
+	if roomutils.GetRoomObj(ply.Player).IsReady() == false {
 		return
 	}
 	if ply.robOrNot != -1 {
@@ -135,12 +136,12 @@ func (ply *SangongPlayer) GetUserInfo(self bool) *SangongPlayerInfo {
 	info.UserInfo = ply.UserInfo
 	// info.UId = ply.GetCharObj().Id
 	info.SeatId = ply.SeatId
-	info.IsReady = ply.RoomObj.IsReady()
+	info.IsReady = roomutils.GetRoomObj(ply.Player).IsReady()
 	info.RobOrNot = ply.robOrNot
 	info.Chip = ply.chip
 
 	room := ply.Room()
-	if room.Status == service.RoomStatusLook && ply.RoomObj.IsReady() {
+	if room.Status == service.RoomStatusLook && roomutils.GetRoomObj(ply.Player).IsReady() {
 		info.IsDone = ply.IsDone()
 		info.Cards = make([]int, len(ply.cards))
 		copy(info.Cards, ply.cards)
@@ -157,7 +158,7 @@ func (ply *SangongPlayer) GetUserInfo(self bool) *SangongPlayerInfo {
 // 坐下
 func (ply *SangongPlayer) SitDown(seatId int) {
 	room := ply.Room()
-	if code := ply.RoomObj.SitDown(seatId); code != Ok {
+	if code := roomutils.GetRoomObj(ply.Player).SitDown(seatId); code != Ok {
 		return
 	}
 	// OK
@@ -166,7 +167,7 @@ func (ply *SangongPlayer) SitDown(seatId int) {
 }
 
 func (ply *SangongPlayer) Room() *SangongRoom {
-	if room := ply.RoomObj.CardRoom(); room != nil {
+	if room := roomutils.GetRoomObj(ply.Player).CardRoom(); room != nil {
 		return room.(*SangongRoom)
 	}
 	return nil

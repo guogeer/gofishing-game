@@ -72,6 +72,11 @@ func (room *Room) Countdown() int64 {
 	return 0
 }
 
+func (room *Room) SetCountdown(f func(), d time.Duration) {
+	utils.StopTimer(room.countdownTimer)
+	room.countdownTimer = utils.NewTimer(f, d)
+}
+
 func (room *Room) Unit() int64 {
 	unit, _ := config.Int("room", room.SubId, "cost")
 	return unit
@@ -191,4 +196,8 @@ func (room *Room) SetNoPlay(opt string) {
 
 func (room *Room) GetPlayValue(prefix string) int {
 	return 0
+}
+
+// TODO 积分场逻辑。待实现
+func (room *Room) SetMainPlay(opt string) {
 }

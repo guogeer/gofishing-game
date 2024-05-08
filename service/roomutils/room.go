@@ -24,6 +24,11 @@ const (
 	RoomStatusPlaying // 游戏中
 )
 
+var (
+	OptAutoPlay                  = "autoPlay"
+	OptForbidEnterAfterGameStart = "forbidEnterAfterGameStart"
+)
+
 type subGame struct {
 	Id         int
 	MaxSeatNum int

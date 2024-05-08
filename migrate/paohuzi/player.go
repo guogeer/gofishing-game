@@ -2,6 +2,7 @@ package paohuzi
 
 import (
 	"gofishing-game/service"
+	"gofishing-game/service/roomutils"
 	"sort"
 	"third/cardutil"
 
@@ -99,7 +100,7 @@ func (ply *PaohuziPlayer) GetUserInfo(self bool) *PaohuziUserInfo {
 	info.UserInfo = ply.UserInfo
 	// info.UId = ply.GetCharObj().Id
 	info.SeatId = ply.SeatId
-	info.IsReady = ply.RoomObj.IsReady()
+	info.IsReady = roomutils.GetRoomObj(ply.Player).IsReady()
 	info.DrawCard = ply.drawCard
 
 	info.Cards = ply.GetSortedCards()
@@ -126,7 +127,7 @@ func (ply *PaohuziPlayer) GetSortedCards() []int {
 }
 
 func (ply *PaohuziPlayer) Room() *PaohuziRoom {
-	if room := ply.RoomObj.CardRoom(); room != nil {
+	if room := roomutils.GetRoomObj(ply.Player).CardRoom(); room != nil {
 		return room.(*PaohuziRoom)
 	}
 	return nil

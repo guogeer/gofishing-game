@@ -19,6 +19,18 @@ func isItemValid(id int) bool {
 	return strings.ToLower(s) != "no"
 }
 
+type itemOption struct {
+	nolog bool
+}
+
+type itemOptionFunc func(*itemOption)
+
+func WithNoItemLog() itemOptionFunc {
+	return func(opt *itemOption) {
+		opt.nolog = true
+	}
+}
+
 type bagObj struct {
 	player *Player
 
@@ -57,8 +69,8 @@ func (obj *bagObj) IsEnough(id int, num int64) bool {
 	return obj.NumItem(id) >= num
 }
 
-func (obj *bagObj) Add(id int, num int64, way string) {
-	obj.AddSomeItems([]gameutils.Item{&gameutils.NumericItem{Id: id, Num: num}}, way)
+func (obj *bagObj) Add(id int, num int64, way string, fns ...itemOptionFunc) {
+	obj.AddSomeItems([]gameutils.Item{&gameutils.NumericItem{Id: id, Num: num}}, way, fns...)
 }
 
 func (obj *bagObj) NumItem(id int) int64 {
@@ -77,14 +89,20 @@ func (obj *bagObj) CostSomeItems(items []gameutils.Item, way string) {
 	obj.AddSomeItems(items, way)
 }
 
-func (obj *bagObj) AddSomeItems(items []gameutils.Item, way string) {
+func (obj *bagObj) AddSomeItems(items []gameutils.Item, way string, fns ...itemOptionFunc) {
 	for _, item := range items {
 		obj.addItem(item)
 	}
 	obj.items = gameutils.MergeItems(obj.items)
-
 	obj.player.GameAction.OnAddItems(items, way)
-	AddSomeItemLog(obj.player.Id, items, way)
+
+	opt := &itemOption{}
+	for _, fn := range fns {
+		fn(opt)
+	}
+	if !opt.nolog {
+		AddSomeItemLog(obj.player.Id, items, way)
+	}
 }
 
 func (obj *bagObj) GetItem(id int) gameutils.Item {

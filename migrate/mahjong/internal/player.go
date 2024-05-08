@@ -225,7 +225,7 @@ func (ply *MahjongPlayer) AddChipOrBust(n int64, way string) int64 {
 		room.Broadcast("bustOrNot", data)
 		ply.Timeout(ply.Fail)
 	}
-	// ply.RoomObj().WinGold += n
+	// roomutils.GetRoomObj(ply.Player)().WinGold += n
 	ply.BagObj().Add(room.GetChipItem(), n, "bust")
 	return n
 }
@@ -274,7 +274,7 @@ func (ply *MahjongPlayer) GetUserInfo(otherId int) *MahjongPlayerInfo {
 	data.Melds = ply.melds
 	data.DrawCard = ply.drawCard
 	data.IP = ply.IP
-	// data.Disband = ply.RoomObj().DisbandAnswer
+	// data.Disband = roomutils.GetRoomObj(ply.Player)().DisbandAnswer
 	data.Cards = SortCards(ply.handCards)
 	if ply.Id != otherId && !other.isAbleLookOthers {
 		if data.DrawCard != -1 {

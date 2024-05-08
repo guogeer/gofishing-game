@@ -5,6 +5,7 @@ package xiaojiu
 
 import (
 	"gofishing-game/service"
+	"gofishing-game/service/roomutils"
 
 	"github.com/guogeer/quasar/log"
 	"github.com/guogeer/quasar/util"
@@ -94,7 +95,7 @@ func (ply *XiaojiuPlayer) GetUserInfo(self bool) *XiaojiuUserInfo {
 }
 
 func (ply *XiaojiuPlayer) Room() *XiaojiuRoom {
-	if room := ply.RoomObj.CardRoom(); room != nil {
+	if room := roomutils.GetRoomObj(ply.Player).CardRoom(); room != nil {
 		return room.(*XiaojiuRoom)
 	}
 	return nil

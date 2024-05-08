@@ -8,6 +8,7 @@ import (
 	"gofishing-game/internal/errcode"
 	"gofishing-game/internal/gameutils"
 	"gofishing-game/service"
+	"gofishing-game/service/roomutils"
 	"math/rand"
 	"time"
 
@@ -175,7 +176,7 @@ func (ply *ThreeDicePlayer) SitDown(seatId int) {
 	if ply.BagObj().NumItem(gameutils.ItemIdGold) < sitDownRequiredGold {
 		return
 	}
-	if code := ply.RoomObj.SitDown(seatId); code != Ok {
+	if code := roomutils.GetRoomObj(ply.Player).SitDown(seatId); code != Ok {
 		return
 	}
 	// OK
@@ -184,7 +185,7 @@ func (ply *ThreeDicePlayer) SitDown(seatId int) {
 }
 
 func (ply *ThreeDicePlayer) Room() *ThreeDiceRoom {
-	if room := ply.RoomObj.CardRoom(); room != nil {
+	if room := roomutils.GetRoomObj(ply.Player).CardRoom(); room != nil {
 		return room.(*ThreeDiceRoom)
 	}
 	return nil

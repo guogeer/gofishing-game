@@ -1,4 +1,4 @@
-package utils
+package cardcontrol
 
 import (
 	"fmt"
@@ -25,7 +25,7 @@ func NewInvisiblePrizePool(subId int) *InvisiblePrizePool {
 // n>0：表示玩家赢取
 func (pp *InvisiblePrizePool) Add(n int64) {
 	value := -n
-	percent, _ := config.Float("entertainment", pp.subId, "invisiblePrizePoolPercent")
+	percent, _ := config.Float("lottery", pp.subId, "invisiblePrizePoolPercent")
 
 	var tax int64
 	if value > 0 {
@@ -41,9 +41,9 @@ func (pp *InvisiblePrizePool) Add(n int64) {
 // 1：吃分
 func (pp *InvisiblePrizePool) Check() int {
 	subId := pp.subId
-	line, _ := config.Int("entertainment", subId, "warningLine")
+	line, _ := config.Int("lottery", subId, "warningLine")
 
-	percent, _ := config.Float("entertainment", subId, "prizePoolControlPercent")
+	percent, _ := config.Float("lottery", subId, "prizePoolControlPercent")
 	if randutils.IsPercentNice(percent) == false {
 		return 0
 	}
@@ -60,7 +60,7 @@ func (pp *InvisiblePrizePool) Check() int {
 // n>0：表示玩家赢取
 func (pp *InvisiblePrizePool) IsValid(n int64) bool {
 	subId := pp.subId
-	line, _ := config.Int("entertainment", subId, "WarningLine")
+	line, _ := config.Int("lottery", subId, "WarningLine")
 
 	cur := pp.Cap
 	if n-cur >= line {
@@ -84,14 +84,14 @@ func NewPrizePool(subId int) *PrizePool {
 		rankLen: 3,
 		subId:   subId,
 	}
-	service.UpdateDict("entertainment_prize_pool", pool)
+	service.UpdateDict("lottery_prize_pool", pool)
 	return pool
 }
 
 func (pool *PrizePool) Add(n int64) int64 {
 	pool.Cap += n
 
-	limit, _ := config.Int("entertainment", pool.subId, "prizePoolLimit")
+	limit, _ := config.Int("lottery", pool.subId, "prizePoolLimit")
 	if limit > 0 && pool.Cap > limit {
 		pool.Cap = limit
 	}

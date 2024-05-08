@@ -1,58 +1,66 @@
 package niuniu
 
 import (
+	"gofishing-game/internal/errcode"
+	"gofishing-game/internal/gameutils"
+	"gofishing-game/migrate/internal/cardrule"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"math/rand"
-	"third/cardutil"
 	"time"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/util"
 )
 
 const (
-	OptNiuNiuShangZhuang  = 1 + iota // 牛牛上庄
-	OptGuDingShangZhuang             // 固定上庄
-	OptZiYouShangZhuang              // 自由上庄
-	OptMingPaiShangZhuang            // 明牌上庄
-	OptTongBiNiuNiu                  // 通比牛牛
+	OptNiuNiuShangZhuang  = "niuNiuShangZhuang"  // 牛牛上庄
+	OptGuDingShangZhuang  = "guDingShangZhuang"  // 固定上庄
+	OptZiYouShangZhuang   = "ziYouShangZhuang"   // 自由上庄
+	OptMingPaiShangZhuang = "mingPaiShangZhuang" // 明牌上庄
+	OptTongBiNiuNiu       = "tongBiNiuNiu"       // 通比牛牛
 
-	OptWuXiaoNiu // 五小牛
-	OptZhaDanNiu // 炸弹牛
-	OptWuHuaNiu  // 五花牛
+	OptWuXiaoNiu = "wuXiaoNiu" // 五小牛
+	OptZhaDanNiu = "zhaDanNiu" // 炸弹牛
+	OptWuHuaNiu  = "wuHuaNiu"  // 五花牛
 
-	OptFanBeiGuiZe1 // 牛牛X3 牛九X2 牛八X2
-	OptFanBeiGuiZe2 // 牛牛X4 牛九X3 牛八X2 牛七X2
+	OptFanBeiGuiZe1 = "fanBeiGuiZe1" // 牛牛X3 牛九X2 牛八X2
+	OptFanBeiGuiZe2 = "fanBeiGuiZe2" // 牛牛X4 牛九X3 牛八X2 牛七X2
 
-	OptDiZhu1_2
-	OptDiZhu2_4
-	OptDiZhu4_8
+	OptDiZhu1_2 = "diZhu1_2"
+	OptDiZhu2_4 = "diZhu2_4"
+	OptDiZhu4_8 = "diZhu4_8"
 
-	OptXianJiaTuiZhu     // 闲家推注
-	OptKaiShiJinZhiJinRu // 游戏开始后禁止进入
+	OptXianJiaTuiZhu     = "xianJiaTuiZhu"     // 闲家推注
+	OptKaiShiJinZhiJinRu = "kaiShiJinZhiJinRu" // 游戏开始后禁止进入
 
-	OptDiZhu1 // 底分1
-	OptDiZhu2 // 低分2
-	OptDiZhu4 // 低分4
+	OptDiZhu1 = "diZhu1" // 底分1
+	OptDiZhu2 = "diZhu2" // 低分2
+	OptDiZhu4 = "diZhu4" // 低分4
 
-	OptShangZhuangDiFen100 // 上庄分数100
-	OptShangZhuangDiFen150 // 上庄分数150
-	OptShangZhuangDiFen200 // 上庄分数200
+	OptShangZhuangDiFen100 = "shangZhuangDiFen100" // 上庄分数100
+	OptShangZhuangDiFen150 = "shangZhuangDiFen150" // 上庄分数150
+	OptShangZhuangDiFen200 = "shangZhuangDiFen200" // 上庄分数200
 
 	// 最大抢庄倍数
-	OptZuiDaQiangZhuang1
-	OptZuiDaQiangZhuang2
-	OptZuiDaQiangZhuang3
-	OptZuiDaQiangZhuang4
-	OptZuiDaQiangZhuang5
+	OptZuiDaQiangZhuang1 = "zuiDaQiangZhuang1"
+	OptZuiDaQiangZhuang2 = "zuiDaQiangZhuang2"
+	OptZuiDaQiangZhuang3 = "zuiDaQiangZhuang3"
+	OptZuiDaQiangZhuang4 = "zuiDaQiangZhuang4"
+	OptZuiDaQiangZhuang5 = "zuiDaQiangZhuang5"
 
-	OptDiZhu1_2_3_4_5
+	OptDiZhu1_2_3_4_5 = "diZhu1_2_3_4_5"
 
 	// 2017-10-09 应耒阳地区要求
-	OptSiHuaNiu     // 四小牛
-	OptFanBeiGuiZe3 // 四小牛X5 五花牛X6 炸弹牛X7 五小牛X8
+	OptSiHuaNiu     = "siHuaNiu"     // 四小牛
+	OptFanBeiGuiZe3 = "fanBeiGuiZe3" // 四小牛X5 五花牛X6 炸弹牛X7 五小牛X8
+)
+
+const (
+	RoomStatusBet = 100 + iota
+	RoomStatusLook
+	RoomStatusRobDealer
+	RoomStatusChooseDealer
 )
 
 var (
@@ -60,44 +68,28 @@ var (
 )
 
 type UserDetail struct {
-	UId  int
-	Gold int64
-	// Cards []int
+	Uid  int   `json:"uid,omitempty"`
+	Gold int64 `json:"gold,omitempty"`
 }
 
 type NiuNiuRoom struct {
-	*service.Room
+	*roomutils.Room
 
 	dealer      *NiuNiuPlayer
 	nextDealers []*NiuNiuPlayer
-	deadline    time.Time
-	helper      *nn_utils.NiuNiuHelper
-
-	isAbleEnd bool // 房主开始游戏
-	autoTimer *util.Timer
+	helper      *cardrule.NiuNiuHelper
+	isAbleEnd   bool // 房主开始游戏
 }
 
 func (room *NiuNiuRoom) OnEnter(player *service.Player) {
-	room.Room.OnEnter(player)
-
 	comer := player.GameAction.(*NiuNiuPlayer)
 	log.Infof("player %d enter room %d", comer.Id, room.Id)
 
-	// 自动坐下
-	seatId := room.GetEmptySeat()
-	if comer.SeatId == roomutils.NoSeat && seatId != roomutils.NoSeat {
-		// comer.SitDown()
-		comer.RoomObj.SitDown(seatId)
-
-		info := comer.GetUserInfo(false)
-		room.Broadcast("SitDown", map[string]any{"Code": Ok, "Info": info}, comer.Id)
-	}
-
 	// 玩家重连
 	data := map[string]any{
-		"Status":    room.Status,
-		"SubId":     room.SubId,
-		"Countdown": room.GetShowTime(room.deadline),
+		"status":    room.Status,
+		"subId":     room.SubId,
+		"countdown": room.Countdown(),
 	}
 
 	var seats []*NiuNiuPlayerInfo
@@ -107,27 +99,25 @@ func (room *NiuNiuRoom) OnEnter(player *service.Player) {
 			seats = append(seats, info)
 		}
 	}
-	data["SeatPlayers"] = seats
+	data["seatPlayers"] = seats
 	if room.dealer != nil {
-		data["DealerId"] = room.dealer.Id
+		data["dealerId"] = room.dealer.Id
 	}
 	if room.CanPlay(OptMingPaiShangZhuang) {
-		data["MaxRobTimes"] = room.maxRobTimes()
+		data["maxRobTimes"] = room.maxRobTimes()
 	}
 
 	// 玩家可能没座位
-	comer.WriteJSON("GetRoomInfo", data)
+	comer.WriteJSON("getRoomInfo", data)
 }
 
-func (room *NiuNiuRoom) Leave(player *service.Player) ErrCode {
+func (room *NiuNiuRoom) Leave(player *service.Player) errcode.Error {
 	ply := player.GameAction.(*NiuNiuPlayer)
 	log.Debugf("player %d leave room %d", ply.Id, room.Id)
-	return Ok
+	return nil
 }
 
 func (room *NiuNiuRoom) OnLeave(player *service.Player) {
-	room.Room.OnLeave(player)
-
 	room.dealer = nil
 	room.nextDealers = nil
 }
@@ -135,18 +125,17 @@ func (room *NiuNiuRoom) OnLeave(player *service.Player) {
 func (room *NiuNiuRoom) OnCreate() {
 	helper := room.helper
 	if room.CanPlay(OptWuXiaoNiu) {
-		helper.SetOption(cardutil.NNWuXiaoNiu)
+		helper.SetOption(cardrule.NNWuXiaoNiu)
 	}
 	if room.CanPlay(OptWuHuaNiu) {
-		helper.SetOption(cardutil.NNWuHuaNiu)
+		helper.SetOption(cardrule.NNWuHuaNiu)
 	}
 	if room.CanPlay(OptZhaDanNiu) {
-		helper.SetOption(cardutil.NNZhaDanNiu)
+		helper.SetOption(cardrule.NNZhaDanNiu)
 	}
 	if room.CanPlay(OptSiHuaNiu) {
-		helper.SetOption(cardutil.NNSiHuaNiu)
+		helper.SetOption(cardrule.NNSiHuaNiu)
 	}
-	room.Room.OnCreate()
 }
 
 func (room *NiuNiuRoom) getWeightTimes(weight int) int {
@@ -190,11 +179,9 @@ func (room *NiuNiuRoom) maxRobTimes() int {
 }
 
 func (room *NiuNiuRoom) Award() {
-	guid := util.GUID()
-	way := "user." + service.GetName()
+	way := "user." + service.GetServerName()
 	unit := room.Unit()
 
-	roomType := room.GetRoomType()
 	readyPlayers := room.readyPlayers()
 	// 默认和庄家比较
 	dealer := room.dealer
@@ -271,8 +258,8 @@ func (room *NiuNiuRoom) Award() {
 
 		weightTimes := room.getWeightTimes(winner.weight)
 		gold := int64(weightTimes) * int64(userTimes) * unit
-		if gold > loser.AliasGold() && roomType != service.RoomTypeScore {
-			gold = loser.AliasGold()
+		if room.IsTypeNormal() && !loser.BagObj().IsEnough(gameutils.ItemIdGold, gold) {
+			gold = loser.BagObj().NumItem(gameutils.ItemIdGold)
 		}
 
 		winner.lastWinGold += gold
@@ -283,8 +270,8 @@ func (room *NiuNiuRoom) Award() {
 	}
 
 	dealerLostGold := dealerWinGold - dealer.lastWinGold
-	if dealer.lastWinGold+dealer.AliasGold() < 0 && roomType != service.RoomTypeScore {
-		dealer.lastWinGold = -dealer.AliasGold()
+	if room.IsTypeNormal() && dealer.BagObj().NumItem(gameutils.ItemIdGold)+dealer.lastWinGold < 0 {
+		dealer.lastWinGold = -dealer.BagObj().NumItem(gameutils.ItemIdGold)
 	}
 
 	dealerRealLostGold := dealerWinGold - dealer.lastWinGold
@@ -296,19 +283,15 @@ func (room *NiuNiuRoom) Award() {
 			}
 			p.lastWinGold = gold
 		}
-		p.AddAliasGold(p.lastWinGold, guid, way)
+		p.BagObj().Add(gameutils.ItemIdGold, p.lastWinGold, way)
 	}
 
-	room.deadline = time.Now().Add(room.RestartTime())
-	sec := room.GetShowTime(room.deadline)
 	// 显示其他三家手牌
 	details := make([]UserDetail, 0, 8)
 	for _, p := range room.readyPlayers() {
-		details = append(details, UserDetail{UId: p.Id, Gold: p.lastWinGold})
+		details = append(details, UserDetail{Uid: p.Id, Gold: p.lastWinGold})
 	}
-	room.Broadcast("Award", map[string]any{"Details": details, "Times": sec, "Sec": sec})
-
-	// room.ExistTimes++
+	room.Broadcast("award", map[string]any{"Details": details, "countdown": room.Countdown()})
 	room.GameOver()
 }
 
@@ -317,13 +300,13 @@ func (room *NiuNiuRoom) GameOver() {
 
 	// 积分场最后一局
 	details := make([]UserDetail, 0, 8)
-	if room.IsUserCreate() && room.ExistTimes+1 == room.LimitTimes {
+	if room.IsTypeScore() && room.ExistTimes+1 == room.LimitTimes {
 		for i := 0; i < room.NumSeat(); i++ {
 			if p := room.GetPlayer(i); p != nil {
-				details = append(details, UserDetail{UId: p.Id, Gold: p.Gold - p.OriginGold})
+				details = append(details, UserDetail{Uid: p.Id, Gold: p.BagObj().NumItem(gameutils.ItemIdGold) - roomutils.GetRoomObj(p.Player).OriginGold})
 			}
 		}
-		room.Broadcast("TotalAward", map[string]any{"Details": details})
+		room.Broadcast("totalAward", map[string]any{"details": details})
 	}
 	room.Room.GameOver()
 
@@ -337,20 +320,18 @@ func (room *NiuNiuRoom) GameOver() {
 		} else if room.CanPlay(OptShangZhuangDiFen200) {
 			gold = 200
 		}
-		if room.ExistTimes >= 3 || (gold > 0 && gold+room.dealer.AliasGold() <= 0) {
+		if room.ExistTimes >= 3 || (gold > 0 && gold+room.dealer.BagObj().NumItem(gameutils.ItemIdGold) <= 0) {
 			room.isAbleEnd = true
-			room.dealer.WriteJSON("EndGameOrNot", struct{}{})
+			room.dealer.WriteJSON("endGameOrNot", struct{}{})
 		}
 	}
-
-	util.StopTimer(room.autoTimer)
 }
 
 // 游戏中玩家
 func (room *NiuNiuRoom) readyPlayers() []*NiuNiuPlayer {
 	all := make([]*NiuNiuPlayer, 0, 16)
 	for i := 0; i < room.NumSeat(); i++ {
-		if p := room.GetPlayer(i); p != nil && p.RoomObj.IsReady() {
+		if p := room.GetPlayer(i); p != nil && roomutils.GetRoomObj(p.Player).IsReady() {
 			all = append(all, p)
 		}
 	}
@@ -368,14 +349,14 @@ func (room *NiuNiuRoom) ChooseDealer() {
 		room.dealer = choices[rand.Intn(len(choices))]
 
 		for _, p := range choices {
-			seats = append(seats, p.SeatId)
+			seats = append(seats, p.GetSeatIndex())
 		}
 	}
-	data := map[string]any{"UId": room.dealer.Id}
+	data := map[string]any{"uid": room.dealer.Id}
 	if len(seats) > 0 {
-		data["Seats"] = seats
+		data["seats"] = seats
 	}
-	room.Broadcast("NewDealer", data)
+	room.Broadcast("newDealer", data)
 	room.nextDealers = nil
 	room.StartBetting()
 }
@@ -390,13 +371,13 @@ func (room *NiuNiuRoom) StartDealCard() {
 		p.expectWeight, p.expectCards = room.helper.Weight(p.cards)
 	}
 	data := map[string]any{
-		"Sec": 0,
+		"countdown": 0,
 	}
 	if room.CanPlay(OptMingPaiShangZhuang) {
 		// 部分明牌
 		type dealCard struct {
-			UId   int
-			Cards []int
+			Uid   int   `json:"uid,omitempty"`
+			Cards []int `json:"cards,omitempty"`
 		}
 
 		// 兼容
@@ -404,16 +385,16 @@ func (room *NiuNiuRoom) StartDealCard() {
 		readyPlayers := room.readyPlayers()
 		for _, p := range readyPlayers {
 			cards := make([]int, 5)
-			users = append(users, dealCard{UId: p.Id, Cards: cards})
+			users = append(users, dealCard{Uid: p.Id, Cards: cards})
 		}
 		for i, p := range readyPlayers {
 			user := &users[i]
 			for k := 0; k+1 < len(p.cards); k++ {
 				user.Cards[k] = p.cards[k]
 			}
-			data["Parts"] = users
-			data["Cards"] = user.Cards
-			p.WriteJSON("StartDealCard", data)
+			data["parts"] = users
+			data["cards"] = user.Cards
+			p.WriteJSON("startDealCard", data)
 
 			for k := 0; k+1 < len(p.cards); k++ {
 				user.Cards[k] = 0
@@ -421,32 +402,12 @@ func (room *NiuNiuRoom) StartDealCard() {
 		}
 		return
 	}
-	room.Broadcast("StartDealCard", data)
+	room.Broadcast("startDealCard", data)
 }
 
 func (room *NiuNiuRoom) AutoChooseTriCards() {
-	d := maxAutoTime
-	if t, ok := config.Duration("config", "NiuniuLookCards", "Value"); ok {
-		d = t
-	}
-	room.Status = service.RoomStatusLook
-	room.deadline = time.Now().Add(d)
-
-	sec := room.GetShowTime(room.deadline)
-	for _, player := range room.AllPlayers {
-		p := player.GameAction.(*NiuNiuPlayer)
-		data := map[string]any{
-			"Sec": sec,
-		}
-		if p.RoomObj.IsReady() {
-			data["Weight"] = p.expectWeight
-			data["Cards"] = p.cards
-			data["Tricards"] = p.expectCards[:3]
-		}
-		p.WriteJSON("StartLookCard", data)
-	}
-
-	room.Timeout(func() {
+	d, _ := config.Duration("config", "NiuniuLookCards", "Value", maxAutoTime)
+	room.SetCountdown(func() {
 		for _, p := range room.readyPlayers() {
 			var tri [3]int
 			if true || room.IsTypeScore() {
@@ -454,30 +415,27 @@ func (room *NiuNiuRoom) AutoChooseTriCards() {
 			}
 			p.ChooseTriCards(tri)
 		}
-	})
+	}, d)
+
+	room.Status = RoomStatusLook
+	for _, player := range room.GetAllPlayers() {
+		p := player.GameAction.(*NiuNiuPlayer)
+		data := map[string]any{
+			"countdown": room.Countdown(),
+		}
+		if roomutils.GetRoomObj(p.Player).IsReady() {
+			data["weight"] = p.expectWeight
+			data["cards"] = p.cards
+			data["tricards"] = p.expectCards[:3]
+		}
+		p.WriteJSON("startLookCard", data)
+	}
 }
 
 // 选择押注
 func (room *NiuNiuRoom) StartBetting() {
-	d := maxAutoTime
-	if t, ok := config.Duration("config", "NiuniuBetTime", "Value"); ok {
-		d = t
-	}
-	// 没有庄家，如通比牛牛，直接选择摸牌
-	room.Status = service.RoomStatusBet
-	room.deadline = time.Now().Add(d)
-
-	for _, player := range room.AllPlayers {
-		p := player.GameAction.(*NiuNiuPlayer)
-		data := map[string]any{
-			"Sec":   room.GetShowTime(room.deadline),
-			"Chips": p.Chips(),
-		}
-
-		p.WriteJSON("StartBetting", data)
-	}
-
-	room.Timeout(func() {
+	d, _ := config.Duration("config", "NiuniuBetTime", "Value", maxAutoTime)
+	room.SetCountdown(func() {
 		for _, p := range room.readyPlayers() {
 			// 庄家不押注，默认选择1分
 			if chips := p.Chips(); p != room.dealer {
@@ -488,7 +446,19 @@ func (room *NiuNiuRoom) StartBetting() {
 				p.Bet(chip)
 			}
 		}
-	})
+	}, d)
+	// 没有庄家，如通比牛牛，直接选择摸牌
+	room.Status = RoomStatusBet
+
+	for _, player := range room.GetAllPlayers() {
+		p := player.GameAction.(*NiuNiuPlayer)
+		data := map[string]any{
+			"countdown": room.Countdown(),
+			"chips":     p.Chips(),
+		}
+
+		p.WriteJSON("startBetting", data)
+	}
 }
 
 func (room *NiuNiuRoom) OnBet() {
@@ -513,48 +483,40 @@ func (room *NiuNiuRoom) StartGame() {
 		room.ChooseDealer()
 	} else if room.CanPlay(OptGuDingShangZhuang) {
 		// 房主固定为庄家
-		if host := GetPlayer(room.HostId); host != nil && host.Room() == room {
+		if host := room.GetPlayer(room.HostSeatIndex()); host != nil && host.Room() == room {
 			room.nextDealers = []*NiuNiuPlayer{host}
 		}
 		room.ChooseDealer()
 	} else if room.CanPlay(OptMingPaiShangZhuang) {
-		d := maxAutoTime
-		if t, ok := config.Duration("config", "NiuniuRobDealerTime", "Value"); ok {
-			d = t
-		}
-		room.Status = service.RoomStatusRobDealer
-		room.deadline = time.Now().Add(d)
-		sec := room.GetShowTime(room.deadline)
+		d, _ := config.Duration("config", "NiuniuRobDealerTime", "Value", maxAutoTime)
 		room.Broadcast("StartRobDealer", map[string]any{
-			"Sec":   sec,
-			"Times": room.maxRobTimes(),
+			"countdown": room.Countdown(),
+			"times":     room.maxRobTimes(),
 		})
 		// 开始选择倍数
-		room.Timeout(func() {
+		room.SetCountdown(func() {
 			for _, p := range room.readyPlayers() {
 				// 默认不抢庄
 				p.DoubleAndRob(0)
 			}
-		})
+		}, d)
+		room.Status = RoomStatusRobDealer
 		// 等待加倍抢庄
 	} else if room.CanPlay(OptTongBiNiuNiu) {
 		room.nextDealers = nil
 		room.StartBetting()
 		// 自由抢庄
 	} else if room.CanPlay(OptZiYouShangZhuang) {
-		d := maxAutoTime
-		if t, ok := config.Duration("config", "NiuniuChooseDealerTime", "Value"); ok {
-			d = t
-		}
-		room.Status = service.RoomStatusChooseDealer
-		room.deadline = time.Now().Add(d)
-		room.Broadcast("StartChooseDealer", map[string]any{
-			"Sec": room.GetShowTime(room.deadline)})
-		room.Timeout(func() {
+		d, _ := config.Duration("config", "NiuniuChooseDealerTime", "Value", maxAutoTime)
+		room.Status = RoomStatusChooseDealer
+		room.Broadcast("startChooseDealer", map[string]any{
+			"countdown": room.Countdown(),
+		})
+		room.SetCountdown(func() {
 			for _, p := range room.readyPlayers() {
 				p.ChooseDealer(false)
 			}
-		})
+		}, d)
 		// 等待玩家选择抢庄
 	}
 }
@@ -599,7 +561,7 @@ func (room *NiuNiuRoom) OnDoubleAndRob() {
 	var seats []int
 	for _, p := range room.readyPlayers() {
 		if times == p.robTimes {
-			seats = append(seats, p.SeatId)
+			seats = append(seats, p.GetSeatIndex())
 		}
 	}
 
@@ -623,24 +585,16 @@ func (room *NiuNiuRoom) OnChooseTriCards() {
 	}
 
 	// 全部亮牌后，直接结算
-	room.Broadcast("ShowAllCard", struct{}{})
+	room.Broadcast("showAllCard", struct{}{})
 	room.Award()
 }
 
-func (room *NiuNiuRoom) GetPlayer(seatId int) *NiuNiuPlayer {
-	if seatId < 0 || seatId >= room.NumSeat() {
+func (room *NiuNiuRoom) GetPlayer(seatIndex int) *NiuNiuPlayer {
+	if seatIndex < 0 || seatIndex >= room.NumSeat() {
 		return nil
 	}
-	if p := room.SeatPlayers[seatId]; p != nil {
+	if p := room.FindPlayer(seatIndex); p != nil {
 		return p.GameAction.(*NiuNiuPlayer)
 	}
 	return nil
-}
-
-func (room *NiuNiuRoom) Timeout(f func()) {
-	d := room.deadline.Sub(time.Now())
-	if room.CanPlay(service.OptAutoPlay) {
-		util.StopTimer(room.autoTimer)
-		room.autoTimer = util.NewTimer(f, d)
-	}
 }

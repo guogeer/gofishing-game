@@ -1,85 +1,123 @@
 package lottery
 
 import (
+	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
 
 	"github.com/guogeer/quasar/cmd"
+	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
 )
 
-type Args struct {
-	Area   int
-	Area2  int
-	SeatId int
-	Gold   int64
-	Type   int
+type lotteryArgs struct {
+	Uid     int    `json:"uid,omitempty"`
+	Type    int    `json:"type,omitempty"`
+	Message string `json:"message,omitempty"`
+	Token   string `json:"token,omitempty"`
+	Area    int    `json:"area,omitempty"`
+	Gold    int64  `json:"gold,omitempty"`
+	PageNum int    `json:"pageNum,omitempty"`
+	SeatId  int    `json:"seatId,omitempty"`
+}
+
+type Config struct {
 }
 
 func init() {
-	cmd.Bind(Bet, (*Args)(nil))
+	cmd.BindFunc(Bet, (*lotteryArgs)(nil))
+	cmd.BindFunc(GetLastHistory, (*lotteryArgs)(nil))
+	cmd.BindFunc(ApplyDealer, (*lotteryArgs)(nil))
+	cmd.BindFunc(CancelDealer, (*lotteryArgs)(nil))
+	cmd.BindFunc(GetDealerQueue, (*lotteryArgs)(nil))
+	cmd.BindFunc(ChangeDealerGold, (*lotteryArgs)(nil))
 
-	cmd.Bind(SitUp, (*Args)(nil))
-	cmd.Bind(SitDown, (*Args)(nil))
-	cmd.Bind(GetBetHistory, (*Args)(nil))
-	cmd.Bind(Console_WhosYourDaddy, (*Args)(nil))
+	cmd.BindFunc(Console_WhosYourDaddy, (*lotteryArgs)(nil))
 }
 
 func GetPlayerByContext(ctx *cmd.Context) *lotteryPlayer {
-	if p := service.GetGatewayPlayer(ctx.Ssid); p != nil {
-		return p.GameAction.(*lotteryPlayer)
+	if ply := service.GetGatewayPlayer(ctx.Ssid); ply != nil {
+		return ply.GameAction.(*lotteryPlayer)
 	}
 	return nil
 }
 
-func Bet(ctx *cmd.Context, data interface{}) {
-	args := data.(*Args)
+func Bet(ctx *cmd.Context, iArgs interface{}) {
+	args := iArgs.(*lotteryArgs)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
 		return
 	}
-	area := args.Area + 2
-	if args.Area2 > 0 {
-		area = args.Area2
-	}
-	ply.Bet(area, args.Gold)
+	ply.Bet(args.Area, args.Gold)
 }
 
-func SitDown(ctx *cmd.Context, iArgs interface{}) {
-	args := iArgs.(*Args)
+func GetLastHistory(ctx *cmd.Context, iArgs interface{}) {
+	args := iArgs.(*lotteryArgs)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
 		return
 	}
-	ply.SitDown(args.SeatId)
+	ply.GetLastHistory(args.PageNum)
 }
 
-func SitUp(ctx *cmd.Context, iArgs interface{}) {
+func Chat(ctx *cmd.Context, iArgs interface{}) {
+	args := iArgs.(*lotteryArgs)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
 		return
 	}
-	ply.RoomObj.SitUp()
+	ply.Chat(args.Type, args.Message)
 }
 
-func GetBetHistory(ctx *cmd.Context, iArgs interface{}) {
+func ApplyDealer(ctx *cmd.Context, iArgs interface{}) {
+	// args := iArgs.(*Args)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
 		return
 	}
-	room := ply.Room()
-	var last []UserRecord
-	for e := room.awards.Front(); e != nil; e = e.Next() {
-		awardData := e.Value.(*AwardRecord)
-		userData := awardData.Users[ply.Id]
-		userData.Ts = awardData.Ts
-		userData.Type = awardData.Type
-		last = append(last, userData)
+	ply.ApplyDealer()
+}
+
+func CancelDealer(ctx *cmd.Context, iArgs interface{}) {
+	// args := iArgs.(*Args)
+	ply := GetPlayerByContext(ctx)
+	if ply == nil {
+		return
 	}
-	ply.WriteJSON("GetBetHistory", map[string]any{"Last": last})
+	ply.CancelDealer()
+}
+
+func GetDealerQueue(ctx *cmd.Context, iArgs interface{}) {
+	// args := iArgs.(*Args)
+	ply := GetPlayerByContext(ctx)
+	if ply == nil {
+		return
+	}
+
+	ply.WriteJSON("GetDealerQueue", ply.dealerQueue())
 }
 
 func Console_WhosYourDaddy(ctx *cmd.Context, iArgs interface{}) {
-	args := iArgs.(*Args)
-	log.Debug("console whos you daddy", args.Type)
-	gNextTurnType = args.Type
+	log.Debug("console whos you daddy")
+	isNextTurnSystemControl = true
+}
+
+// 修改上庄金币
+func ChangeDealerGold(ctx *cmd.Context, iArgs interface{}) {
+	args := iArgs.(*lotteryArgs)
+	ply := GetPlayerByContext(ctx)
+	if ply == nil {
+		return
+	}
+
+	var e errcode.Error
+	room := ply.Room()
+	minDealerGold, _ := config.Int("lottery", room.SubId, "MinDealerGold")
+	if args.Gold < minDealerGold {
+		e = errcode.Retry
+	}
+	ply.WriteErr("ChangeDealerGold", e, "gold", args.Gold)
+	if e != nil {
+		return
+	}
+	ply.dealerLimitGold = args.Gold
 }

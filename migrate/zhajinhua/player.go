@@ -151,7 +151,7 @@ func (ply *ZhajinhuaPlayer) initGame() {
 }
 
 func (ply *ZhajinhuaPlayer) IsPlaying() bool {
-	return ply.RoomObj.IsReady() && ply.cause == 0
+	return roomutils.GetRoomObj(ply.Player).IsReady() && ply.cause == 0
 }
 
 func (ply *ZhajinhuaPlayer) GameOver() {
@@ -396,10 +396,10 @@ func (ply *ZhajinhuaPlayer) GetUserInfo(self bool) *ZhajinhuaUserInfo {
 	info.SeatId = ply.SeatId
 	info.Auto = ply.auto
 	info.IsAutoFold = ply.isAutoFold
-	info.IsReady = ply.RoomObj.IsReady()
+	info.IsReady = roomutils.GetRoomObj(ply.Player).IsReady()
 
 	room := ply.Room()
-	if room.Status == service.RoomStatusPlaying && ply.RoomObj.IsReady() {
+	if room.Status == service.RoomStatusPlaying && roomutils.GetRoomObj(ply.Player).IsReady() {
 		info.Bet = ply.bet
 		info.CallTimes = ply.callTimes
 		info.RaiseTimes = ply.raiseTimes
@@ -415,7 +415,7 @@ func (ply *ZhajinhuaPlayer) GetUserInfo(self bool) *ZhajinhuaUserInfo {
 			info.CardType, _ = room.helper.GetType(ply.cards[:])
 		}
 	}
-	if room.Status == service.RoomStatusFree && ply.RoomObj.IsReady() {
+	if room.Status == service.RoomStatusFree && roomutils.GetRoomObj(ply.Player).IsReady() {
 		info.IsShow = ply.isShow
 		if ply.isShow == true {
 			info.Cards = ply.cards[:]
@@ -437,13 +437,13 @@ func (ply *ZhajinhuaPlayer) SitDown(seatId int) {
 			ply.WriteJSON("SitDown", map[string]any{"Code": code, "Msg": code.String(), "UId": ply.Id})
 		}
 	}()
-	if code := ply.RoomObj.TrySitDown(seatId); code != Ok {
+	if code := roomutils.GetRoomObj(ply.Player).TrySitDown(seatId); code != Ok {
 		return
 	}
 	// OK
 	info := ply.GetUserInfo(false)
 	room.Broadcast("SitDown", map[string]any{"Code": Ok, "UId": ply.Id, "Info": info})
-	ply.RoomObj.Ready()
+	roomutils.GetRoomObj(ply.Player).Ready()
 }
 
 // 站起
@@ -453,11 +453,11 @@ func (ply *ZhajinhuaPlayer) SitUp() {
 	if room.Status == service.RoomStatusPlaying {
 		ply.TakeAction(-1)
 	}
-	ply.RoomObj.SitUp()
+	roomutils.GetRoomObj(ply.Player).SitUp()
 }
 
 func (ply *ZhajinhuaPlayer) Room() *ZhajinhuaRoom {
-	if room := ply.RoomObj.CardRoom(); room != nil {
+	if room := roomutils.GetRoomObj(ply.Player).CardRoom(); room != nil {
 		return room.(*ZhajinhuaRoom)
 	}
 	return nil
@@ -486,7 +486,7 @@ func (ply *ZhajinhuaPlayer) ChangeRoom() {
 	ply.SitUp()
 
 	code := Ok
-	if code = ply.RoomObj.TryChangeRoom(); code != Ok {
+	if code = roomutils.GetRoomObj(ply.Player).TryChangeRoom(); code != Ok {
 		return
 	}
 	ply.WriteJSON("ChangeRoom", map[string]any{"Code": code, "Msg": code.String()})
@@ -496,7 +496,7 @@ func (ply *ZhajinhuaPlayer) ChangeRoom() {
 	ply.initGame()
 	ply.OnEnter()
 
-	ply.RoomObj.Ready()
+	roomutils.GetRoomObj(ply.Player).Ready()
 }
 
 // 筹码、跟注、加注
