@@ -68,7 +68,7 @@ func (room *ShengsiduRoom) OnEnter(player *service.Player) {
 
 	// 自动坐下
 	seatId := room.GetEmptySeat()
-	if player.SeatId == roomutils.NoSeat && seatId != roomutils.NoSeat {
+	if player.GetSeatIndex == roomutils.NoSeat && seatId != roomutils.NoSeat {
 		// comer.SitDown()
 		comer.RoomObj.SitDown(seatId)
 
@@ -161,7 +161,7 @@ func (room *ShengsiduRoom) Award() {
 	unit := room.Unit()
 
 	winPlayer := room.winPlayer
-	winSeatId := winPlayer.SeatId
+	winSeatId := winplayer.GetSeatIndex
 	winPlayer.winTimes++
 
 	springNum := 0

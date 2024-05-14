@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"quasar/utils"
 	"time"
 
 	"gofishing-game/internal/errcode"
@@ -17,6 +16,7 @@ import (
 	"github.com/guogeer/quasar/cmd"
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
+	"github.com/guogeer/quasar/utils"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -435,4 +435,16 @@ func (player *Player) Notify(data any) {
 	}
 
 	player.WriteJSON("notify", data)
+}
+
+func (player *Player) AddGold(num int64, way string) {
+	player.bagObj.Add(gameutils.ItemIdGold, num, way)
+}
+
+func (player *Player) NumGold() int64 {
+	return player.bagObj.NumItem(gameutils.ItemIdGold)
+}
+
+// TODO 游戏录像/回放
+func (player *Player) Replay(msgId string, data any) {
 }

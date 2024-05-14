@@ -1,25 +1,27 @@
 package paodekuai
 
 import (
+	"gofishing-game/internal/errcode"
+	"gofishing-game/migrate/internal/cardrule"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
-	"third/cardutil"
 	"time"
 
 	"github.com/guogeer/quasar/log"
+	"github.com/guogeer/quasar/utils"
 )
 
 // 玩家信息
 type PaodekuaiUserInfo struct {
 	service.UserInfo
 
-	SeatId    int
-	CardNum   int
-	BoomTimes int   `json:",omitempty"`
-	Cards     []int `json:",omitempty"`
-	Action    []int `json:",omitempty"` // 最近打出去的牌
+	SeatIndex int   `json:"seatIndex,omitempty"`
+	CardNum   int   `json:"cardNum,omitempty"`
+	BoomTimes int   `json:"boomTimes,omitempty"`
+	Cards     []int `json:"cards,omitempty"`
+	Action    []int `json:"action,omitempty"` // 最近打出去的牌
 	// 准备
-	IsReady bool `json:",omitempty"`
+	IsReady bool `json:"isReady,omitempty"`
 }
 
 type PaodekuaiPlayer struct {
@@ -35,14 +37,28 @@ type PaodekuaiPlayer struct {
 	winTimes       int   // 赢的局数
 	maxWinGold     int64 // 最大赢的金币
 	totalBoomTimes int   // 总的炸弹数
+	operateTimer   *utils.Timer
 }
 
-func (ply *PaodekuaiPlayer) TryLeave() ErrCode {
+func (ply *PaodekuaiPlayer) TryEnter() errcode.Error {
+	return nil
+}
+
+func (ply *PaodekuaiPlayer) BeforeEnter() {
+}
+
+func (ply *PaodekuaiPlayer) AfterEnter() {
+}
+
+func (ply *PaodekuaiPlayer) BeforeLeave() {
+}
+
+func (ply *PaodekuaiPlayer) TryLeave() errcode.Error {
 	room := ply.Room()
-	if room.Status != service.RoomStatusFree {
-		return Retry
+	if room.Status != 0 {
+		return errcode.Retry
 	}
-	return Ok
+	return nil
 }
 
 func (ply *PaodekuaiPlayer) initGame() {
@@ -63,7 +79,7 @@ func (ply *PaodekuaiPlayer) GetUserInfo(self bool) *PaodekuaiUserInfo {
 	info := &PaodekuaiUserInfo{}
 	info.UserInfo = ply.UserInfo
 	// info.UId = ply.GetCharObj().Id
-	info.SeatId = ply.SeatId
+	info.SeatIndex = ply.GetSeatIndex()
 	info.IsReady = roomutils.GetRoomObj(ply.Player).IsReady()
 	info.Cards = ply.GetSortedCards()
 	info.BoomTimes = ply.boomTimes
@@ -97,8 +113,8 @@ func (ply *PaodekuaiPlayer) AutoPlay() {
 			action = []int{c}
 		} else {
 			// 最后一轮，玩家自动出牌
-			if typ != cardutil.PaodekuaiNone &&
-				typ != cardutil.PaodekuaiSidaisan {
+			if typ != cardrule.PaodekuaiNone &&
+				typ != cardrule.PaodekuaiSidaisan {
 				isAuto = true
 				action = cards
 			} else { // 没有其他玩家出牌
@@ -116,7 +132,7 @@ func (ply *PaodekuaiPlayer) AutoPlay() {
 		}
 	} else {
 		// 如果能全部出完，优先自动出完
-		if typ != cardutil.PaodekuaiSidaisan && room.helper.Less(other.action, cards) {
+		if typ != cardrule.PaodekuaiSidaisan && room.helper.Less(other.action, cards) {
 			isAuto = true
 			action = cards
 		} else {
@@ -134,15 +150,16 @@ func (ply *PaodekuaiPlayer) AutoPlay() {
 	if isAuto == true {
 		d = maxAutoTime
 	} else {
-		if room.GetRoomType() == service.RoomTypeScore {
+		if room.IsTypeScore() {
 			return
 		}
 	}
 
+	utils.StopTimer(ply.operateTimer)
 	if len(action) == 0 {
-		ply.AddTimer(service.TimerEventOperate, ply.Pass, d)
+		ply.operateTimer = ply.TimerGroup.NewTimer(ply.Pass, d)
 	} else {
-		ply.AddTimer(service.TimerEventOperate, func() { ply.Discard(action) }, d)
+		ply.operateTimer = ply.TimerGroup.NewTimer(func() { ply.Discard(action) }, d)
 	}
 }
 
@@ -172,7 +189,7 @@ func (ply *PaodekuaiPlayer) Discard(cards []int) {
 		}
 	}
 	typ, _, _ := room.helper.GetType(cards)
-	if typ == cardutil.PaodekuaiNone {
+	if typ == cardrule.PaodekuaiNone {
 		return
 	}
 
@@ -183,9 +200,9 @@ func (ply *PaodekuaiPlayer) Discard(cards []int) {
 	helper := room.helper
 	if other := room.discardPlayer; other == nil && total != len(cards) && helper.Sandaidui == false {
 		switch typ {
-		case cardutil.PaodekuaiSandai0, cardutil.PaodekuaiSandai1:
+		case cardrule.PaodekuaiSandai0, cardrule.PaodekuaiSandai1:
 			return
-		case cardutil.PaodekuaiFeiji:
+		case cardrule.PaodekuaiFeiji:
 			if len(cards)%5 != 0 {
 				return
 			}
@@ -196,7 +213,7 @@ func (ply *PaodekuaiPlayer) Discard(cards []int) {
 		return
 	}
 	// 下家报单必须出最大的牌
-	next := room.GetPlayer((ply.SeatId + 1) % room.NumSeat())
+	next := room.GetPlayer((ply.GetSeatIndex() + 1) % room.NumSeat())
 	if len(cards) == 1 && len(next.GetSortedCards()) == 1 {
 		maxCard := room.helper.MaxCard(ply.GetSortedCards())
 		if room.helper.Value(cards[0]) != room.helper.Value(maxCard) {
@@ -214,8 +231,8 @@ func (ply *PaodekuaiPlayer) Discard(cards []int) {
 	}
 	*/
 	// util.StopTimer(ply.autoTimer)
-	ply.StopTimer(service.TimerEventOperate)
-	data := map[string]any{"Cards": cards, "UId": ply.Id}
+	utils.StopTimer(ply.operateTimer)
+	data := map[string]interface{}{"Cards": cards, "UId": ply.Id}
 	if cardNum := total - len(cards); cardNum < 3 {
 		data["CardNum"] = cardNum
 	}
@@ -250,13 +267,13 @@ func (ply *PaodekuaiPlayer) Pass() {
 	// OK
 	ply.action = nil
 	// util.StopTimer(ply.autoTimer)
-	ply.StopTimer(service.TimerEventOperate)
-	room.Broadcast("Pass", map[string]any{"UId": ply.Id})
+	utils.StopTimer(ply.operateTimer)
+	room.Broadcast("Pass", map[string]interface{}{"UId": ply.Id})
 	room.Turn()
 }
 
 func (ply *PaodekuaiPlayer) Room() *PaodekuaiRoom {
-	if room := roomutils.GetRoomObj(ply.Player).CardRoom(); room != nil {
+	if room := roomutils.GetRoomObj(ply.Player).CustomRoom(); room != nil {
 		return room.(*PaodekuaiRoom)
 	}
 	return nil
@@ -266,7 +283,7 @@ func (ply *PaodekuaiPlayer) Replay(messageId string, i interface{}) {
 	switch messageId {
 	case "StartDealCard":
 		room := ply.Room()
-		data := i.(map[string]any)
+		data := i.(map[string]interface{})
 		all := make([][]int, room.NumSeat())
 		for k := 0; k < room.NumSeat(); k++ {
 			other := room.GetPlayer(k)
@@ -277,4 +294,8 @@ func (ply *PaodekuaiPlayer) Replay(messageId string, i interface{}) {
 	}
 	ply.Player.Replay(messageId, i)
 
+}
+
+func (ply *PaodekuaiPlayer) GetSeatIndex() int {
+	return roomutils.GetRoomObj(ply.Player).GetSeatIndex()
 }

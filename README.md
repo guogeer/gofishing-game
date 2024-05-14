@@ -38,8 +38,7 @@ protoc --proto_path=./ --go-grpc_out=./ --go-grpc_opt=paths=source_relative --go
 ```
 2、安装依赖的服务
 ```sh
-go install github.com/guogeer/quasar/gateway@latest
-go install github.com/guogeer/quasar/router@latest
+go install github.com/guogeer/quasar/...
 # 若未设置$GOPATH
 cp ~/go/bin/gateway gateway_server
 cp ~/go/bin/router router_server

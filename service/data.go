@@ -5,7 +5,6 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"quasar/utils"
 	"time"
 
 	"gofishing-game/internal/errcode"
@@ -14,6 +13,7 @@ import (
 	"gofishing-game/internal/rpc"
 
 	"github.com/guogeer/quasar/log"
+	"github.com/guogeer/quasar/utils"
 	"google.golang.org/protobuf/proto"
 )
 

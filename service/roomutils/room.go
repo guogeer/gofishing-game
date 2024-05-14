@@ -27,6 +27,7 @@ const (
 var (
 	OptAutoPlay                  = "autoPlay"
 	OptForbidEnterAfterGameStart = "forbidEnterAfterGameStart"
+	OptSeat                      = "seat_%d"
 )
 
 type subGame struct {

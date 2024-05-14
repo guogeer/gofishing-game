@@ -1,9 +1,12 @@
 package paodekuai
 
 import (
+	"fmt"
+	"gofishing-game/internal/cardutils"
+	"gofishing-game/migrate/internal/cardrule"
 	"gofishing-game/service"
+	"gofishing-game/service/roomutils"
 	"strings"
-	"third/cardutil"
 
 	"github.com/guogeer/quasar/config"
 )
@@ -21,14 +24,14 @@ func init() {
 		}
 	}
 
-	cardutil.GetCardSystem().Init(cards)
+	cardutils.GetCardSystem().Init(cards)
 }
 
-func (w *PaodekuaiWorld) NewRoom(id, subId int) *service.Room {
+func (w *PaodekuaiWorld) NewRoom(subId int) *roomutils.Room {
 	r := &PaodekuaiRoom{
-		helper: cardutil.NewPaodekuaiHelper(),
+		helper: cardrule.NewPaodekuaiHelper(),
 	}
-	r.Room = service.NewRoom(id, subId, r)
+	r.Room = roomutils.NewRoom(subId, r)
 	r.SetPlay(OptCard16)
 	r.SetNoPlay(OptCard15)
 
@@ -49,8 +52,8 @@ func (w *PaodekuaiWorld) NewRoom(id, subId int) *service.Room {
 		r.SetNoPlay(OptMeilunheitaosanbichu)
 	}
 
-	r.SetPlay(service.OptZeroSeat + 3)
-	r.SetNoPlay(service.OptZeroSeat + 2)
+	r.SetPlay(fmt.Sprintf(roomutils.OptSeat, 3))
+	r.SetNoPlay(fmt.Sprintf(roomutils.OptSeat, 2))
 
 	return r.Room
 }

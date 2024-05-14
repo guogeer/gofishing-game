@@ -1,36 +1,32 @@
 package paodekuai
 
 import (
+	"gofishing-game/internal/cardutils"
+	"gofishing-game/migrate/internal/cardrule"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"math/rand"
-	"third/cardutil"
+	"time"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/util"
-
-	// "third/pb"
-	// "third/rpc"
-	"time"
-	// "golang.org/x/net/context"
 )
 
 const (
-	OptXianshipai = iota + 10
-	OptBuxianshipai
-	OptZhuangjiaxianchu
-	OptHeitaosanxianchu
-	OptHeitaosanbichu
-	OptBixuguan
-	OptKebuguan
-	OptHongtaoshizhaniao
-	OptCard15
-	OptCard16
-	OptShoulunheitaosanxianchu // 首轮黑桃3先出
-	OptSidaisan                // 四带三
-	OptSandaidui               // 三带对
-	OptMeilunheitaosanbichu    // 每轮黑桃3必出
+	OptXianshipai              = "xianshipai"
+	OptBuxianshipai            = "buxianshipai"
+	OptZhuangjiaxianchu        = "zhuangjiaxianchu"
+	OptHeitaosanxianchu        = "heitaosanxianchu"
+	OptHeitaosanbichu          = "heitaosanbichu"
+	OptBixuguan                = "bixuguan"
+	OptKebuguan                = "kebuguan"
+	OptHongtaoshizhaniao       = "hongtaoshizhaniao"
+	OptCard15                  = "card15"
+	OptCard16                  = "card15"
+	OptShoulunheitaosanxianchu = "shoulunheitaosanxianchu" // 首轮黑桃3先出
+	OptSidaisan                = "sidaisan"                // 四带三
+	OptSandaidui               = "sandaidui"               // 三带对
+	OptMeilunheitaosanbichu    = "meilunheitaosanbichu"    // 每轮黑桃3必出
 )
 
 var (
@@ -40,19 +36,19 @@ var (
 
 type Bill struct {
 	// 炸弹数
-	Boom int `json:",omitempty"`
+	Boom int `json:"boom,omitempty"`
 	// 剩余牌数
-	CardNum  int   `json:",omitempty"`
-	Cards    []int `json:",omitempty"`
-	Gold     int64
-	Spring   bool `json:",omitempty"` // 春天
-	Hearts10 bool `json:",omitempty"` // 扎鸟
+	CardNum  int   `json:"cardNum,omitempty"`
+	Cards    []int `json:"cards,omitempty"`
+	Gold     int64 `json:"gold,omitempty"`
+	Spring   bool  `json:"spring,omitempty"`   // 春天
+	Hearts10 bool  `json:"hearts10,omitempty"` // 扎鸟
 }
 
 type PaodekuaiRoom struct {
-	*service.Room
+	*roomutils.Room
 
-	helper *cardutil.PaodekuaiHelper
+	helper *cardrule.PaodekuaiHelper
 
 	dealer, nextDealer  *PaodekuaiPlayer
 	discardPlayer       *PaodekuaiPlayer
@@ -65,26 +61,14 @@ type PaodekuaiRoom struct {
 }
 
 func (room *PaodekuaiRoom) OnEnter(player *service.Player) {
-	room.Room.OnEnter(player)
-
 	comer := player.GameAction.(*PaodekuaiPlayer)
 	log.Infof("player %d enter room %d", comer.Id, room.Id)
 
-	// 自动坐下
-	seatId := room.GetEmptySeat()
-	if player.SeatId == roomutils.NoSeat && seatId != roomutils.NoSeat {
-		// comer.SitDown()
-		comer.RoomObj.SitDown(seatId)
-
-		info := comer.GetUserInfo(false)
-		room.Broadcast("SitDown", map[string]any{"Code": Ok, "Info": info}, comer.Id)
-	}
-
 	// 玩家重连
-	data := map[string]any{
-		"Status":    room.Status,
-		"SubId":     room.SubId,
-		"Countdown": room.GetShowTime(room.autoTime),
+	data := map[string]interface{}{
+		"status":    room.Status,
+		"subId":     room.SubId,
+		"countdown": room.Countdown(),
 	}
 
 	var seats []*PaodekuaiUserInfo
@@ -94,36 +78,27 @@ func (room *PaodekuaiRoom) OnEnter(player *service.Player) {
 			seats = append(seats, info)
 		}
 	}
-	data["SeatPlayers"] = seats
+	data["seatPlayers"] = seats
 
 	// 玩家可能没座位
-	comer.WriteJSON("GetRoomInfo", data)
+	comer.SetClientValue("roomInfo", data)
 
-	if room.Status != service.RoomStatusFree {
+	if room.Status != 0 {
 		room.OnTurn()
 	}
 }
 
-func (room *PaodekuaiRoom) Leave(player *service.Player) ErrCode {
-	ply := player.GameAction.(*PaodekuaiPlayer)
-	log.Debugf("player %d leave room %d", ply.Id, room.Id)
-	return Ok
-}
-
 func (room *PaodekuaiRoom) OnLeave(player *service.Player) {
-	room.Room.OnLeave(player)
-
 	room.nextDealer = nil
 }
 
 func (room *PaodekuaiRoom) OnCreate() {
-	room.CardSet().Recover(cardutil.GetAllCards()...)
+	room.CardSet().Recover(cardutils.GetAllCards()...)
 	if room.CanPlay(OptCard15) {
 		room.CardSet().Remove(0xf0, 0xf1, 0x02, 0x12, 0x22, 0x0e, 0x1e, 0x2e, 0x0d)
 	} else {
 		room.CardSet().Remove(0xf0, 0xf1, 0x02, 0x12, 0x22, 0x0e)
 	}
-	room.Room.OnCreate()
 
 	helper := room.helper
 	helper.Sidaisan = false
@@ -152,7 +127,7 @@ func (room *PaodekuaiRoom) StartGame() {
 		room.dealer = p
 	}
 	// 房主当庄
-	if host := GetPlayer(room.HostId); room.dealer == nil && host != nil && host.Room() == room {
+	if host := room.GetPlayer(room.HostSeatIndex()); room.dealer == nil && host != nil && host.Room() == room {
 		room.dealer = host
 	}
 	// 随机
@@ -160,7 +135,7 @@ func (room *PaodekuaiRoom) StartGame() {
 		seatId := rand.Intn(room.NumSeat())
 		room.dealer = room.GetPlayer(seatId)
 	}
-	room.Broadcast("NewDealer", map[string]any{"UId": room.dealer.Id})
+	room.Broadcast("newDealer", map[string]interface{}{"uid": room.dealer.Id})
 
 	if p := room.spades3Player; p != nil {
 		room.expectDiscardPlayer = p
@@ -176,12 +151,11 @@ func (room *PaodekuaiRoom) Award() {
 		room.nextDealer = room.winPlayer
 	}
 
-	guid := util.GUID()
-	way := service.GetName()
-	unit, _ := config.Int("Room", room.SubId, "Unit")
+	way := service.GetServerName()
+	unit, _ := config.Int("room", room.SubId, "unit")
 
 	winPlayer := room.winPlayer
-	winSeatId := winPlayer.SeatId
+	winSeatId := winPlayer.GetSeatIndex()
 	winPlayer.winTimes++
 
 	bills := make([]Bill, room.NumSeat())
@@ -195,7 +169,7 @@ func (room *PaodekuaiRoom) Award() {
 				if other := room.GetPlayer(k); p != other {
 					gold := int64(t) * 10 * unit
 					bills[k].Gold -= gold
-					bills[p.SeatId].Gold += gold
+					bills[p.GetSeatIndex()].Gold += gold
 				}
 			}
 		}
@@ -234,27 +208,23 @@ func (room *PaodekuaiRoom) Award() {
 		if p.maxWinGold < gold {
 			p.maxWinGold = gold
 		}
-		p.AddGold(gold, guid, way)
+		p.AddGold(gold, way)
 	}
 
-	// room.Status = service.RoomStatusFree
-	room.autoTime = time.Now().Add(120 * time.Second)
-	sec := room.GetShowTime(room.autoTime)
-	room.Broadcast("Award", map[string]any{"Details": bills, "Times": sec, "Sec": sec})
-
 	room.GameOver()
+	room.Broadcast("award", map[string]interface{}{"details": bills, "countdown": room.Countdown()})
 }
 
 func (room *PaodekuaiRoom) GameOver() {
 	if room.IsTypeScore() && room.ExistTimes+1 == room.LimitTimes {
 		type TotalAwardInfo struct {
 			// 炸弹数
-			Boom int
+			Boom int `json:"boom,omitempty"`
 			// 赢的局数
-			WinTimes int
+			WinTimes int `json:"winTimes,omitempty"`
 			// 最大赢取金币
-			MaxWinGold int64
-			Gold       int64
+			MaxWinGold int64 `json:"maxWinGold,omitempty"`
+			Gold       int64 `json:"gold,omitempty"`
 		}
 
 		// 积分场最后一局
@@ -265,11 +235,11 @@ func (room *PaodekuaiRoom) GameOver() {
 					Boom:       p.totalBoomTimes,
 					WinTimes:   p.winTimes,
 					MaxWinGold: p.maxWinGold,
-					Gold:       p.Gold,
+					Gold:       p.NumGold(),
 				})
 			}
 		}
-		room.Broadcast("TotalAward", map[string]any{"Details": details})
+		room.Broadcast("TotalAward", map[string]interface{}{"Details": details})
 	}
 	room.Room.GameOver()
 
@@ -284,9 +254,6 @@ func (room *PaodekuaiRoom) GameOver() {
 
 func (room *PaodekuaiRoom) StartDealCard() {
 	// 发牌
-	room.autoTime = time.Now().Add(maxOperateTime)
-	sec := room.GetShowTime(room.autoTime)
-
 	n := 16
 	if room.CanPlay(OptCard15) {
 		n = 15
@@ -314,21 +281,21 @@ func (room *PaodekuaiRoom) StartDealCard() {
 		log.Debug("start deal card", p.GetSortedCards())
 	}
 
-	data := map[string]any{
-		"Sec": sec,
+	data := map[string]interface{}{
+		"countdown": room.Countdown(),
 	}
 	for i := 0; i < room.NumSeat(); i++ {
 		p := room.GetPlayer(i)
-		data["Cards"] = p.GetSortedCards()
-		p.WriteJSON("StartDealCard", data)
+		data["cards"] = p.GetSortedCards()
+		p.WriteJSON("startDealCard", data)
 	}
 }
 
-func (room *PaodekuaiRoom) GetPlayer(seatId int) *PaodekuaiPlayer {
-	if seatId < 0 || seatId >= room.NumSeat() {
+func (room *PaodekuaiRoom) GetPlayer(seatIndex int) *PaodekuaiPlayer {
+	if seatIndex < 0 || seatIndex >= room.NumSeat() {
 		return nil
 	}
-	if p := room.SeatPlayers[seatId]; p != nil {
+	if p := room.GetPlayer(seatIndex); p != nil {
 		return p.GameAction.(*PaodekuaiPlayer)
 	}
 	return nil
@@ -339,11 +306,11 @@ func (room *PaodekuaiRoom) Turn() {
 	current := room.expectDiscardPlayer
 	if p := room.discardPlayer; p != nil {
 		cards := p.GetSortedCards()
-		next := room.GetPlayer((current.SeatId + 1) % room.NumSeat())
+		next := room.GetPlayer((current.GetSeatIndex() + 1) % room.NumSeat())
 		// 最后出的炸弹才给钱
 		if len(cards) == 0 || p == next {
 			typ, _, _ := room.helper.GetType(p.action)
-			if typ == cardutil.PaodekuaiZhadan {
+			if typ == cardrule.PaodekuaiZhadan {
 				p.boomTimes++
 				p.totalBoomTimes++
 			}
@@ -369,9 +336,9 @@ func (room *PaodekuaiRoom) Turn() {
 func (room *PaodekuaiRoom) OnTurn() {
 	current := room.expectDiscardPlayer
 
-	data := map[string]any{
-		"UId": current.Id,
-		"Sec": room.GetShowTime(room.autoTime),
+	data := map[string]interface{}{
+		"UId":       current.Id,
+		"countdown": room.Countdown(),
 	}
 	if c := current.forceDiscardCard; c > 0 {
 		data["ForceCards"] = []int{c}
