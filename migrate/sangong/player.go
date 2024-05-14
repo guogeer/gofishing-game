@@ -135,7 +135,7 @@ func (ply *SangongPlayer) GetUserInfo(self bool) *SangongPlayerInfo {
 	info := &SangongPlayerInfo{}
 	info.UserInfo = ply.UserInfo
 	// info.UId = ply.GetCharObj().Id
-	info.SeatId = ply.SeatId
+	info.SeatId = ply.GetSeatIndex()
 	info.IsReady = roomutils.GetRoomObj(ply.Player).IsReady()
 	info.RobOrNot = ply.robOrNot
 	info.Chip = ply.chip

@@ -89,7 +89,7 @@ func (ply *XiaojiuPlayer) Bet(area int, gold int64) {
 func (ply *XiaojiuPlayer) GetUserInfo(self bool) *XiaojiuUserInfo {
 	info := &XiaojiuUserInfo{}
 	info.UserInfo = ply.UserInfo
-	info.SeatId = ply.SeatId
+	info.SeatId = ply.GetSeatIndex()
 	info.Areas = ply.areas
 	return info
 }

@@ -9,7 +9,6 @@ import (
 	"gofishing-game/service"
 	"third/cardutil"
 	"third/errcode"
-	"third/gameutil"
 	"time"
 
 	"github.com/guogeer/quasar/config"
@@ -223,7 +222,7 @@ func (sys *LotterySystem) Award() {
 			if totalFlushGold > 0 {
 				winGold += int64(float64(sharePrizePool) / float64(totalFlushGold) * float64(userFlushGold))
 			}
-			item := &service.Item{Id: gameutil.ItemIdGold, Num: winGold}
+			item := &service.Item{Id: gameutils.ItemIdGold, Num: winGold}
 			service.AddItemsOrNotifyHall(user.Id, guid, "sys.lottery_win", item)
 
 			userWinGold += winGold

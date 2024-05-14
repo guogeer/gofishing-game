@@ -53,7 +53,7 @@ func (ply *ShisanshuiPlayer) GameOver() {
 func (ply *ShisanshuiPlayer) GetUserInfo(self bool) *ShisanshuiUserInfo {
 	info := &ShisanshuiUserInfo{}
 	info.UserInfo = ply.UserInfo
-	info.SeatId = ply.SeatId
+	info.SeatId = ply.GetSeatIndex()
 	info.IsReady = roomutils.GetRoomObj(ply.Player).IsReady()
 
 	if self == true {

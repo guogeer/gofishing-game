@@ -773,7 +773,7 @@ func (ply *MahjongPlayer) KongOk() {
 		}
 		log.Info("kong", unit, type_)
 
-		// detail := ChipChip{Operate: type_, Times: times, SeatId: ply.SeatId}
+		// detail := ChipChip{Operate: type_, Times: times, SeatId: ply.GetSeatIndex()}
 		detail := ChipDetail{Operate: type_, Times: times, Seats: 1 << uint(ply.GetSeatIndex())}
 		if type_ == mjutils.MeldStraightKong {
 			effectPlayers = append(effectPlayers, ply.lastKong.other)

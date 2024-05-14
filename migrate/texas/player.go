@@ -90,7 +90,7 @@ func (ply *TexasPlayer) AfterEnter() {
 	bankroll := ply.defaultBankroll()
 	// 选择过筹码的场次，第二次直接坐下
 	seatId := room.GetEmptySeat()
-	if seatId != roomutils.NoSeat && ply.SeatId == roomutils.NoSeat && bankroll > 0 {
+	if seatId != roomutils.NoSeat && ply.GetSeatIndex() == roomutils.NoSeat && bankroll > 0 {
 		ply.SitDown(seatId)
 	}
 	ply.OnlineBoxObj().Look()
@@ -153,7 +153,7 @@ func (ply *TexasPlayer) TakeAction(gold int64) {
 	if gold > ply.bankroll || gold > maxAllIn {
 		return
 	}
-	totalBlind := room.allBlind[ply.SeatId]
+	totalBlind := room.allBlind[ply.GetSeatIndex()]
 	maxBlind := maxInArray(room.allBlind[:])
 	log.Debugf("player %d bank %d bet %d totalBlind %d maxBlind %d ok", ply.Id, ply.bankroll, gold, totalBlind, maxBlind)
 	if gold >= 0 && gold < ply.bankroll {
@@ -178,7 +178,7 @@ func (ply *TexasPlayer) TakeAction(gold int64) {
 	}
 	if gold >= 0 {
 		ply.totalBlind += gold
-		room.allBlind[ply.SeatId] += gold
+		room.allBlind[ply.GetSeatIndex()] += gold
 		ply.AddBankroll(-gold)
 	}
 	data := map[string]any{
@@ -209,7 +209,7 @@ func (ply *TexasPlayer) GetUserInfo(self bool) *TexasUserInfo {
 	info := &TexasUserInfo{}
 	info.UserInfo = ply.UserInfo
 	// info.UId = ply.GetCharObj().Id
-	info.SeatId = ply.SeatId
+	info.SeatId = ply.GetSeatIndex()
 	info.Action = ply.action
 	info.IsShow = ply.isShow
 	info.IsReady = roomutils.GetRoomObj(ply.Player).IsReady()
@@ -288,7 +288,7 @@ func (ply *TexasPlayer) AddBankroll(bankroll int64) {
 
 // 站起
 func (ply *TexasPlayer) SitUp() {
-	if ply.SeatId == roomutils.NoSeat {
+	if ply.GetSeatIndex() == roomutils.NoSeat {
 		return
 	}
 
@@ -365,7 +365,7 @@ func (ply *TexasPlayer) OnTurn() {
 		"Sec0": room.GetShowTime(time.Now().Add(room.maxAutoTime())),
 	}
 	if ply == act && ply.IsPlaying() {
-		totalBlind := room.allBlind[ply.SeatId]
+		totalBlind := room.allBlind[ply.GetSeatIndex()]
 		gold := maxInArray(room.allBlind[:]) - totalBlind
 		raise := room.raise - totalBlind
 
@@ -394,7 +394,7 @@ func (ply *TexasPlayer) AutoPlay() {
 
 	if ply == room.activePlayer {
 		maxAllIn := ply.maxAllIn()
-		gold := maxInArray(room.allBlind[:]) - room.allBlind[ply.SeatId]
+		gold := maxInArray(room.allBlind[:]) - room.allBlind[ply.GetSeatIndex()]
 		if gold > ply.bankroll {
 			gold = ply.bankroll
 		}

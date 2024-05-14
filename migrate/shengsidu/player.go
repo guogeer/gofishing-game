@@ -72,7 +72,7 @@ func (ply *ShengsiduPlayer) GetUserInfo(self bool) *ShengsiduUserInfo {
 	info := &ShengsiduUserInfo{}
 	info.UserInfo = ply.UserInfo
 	// info.UId = ply.GetCharObj().Id
-	info.SeatId = ply.SeatId
+	info.SeatId = ply.GetSeatIndex()
 	info.IsReady = roomutils.GetRoomObj(ply.Player).IsReady()
 	info.Cards = ply.GetSortedCards()
 	info.BoomTimes = ply.boomTimes
@@ -216,7 +216,7 @@ func (ply *ShengsiduPlayer) Discard(cards []int) {
 	}
 	// 下家报单必须出最大的单张
 	baodan := false
-	next := room.GetPlayer((ply.SeatId + 1) % room.NumSeat())
+	next := room.GetPlayer((ply.GetSeatIndex() + 1) % room.NumSeat())
 	if next != nil && len(next.GetSortedCards()) == 1 {
 		baodan = true
 	}

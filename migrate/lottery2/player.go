@@ -31,7 +31,7 @@ type lotteryPlayer struct {
 func (ply *lotteryPlayer) AfterEnter() {
 	room := ply.Room()
 	seatId := room.GetEmptySeat()
-	if seatId != roomutils.NoSeat && ply.SeatId == roomutils.NoSeat {
+	if seatId != roomutils.NoSeat && ply.GetSeatIndex() == roomutils.NoSeat {
 		ply.SitDown(seatId)
 	}
 }
@@ -112,7 +112,7 @@ func (ply *lotteryPlayer) Bet(clientArea int, gold int64) {
 
 	way := service.ItemWay{Way: "sum.lottery_bet", SubId: subId}.String()
 	ply.AddGold(-gold, util.GUID(), way)
-	if ply.SeatId != roomutils.NoSeat {
+	if ply.GetSeatIndex() != roomutils.NoSeat {
 		room.Broadcast("Bet", response, ply.Id)
 	}
 }
@@ -120,7 +120,7 @@ func (ply *lotteryPlayer) Bet(clientArea int, gold int64) {
 func (ply *lotteryPlayer) GetUserInfo(otherId int) *lotteryUserInfo {
 	info := &lotteryUserInfo{}
 	info.UserInfo = ply.GetInfo(otherId)
-	info.SeatId = ply.SeatId
+	info.SeatId = ply.GetSeatIndex()
 	info.BetAreas = ply.areas[2:]
 	info.BetAreas2 = ply.areas[:]
 	return info

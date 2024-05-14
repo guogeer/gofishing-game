@@ -99,7 +99,7 @@ func (ply *PaohuziPlayer) GetUserInfo(self bool) *PaohuziUserInfo {
 	info := &PaohuziUserInfo{}
 	info.UserInfo = ply.UserInfo
 	// info.UId = ply.GetCharObj().Id
-	info.SeatId = ply.SeatId
+	info.SeatId = ply.GetSeatIndex()
 	info.IsReady = roomutils.GetRoomObj(ply.Player).IsReady()
 	info.DrawCard = ply.drawCard
 
@@ -401,7 +401,7 @@ func (ply *PaohuziPlayer) Chow(chowCards [][3]int) {
 
 	if ply.drawCard != -1 {
 		// 下家
-		nextId := (ply.SeatId + 1) % room.NumSeat()
+		nextId := (ply.GetSeatIndex() + 1) % room.NumSeat()
 		next := room.GetPlayer(nextId)
 		if _, ok := room.expectWinPlayers[next.Id]; !ok &&
 			room.expectPongPlayer != next &&
@@ -411,7 +411,7 @@ func (ply *PaohuziPlayer) Chow(chowCards [][3]int) {
 		}
 
 		// 上家
-		lastId := (ply.SeatId - 1 + room.NumSeat()) % room.NumSeat()
+		lastId := (ply.GetSeatIndex() - 1 + room.NumSeat()) % room.NumSeat()
 		last := room.GetPlayer(lastId)
 		if ply != last {
 			last.unableChowCards[chowCard] = true
@@ -717,7 +717,7 @@ func (ply *PaohuziPlayer) IsAbleChow() bool {
 		return false
 	}
 	// 上家出牌
-	lastId := (ply.SeatId + room.NumSeat() - 1) % room.NumSeat()
+	lastId := (ply.GetSeatIndex() + room.NumSeat() - 1) % room.NumSeat()
 	if other := room.discardPlayer; other != nil && lastId != other.SeatId {
 		return false
 	}

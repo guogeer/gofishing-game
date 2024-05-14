@@ -35,9 +35,10 @@ type Room struct {
 	chipItemId  int
 
 	// TODO 积分场逻辑。待实现
-	hostSeatIndex int // 房主
-	ExistTimes    int
-	LimitTimes    int
+	hostSeatIndex  int // 房主
+	ExistTimes     int
+	LimitTimes     int
+	StartGameUsers []*service.UserInfo
 }
 
 func NewRoom(subId int, CustomRoom CustomRoom) *Room {
@@ -200,4 +201,8 @@ func (room *Room) GetPlayValue(prefix string) int {
 
 // TODO 积分场逻辑。待实现
 func (room *Room) SetMainPlay(opt string) {
+}
+
+// TODO 自动开局，不需要等待准备
+func (room *Room) AutoStart() {
 }

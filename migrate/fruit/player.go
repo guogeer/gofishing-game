@@ -56,7 +56,7 @@ func (ply *FruitPlayer) TryLeave() ErrCode {
 }
 
 func (ply *FruitPlayer) BeforeLeave() {
-	if ply.SeatId != roomutils.NoSeat {
+	if ply.GetSeatIndex() != roomutils.NoSeat {
 		roomutils.GetRoomObj(ply.Player).SitUp()
 	}
 }

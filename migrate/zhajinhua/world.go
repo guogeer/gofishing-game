@@ -1,8 +1,10 @@
 package zhajinhua
 
 import (
+	"gofishing-game/internal/cardutils"
+	"gofishing-game/migrate/internal/cardrule"
 	"gofishing-game/service"
-	"third/cardutil"
+	"gofishing-game/service/roomutils"
 	"time"
 )
 
@@ -19,19 +21,19 @@ func init() {
 		}
 	}
 
-	cardutil.GetCardSystem().Init(cards)
+	cardutils.GetCardSystem().Init(cards)
 }
 
-func (w *ZhajinhuaWorld) NewRoom(id, subId int) *service.Room {
-	helper := cardutil.NewZhajinhuaHelper()
+func (w *ZhajinhuaWorld) NewRoom(subId int) *roomutils.Room {
+	helper := cardrule.NewZhajinhuaHelper()
 	room := &ZhajinhuaRoom{
 		helper: helper,
 
 		dealerSeatId: -1,
 	}
-	room.Room = service.NewRoom(id, subId, room)
+	room.Room = roomutils.NewRoom(subId, room)
 	room.AutoStart()
-	room.SetRestartTime(8 * time.Second)
+	room.SetFreeDuration(8 * time.Second)
 
 	room.SetPlay(OptLunshu10)
 	room.SetNoPlay(OptLunshu20)
@@ -40,8 +42,8 @@ func (w *ZhajinhuaWorld) NewRoom(id, subId int) *service.Room {
 	room.SetNoPlay(OptMengpailunshu2)
 	room.SetNoPlay(OptMengpailunshu3)
 
-	room.SetPlay(service.OptAutoPlay)                    // 自动代打
-	room.SetNoPlay(service.OptForbidEnterAfterGameStart) // 游戏开始后禁止进入游戏
+	room.SetPlay(roomutils.OptAutoPlay)                    // 自动代打
+	room.SetNoPlay(roomutils.OptForbidEnterAfterGameStart) // 游戏开始后禁止进入游戏
 	return room.Room
 }
 

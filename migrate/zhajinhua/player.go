@@ -3,15 +3,15 @@ package zhajinhua
 // 2017-9-5
 
 import (
+	"gofishing-game/internal/errcode"
 	"gofishing-game/internal/gameutils"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
-	"third/gameutil"
-	"time"
+	"slices"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/util"
+	"github.com/guogeer/quasar/utils"
 )
 
 const (
@@ -33,7 +33,7 @@ const (
 	AutoCall // 自动跟注
 )
 
-type Item = service.Item
+type Item = gameutils.Item
 
 // 愚蠢的玩家
 // 机器人作弊
@@ -106,23 +106,32 @@ type ZhajinhuaPlayer struct {
 	compareGold int64 // 比牌金币，>0 可比牌
 	isPaying    bool  // 正在充值
 	isAllIn     bool
+
+	autoTimer, operateTimer *utils.Timer
+}
+
+func (ply *ZhajinhuaPlayer) TryEnter() errcode.Error {
+	return nil
+}
+
+func (ply *ZhajinhuaPlayer) BeforeEnter() {
 }
 
 func (ply *ZhajinhuaPlayer) AfterEnter() {
 }
 
 func (ply *ZhajinhuaPlayer) BeforeLeave() {
-	if ply.SeatId != roomutils.NoSeat {
+	if ply.GetSeatIndex() != roomutils.NoSeat {
 		ply.SitUp()
 	}
 }
 
-func (ply *ZhajinhuaPlayer) TryLeave() ErrCode {
+func (ply *ZhajinhuaPlayer) TryLeave() errcode.Error {
 	room := ply.Room()
-	if room.IsUserCreate() && room.Status != service.RoomStatusFree {
-		return Retry
+	if room.IsTypeScore() && room.Status != 0 {
+		return errcode.Retry
 	}
-	return Ok
+	return nil
 }
 
 func (ply *ZhajinhuaPlayer) initGame() {
@@ -144,8 +153,8 @@ func (ply *ZhajinhuaPlayer) initGame() {
 	ply.isShow = false
 	ply.isAutoFold = false
 	ply.auto = AutoNone
-	ply.StopTimer(service.TimerEventAuto)
-	ply.StopTimer(service.TimerEventOperate)
+	utils.StopTimer(ply.autoTimer)
+	utils.StopTimer(ply.operateTimer)
 	ply.isAllIn = false
 	ply.isAbleLook = false
 }
@@ -202,7 +211,6 @@ func (ply *ZhajinhuaPlayer) CompareCard(seatId int) {
 		}
 	}
 
-	// guid := util.GUID()
 	ply.loop++
 	ply.action = ActionCompare
 	loser.cause = CauseFail
@@ -212,12 +220,12 @@ func (ply *ZhajinhuaPlayer) CompareCard(seatId int) {
 		room.currentChip = (room.currentChip + 1) / 2
 	}
 
-	seats := []int{ply.SeatId, seatId}
+	seats := []int{ply.GetSeatIndex(), seatId}
 	winner.compareSeats = seats
 	loser.compareSeats = seats
 	// loser.AddGoldLog(-loser.bet, guid, "user.zhajinhua_fail")
 
-	ply.StopTimer(service.TimerEventOperate)
+	utils.StopTimer(ply.operateTimer)
 
 	ply.OnBet(ply.compareGold)
 	ply.compareGold = 0 // 清除
@@ -254,16 +262,15 @@ func (ply *ZhajinhuaPlayer) CompareCard(seatId int) {
 	room.OnTakeAction()
 }
 
-func (ply *ZhajinhuaPlayer) OnAddItems(items []*Item, guid, way string) {
+func (ply *ZhajinhuaPlayer) OnAddItems(items []gameutils.Item, way string) {
 	room := ply.Room()
-	ply.Player.OnAddItems(items, guid, way)
+	ply.Player.OnAddItems(items, way)
 	for _, item := range items {
-		if item.Id == gameutil.ItemIdGold && ply.isPaying == true {
+		if item.GetId() == gameutils.ItemIdGold && ply.isPaying == true {
 			ply.isPaying = false
 
 			t := room.maxAutoTime()
-			ply.ResetTimer(service.TimerEventOperate, t)
-			room.deadline = time.Now().Add(t)
+			utils.ResetTimer(ply.operateTimer, t)
 			room.OnTurn()
 		}
 	}
@@ -277,7 +284,7 @@ func (ply *ZhajinhuaPlayer) TakeAction(gold int64) {
 	if ply.IsPlaying() == false {
 		return
 	}
-	if room.Status != service.RoomStatusPlaying {
+	if room.Status != roomutils.RoomStatusPlaying {
 		return
 	}
 
@@ -287,7 +294,7 @@ func (ply *ZhajinhuaPlayer) TakeAction(gold int64) {
 		return
 	}
 	chips, call, _ := ply.Chips()
-	if len(chips) > 0 && gold >= 0 && util.InArray(chips, gold) == 0 {
+	if len(chips) > 0 && gold >= 0 && !slices.Contains(chips, gold) {
 		return
 	}
 	if len(chips) == 0 && gold >= 0 && gold < call && gold != maxBet {
@@ -297,12 +304,11 @@ func (ply *ZhajinhuaPlayer) TakeAction(gold int64) {
 		return
 	}
 	if !room.IsTypeScore() && gold > ply.BagObj().NumItem(gameutils.ItemIdGold) {
-		code := MoreGold
-		ply.WriteJSON("TakeAction", map[string]any{"Code": code, "Msg": code.String(), "UId": ply.Id})
+		e := errcode.MoreItem(gameutils.ItemIdGold)
+		ply.WriteErr("TakeAction", e, "uid", ply.Id)
 
 		ply.isPaying = true
-		ply.ResetTimer(service.TimerEventOperate, maxPayTime)
-		room.deadline = time.Now().Add(maxPayTime)
+		utils.ResetTimer(ply.operateTimer, maxPayTime)
 		room.OnTurn()
 		return
 	}
@@ -318,7 +324,6 @@ func (ply *ZhajinhuaPlayer) TakeAction(gold int64) {
 	ply.action = ActionNone
 	ply.isPaying = false
 
-	guid := util.GUID()
 	if gold == -2 {
 		ply.isAutoFold = true
 		ply.continuousAutoFold++
@@ -340,8 +345,8 @@ func (ply *ZhajinhuaPlayer) TakeAction(gold int64) {
 
 		ply.bet += gold
 		ply.betHistory = append(ply.betHistory, gold)
-		ply.AddGold(-gold, guid, "sum.zhajinhua_bet")
-		room.allBet[ply.SeatId] = ply.bet
+		ply.BagObj().Add(gameutils.ItemIdGold, -gold, "zhajinhua_bet", service.WithNoItemLog())
+		room.allBet[ply.GetSeatIndex()] = ply.bet
 
 		currentChip := gold
 		if ply.isLook == true {
@@ -369,16 +374,16 @@ func (ply *ZhajinhuaPlayer) TakeAction(gold int64) {
 	ply.raiseTimes = times
 
 	data := map[string]any{
-		"Code":       Ok,
-		"UId":        ply.Id,
+		"code":       "ok",
+		"uid":        ply.Id,
 		"Bet":        ply.bet,
 		"Gold":       gold,
 		"Action":     ply.action,
 		"CallTimes":  ply.callTimes,
 		"RaiseTimes": ply.raiseTimes,
 	}
-	ply.StopTimer(service.TimerEventAuto)
-	ply.StopTimer(service.TimerEventOperate)
+	utils.StopTimer(ply.autoTimer)
+	utils.StopTimer(ply.operateTimer)
 	room.Broadcast("TakeAction", data)
 
 	room.OnTakeAction()
@@ -393,13 +398,13 @@ func (ply *ZhajinhuaPlayer) GetUserInfo(self bool) *ZhajinhuaUserInfo {
 	info := &ZhajinhuaUserInfo{}
 	info.UserInfo = ply.UserInfo
 	// info.UId = ply.GetCharObj().Id
-	info.SeatId = ply.SeatId
+	info.SeatId = ply.GetSeatIndex()
 	info.Auto = ply.auto
 	info.IsAutoFold = ply.isAutoFold
 	info.IsReady = roomutils.GetRoomObj(ply.Player).IsReady()
 
 	room := ply.Room()
-	if room.Status == service.RoomStatusPlaying && roomutils.GetRoomObj(ply.Player).IsReady() {
+	if room.Status == roomutils.RoomStatusPlaying && roomutils.GetRoomObj(ply.Player).IsReady() {
 		info.Bet = ply.bet
 		info.CallTimes = ply.callTimes
 		info.RaiseTimes = ply.raiseTimes
@@ -415,7 +420,7 @@ func (ply *ZhajinhuaPlayer) GetUserInfo(self bool) *ZhajinhuaUserInfo {
 			info.CardType, _ = room.helper.GetType(ply.cards[:])
 		}
 	}
-	if room.Status == service.RoomStatusFree && roomutils.GetRoomObj(ply.Player).IsReady() {
+	if room.Status == 0 && roomutils.GetRoomObj(ply.Player).IsReady() {
 		info.IsShow = ply.isShow
 		if ply.isShow == true {
 			info.Cards = ply.cards[:]
@@ -426,38 +431,18 @@ func (ply *ZhajinhuaPlayer) GetUserInfo(self bool) *ZhajinhuaUserInfo {
 	return info
 }
 
-// 坐下
-func (ply *ZhajinhuaPlayer) SitDown(seatId int) {
-	room := ply.Room()
-	log.Debugf("player %d sit down", ply.Id)
-
-	code := Ok
-	defer func() {
-		if code != Ok {
-			ply.WriteJSON("SitDown", map[string]any{"Code": code, "Msg": code.String(), "UId": ply.Id})
-		}
-	}()
-	if code := roomutils.GetRoomObj(ply.Player).TrySitDown(seatId); code != Ok {
-		return
-	}
-	// OK
-	info := ply.GetUserInfo(false)
-	room.Broadcast("SitDown", map[string]any{"Code": Ok, "UId": ply.Id, "Info": info})
-	roomutils.GetRoomObj(ply.Player).Ready()
-}
-
 // 站起
 func (ply *ZhajinhuaPlayer) SitUp() {
 	room := ply.Room()
 	log.Debugf("player %d sit up", ply.Id)
-	if room.Status == service.RoomStatusPlaying {
+	if room.Status == roomutils.RoomStatusPlaying {
 		ply.TakeAction(-1)
 	}
 	roomutils.GetRoomObj(ply.Player).SitUp()
 }
 
 func (ply *ZhajinhuaPlayer) Room() *ZhajinhuaRoom {
-	if room := roomutils.GetRoomObj(ply.Player).CardRoom(); room != nil {
+	if room := roomutils.GetRoomObj(ply.Player).CustomRoom(); room != nil {
 		return room.(*ZhajinhuaRoom)
 	}
 	return nil
@@ -485,12 +470,9 @@ func (ply *ZhajinhuaPlayer) Replay(messageId string, i interface{}) {
 func (ply *ZhajinhuaPlayer) ChangeRoom() {
 	ply.SitUp()
 
-	code := Ok
-	if code = roomutils.GetRoomObj(ply.Player).TryChangeRoom(); code != Ok {
-		return
-	}
-	ply.WriteJSON("ChangeRoom", map[string]any{"Code": code, "Msg": code.String()})
-	if code != Ok {
+	e := roomutils.GetRoomObj(ply.Player).ChangeRoom()
+	ply.WriteErr("ChangeRoom", e)
+	if e != nil {
 		return
 	}
 	ply.initGame()
@@ -544,7 +526,7 @@ func (ply *ZhajinhuaPlayer) OnTurn() {
 	current := room.activePlayer
 	data := map[string]any{
 		"UId": current.Id,
-		"Sec": room.GetShowTime(room.deadline),
+		"Sec": room.Countdown(),
 	}
 	if current.isPaying {
 		data["IsPaying"] = true
@@ -595,9 +577,9 @@ func (ply *ZhajinhuaPlayer) maxBet() int64 {
 	var currentChip int64
 	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil && p.IsPlaying() {
-			chip := p.Gold
+			chip := p.NumGold()
 			if p.isLook == true {
-				chip = (p.Gold + 1) / 2
+				chip = (p.NumGold() + 1) / 2
 			}
 			// 有人已全压
 			if p.isAllIn == true {
@@ -628,7 +610,7 @@ func (ply *ZhajinhuaPlayer) ShowCard() {
 	}
 
 	room := ply.Room()
-	if room.Status != service.RoomStatusFree {
+	if room.Status != 0 {
 		return
 	}
 	ply.isShow = true
@@ -642,7 +624,8 @@ func (ply *ZhajinhuaPlayer) AutoPlay() {
 	_, call, _ := ply.Chips()
 	// 自动跟注
 	if ply == act && ply.auto == AutoCall {
-		ply.AddTimer(service.TimerEventAuto, func() { ply.TakeAction(call) }, systemAutoPlayTime)
+		utils.StopTimer(ply.autoTimer)
+		ply.autoTimer = ply.TimerGroup.NewTimer(func() { ply.TakeAction(call) }, systemAutoPlayTime)
 	}
 }
 
@@ -651,8 +634,12 @@ func (ply *ZhajinhuaPlayer) OnBet(gold int64) {
 
 	ply.bet += gold
 	ply.betHistory = append(ply.betHistory, gold)
-	ply.AddGold(-gold, util.GUID(), "sum.zhajinhua_compare")
+	ply.BagObj().Add(gameutils.ItemIdGold, -gold, "zhajinhua_compare", service.WithNoItemLog())
 
-	room.allBet[ply.SeatId] = ply.bet
+	room.allBet[ply.GetSeatIndex()] = ply.bet
 	room.Broadcast("BetOk", map[string]any{"UId": ply.Id, "Gold": gold, "Action": ply.action})
+}
+
+func (ply *ZhajinhuaPlayer) GetSeatIndex() int {
+	return roomutils.GetRoomObj(ply.Player).GetSeatIndex()
 }
