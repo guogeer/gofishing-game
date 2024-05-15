@@ -1,6 +1,7 @@
 package shisanshui
 
 import (
+	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"third/cardutil"
@@ -28,7 +29,7 @@ type ShisanshuiPlayer struct {
 	resultSet         []cardutil.ShisanshuiResult
 }
 
-func (ply *ShisanshuiPlayer) TryLeave() ErrCode {
+func (ply *ShisanshuiPlayer) TryLeave() errcode.Error {
 	room := ply.Room()
 	if room.Status != service.RoomStatusFree && roomutils.GetRoomObj(ply.Player).IsReady() {
 		return Retry
@@ -133,7 +134,7 @@ func (ply *ShisanshuiPlayer) Timeout(fn func(), d time.Duration) {
 }
 
 func (ply *ShisanshuiPlayer) Room() *ShisanshuiRoom {
-	if room := roomutils.GetRoomObj(ply.Player).CardRoom(); room != nil {
+	if room := roomutils.GetRoomObj(ply.Player).CustomRoom(); room != nil {
 		return room.(*ShisanshuiRoom)
 	}
 	return nil

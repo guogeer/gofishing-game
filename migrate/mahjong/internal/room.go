@@ -545,13 +545,13 @@ func (room *MahjongRoom) Billing(bills []Bill) {
 		for _, detail := range bill.Details {
 			seatId := detail.GetSeatIndex()
 			detail.Chip = -detail.Chip
-			// detail.SeatId = p.SeatId
+			// detail.SeatId = p.GetSeatIndex()
 			detail.Seats = 1 << uint(p.GetSeatIndex())
 			// bills[seatId].Chip += detail.Chip
 			if otherBill := &bills[seatId]; len(otherBill.Details) > 0 {
 				head := &(otherBill.Details[0])
 				head.Chip += detail.Chip
-				// one.Seats |= 1 << uint(p.SeatId)
+				// one.Seats |= 1 << uint(p.GetSeatIndex())
 				head.Seats |= detail.Seats
 			} else {
 				otherBill.Details = append(otherBill.Details, detail)

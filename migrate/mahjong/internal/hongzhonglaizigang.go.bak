@@ -81,7 +81,7 @@ func (mj *HongzhonglaizigangMahjong) OnReady() {
 func (mj *HongzhonglaizigangMahjong) startPlaying() {
 	room := mj.room
 
-	room.Status = service.RoomStatusPlaying
+	room.Status = roomutils.RoomStatusPlaying
 	room.StartDealCard()
 	mj.ghostCard = room.CardSet().Deal()
 	room.Broadcast("ChooseGhostCard", map[string]interface{}{
@@ -99,7 +99,7 @@ func (mj *HongzhonglaizigangMahjong) startChoosePiao() {
 	room.deadline = time.Now().Add(MaxOperateTime)
 	room.Broadcast("StartChoosePiao", map[string]interface{}{
 		"Index": hongzhonglaizigangPiaoOptions,
-		"Sec":   room.GetShowTime(room.deadline),
+		"Sec":   room.Countdown(),
 	})
 	for i := 0; i < room.NumSeat(); i++ {
 		p := room.GetPlayer(i)
@@ -243,7 +243,7 @@ func (mj *HongzhonglaizigangMahjong) Award() {
 	for i := 0; i < room.NumSeat(); i++ {
 		p := room.GetPlayer(i)
 		detail := GoldDetail{
-			Seats:   1 << uint(p.SeatId()),
+			Seats:   1 << uint(p.GetSeatIndex()()),
 			Operate: cardutil.OperateWin,
 		}
 
@@ -267,7 +267,7 @@ func (mj *HongzhonglaizigangMahjong) Award() {
 	for _, p := range room.winPlayers {
 		obj := p.localObj.(*HongzhonglaizigangObj)
 		boom := room.boomPlayer()
-		addition2 := bills[p.SeatId()].Details[0].Addition2
+		addition2 := bills[p.GetSeatIndex()()].Details[0].Addition2
 
 		var winTimes = 1
 		for _, t := range addition2 {
@@ -311,12 +311,12 @@ func (mj *HongzhonglaizigangMahjong) Award() {
 			bad = boom
 		}
 
-		bills[p.SeatId()].Details[0].Score = score
+		bills[p.GetSeatIndex()()].Details[0].Score = score
 		// log.Debug("test", score, points, p.drawCard)
 		// 包牌
 		if bad != p {
 			detail := &bills[bad.SeatId()].Details[0]
-			detail.Seats = 1 << uint(p.SeatId())
+			detail.Seats = 1 << uint(p.GetSeatIndex()())
 			detail.Times = 2 * room.piao()
 
 			if room.CanPlay(OptZiYouXuanPiao) {
@@ -362,7 +362,7 @@ func (mj *HongzhonglaizigangMahjong) Award() {
 				}
 				log.Debug("test", winTimes, loseTimes, losePoints, extraTimes)
 				detail := &bills[other.SeatId()].Details[0]
-				detail.Seats = 1 << uint(p.SeatId())
+				detail.Seats = 1 << uint(p.GetSeatIndex()())
 
 				times := winTimes * loseTimes * losePoints / extraTimes
 				times = times / mj.multiple() * mj.multiple()

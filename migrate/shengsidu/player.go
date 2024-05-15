@@ -1,6 +1,7 @@
 package shengsidu
 
 import (
+	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"third/cardutil"
@@ -38,7 +39,7 @@ type ShengsiduPlayer struct {
 	addition       map[string]int
 }
 
-func (ply *ShengsiduPlayer) TryLeave() ErrCode {
+func (ply *ShengsiduPlayer) TryLeave() errcode.Error {
 	room := ply.Room()
 	if room.Status != service.RoomStatusFree {
 		return Retry
@@ -290,7 +291,7 @@ func (ply *ShengsiduPlayer) Pass() {
 }
 
 func (ply *ShengsiduPlayer) Room() *ShengsiduRoom {
-	if room := roomutils.GetRoomObj(ply.Player).CardRoom(); room != nil {
+	if room := roomutils.GetRoomObj(ply.Player).CustomRoom(); room != nil {
 		return room.(*ShengsiduRoom)
 	}
 	return nil

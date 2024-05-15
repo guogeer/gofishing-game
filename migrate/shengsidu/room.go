@@ -1,6 +1,7 @@
 package shengsidu
 
 import (
+	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"math/rand"
@@ -100,7 +101,7 @@ func (room *ShengsiduRoom) OnEnter(player *service.Player) {
 	}
 }
 
-func (room *ShengsiduRoom) Leave(player *service.Player) ErrCode {
+func (room *ShengsiduRoom) Leave(player *service.Player) errcode.Error {
 	ply := player.GameAction.(*ShengsiduPlayer)
 	log.Debugf("player %d leave room %d", ply.Id, room.Id)
 	return Ok
@@ -133,7 +134,7 @@ func (room *ShengsiduRoom) StartGame() {
 		room.dealer = p
 	}
 	// 房主当庄
-	if host := GetPlayer(room.HostId); room.dealer == nil && host != nil && host.Room() == room {
+	if host := room.GetPlayer(room.HostSeatIndex()); room.dealer == nil && host != nil && host.Room() == room {
 		room.dealer = host
 	}
 	// 随机
@@ -176,7 +177,7 @@ func (room *ShengsiduRoom) Award() {
 				if other := room.GetPlayer(k); p != other {
 					gold := int64(t) * 10 * unit
 					bills[k].Gold -= gold
-					bills[p.SeatId].Gold += gold
+					bills[p.GetSeatIndex()].Gold += gold
 				}
 			}
 		}

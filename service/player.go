@@ -437,8 +437,8 @@ func (player *Player) Notify(data any) {
 	player.WriteJSON("notify", data)
 }
 
-func (player *Player) AddGold(num int64, way string) {
-	player.bagObj.Add(gameutils.ItemIdGold, num, way)
+func (player *Player) AddGold(num int64, way string, fn ...itemOptionFunc) {
+	player.bagObj.Add(gameutils.ItemIdGold, num, way, fn...)
 }
 
 func (player *Player) NumGold() int64 {

@@ -4,6 +4,7 @@ package texas
 
 import (
 	"fmt"
+	"gofishing-game/internal/errcode"
 	"gofishing-game/internal/gameutils"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
@@ -96,7 +97,7 @@ func (ply *TexasPlayer) AfterEnter() {
 	ply.OnlineBoxObj().Look()
 }
 
-func (ply *TexasPlayer) TryLeave() ErrCode {
+func (ply *TexasPlayer) TryLeave() errcode.Error {
 	room := ply.Room()
 	if room.IsUserCreate() && room.Status != service.RoomStatusFree {
 		return Retry
@@ -217,7 +218,7 @@ func (ply *TexasPlayer) GetUserInfo(self bool) *TexasUserInfo {
 	info.DefaultBankroll = ply.defaultBankroll()
 
 	room := ply.Room()
-	if room.Status == service.RoomStatusPlaying && ply.IsPlaying() {
+	if room.Status == roomutils.RoomStatusPlaying && ply.IsPlaying() {
 		info.LastBlind = ply.lastBlind
 		info.TotalBlind = ply.totalBlind
 		if self == true {
@@ -294,7 +295,7 @@ func (ply *TexasPlayer) SitUp() {
 
 	room := ply.Room()
 	log.Debugf("player %d sit up", ply.Id)
-	if room.Status == service.RoomStatusPlaying && ply.IsPlaying() {
+	if room.Status == roomutils.RoomStatusPlaying && ply.IsPlaying() {
 		ply.action = ActionFold
 		room.OnTakeAction()
 	}
@@ -306,7 +307,7 @@ func (ply *TexasPlayer) SitUp() {
 }
 
 func (ply *TexasPlayer) Room() *TexasRoom {
-	if room := roomutils.GetRoomObj(ply.Player).CardRoom(); room != nil {
+	if room := roomutils.GetRoomObj(ply.Player).CustomRoom(); room != nil {
 		return room.(*TexasRoom)
 	}
 	return nil
@@ -361,7 +362,7 @@ func (ply *TexasPlayer) OnTurn() {
 	act := room.activePlayer
 	data := map[string]any{
 		"UId":  act.Id,
-		"Sec":  room.GetShowTime(room.deadline),
+		"Sec":  room.Countdown(),
 		"Sec0": room.GetShowTime(time.Now().Add(room.maxAutoTime())),
 	}
 	if ply == act && ply.IsPlaying() {

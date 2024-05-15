@@ -61,7 +61,7 @@ func (room *lotteryRoom) OnEnter(player *service.Player) {
 	data := map[string]any{
 		"Status":    room.Status,
 		"SubId":     room.SubId,
-		"Countdown": room.GetShowTime(room.deadline),
+		"Countdown": room.Countdown(),
 		"History":   room.history,
 		"Odds":      room.odds,
 	}
@@ -69,7 +69,7 @@ func (room *lotteryRoom) OnEnter(player *service.Player) {
 		award := room.awards.Back().Value.(*AwardRecord)
 		data["LastRecord"] = award
 	}
-	if room.Status == service.RoomStatusPlaying {
+	if room.Status == roomutils.RoomStatusPlaying {
 		data["BetAreas"] = room.areas
 	}
 
@@ -215,7 +215,7 @@ func (room *lotteryRoom) Award() {
 	result[1], result[typ] = result[typ], result[1]
 	randutil.Shuffle(result[2:])
 	room.Broadcast("Award", map[string]any{
-		"Sec":    room.GetShowTime(room.deadline),
+		"Sec":    room.Countdown(),
 		"Record": awardData,
 		"Result": result[1:],
 	})
@@ -295,7 +295,7 @@ func (room *lotteryRoom) StartGame() {
 	}
 	room.deadline = time.Now().Add(d)
 	room.Broadcast("StartGame", map[string]any{
-		"Sec": room.GetShowTime(room.deadline),
+		"Sec": room.Countdown(),
 	})
 	util.NewTimer(room.Award, d)
 }

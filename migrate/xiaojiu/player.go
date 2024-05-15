@@ -4,11 +4,11 @@ package xiaojiu
 // Guogeer 2018-02-08
 
 import (
+	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/util"
 )
 
 // 玩家信息
@@ -25,15 +25,21 @@ type XiaojiuPlayer struct {
 	winGold int64
 }
 
-func (ply *XiaojiuPlayer) TryEnter() ErrCode {
+func (ply *XiaojiuPlayer) BeforeEnter() {
+}
+
+func (ply *XiaojiuPlayer) AfterEnter() {
+}
+
+func (ply *XiaojiuPlayer) TryEnter() errcode.Error {
 	room := ply.Room()
-	if room.Status != service.RoomStatusFree || room.ExistTimes != 0 {
+	if room.Status != 0 || room.ExistTimes != 0 {
 		return PlayingInGame
 	}
 	return Ok
 }
 
-func (ply *XiaojiuPlayer) TryLeave() ErrCode {
+func (ply *XiaojiuPlayer) TryLeave() errcode.Error {
 	room := ply.Room()
 	if room.IsUserCreate() && room.Status != service.RoomStatusFree {
 		return Retry
@@ -74,13 +80,13 @@ func (ply *XiaojiuPlayer) Bet(area int, gold int64) {
 	if sum+gold > limit {
 		return
 	}
-	if room.Status != service.RoomStatusPlaying {
+	if room.Status != roomutils.RoomStatusPlaying {
 		return
 	}
 
 	// OK
 	ply.areas[area] += gold
-	ply.AddGold(-gold, util.GUID(), "sum.xiaojiu_bet")
+	ply.AddGold(-gold, "xiaojiu_bet", service.WithNoItemLog())
 
 	room.areas[area] += gold
 	room.Broadcast("Bet", map[string]any{"Code": Ok, "UId": ply.Id, "AreaId": area, "Gold": gold})
@@ -95,7 +101,7 @@ func (ply *XiaojiuPlayer) GetUserInfo(self bool) *XiaojiuUserInfo {
 }
 
 func (ply *XiaojiuPlayer) Room() *XiaojiuRoom {
-	if room := roomutils.GetRoomObj(ply.Player).CardRoom(); room != nil {
+	if room := roomutils.GetRoomObj(ply.Player).CustomRoom(); room != nil {
 		return room.(*XiaojiuRoom)
 	}
 	return nil

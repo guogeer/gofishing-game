@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"gofishing-game/internal/cardutils"
+	"gofishing-game/internal/errcode"
 	"gofishing-game/internal/gameutils"
 	"gofishing-game/service"
 
@@ -38,6 +39,8 @@ type Room struct {
 	hostSeatIndex  int // 房主
 	ExistTimes     int
 	LimitTimes     int
+	TimesByLoop    int
+	TimesPerLoop   int
 	StartGameUsers []*service.UserInfo
 }
 
@@ -114,13 +117,19 @@ func (room *Room) CustomRoom() CustomRoom {
 }
 
 func (room *Room) Broadcast(name string, data any, blacklist ...int) {
+	room.BroadcastErr(nil, name, data)
+}
+
+func (room *Room) BroadcastErr(err errcode.Error, name string, data any, blacklist ...int) {
 	set := make(map[int]bool)
 	for _, uid := range blacklist {
 		set[uid] = true
 	}
+
+	result := gameutils.MergeObject(err, data)
 	for _, player := range room.allPlayers {
 		if _, ok := set[player.Id]; !ok {
-			player.WriteJSON(name, data)
+			player.WriteJSON(name, result)
 		}
 	}
 }
@@ -205,4 +214,15 @@ func (room *Room) SetMainPlay(opt string) {
 
 // TODO 自动开局，不需要等待准备
 func (room *Room) AutoStart() {
+}
+
+// 统计座位上玩家
+func (room *Room) NumSeatPlayer() int {
+	var num int
+	for _, p := range room.seatPlayers {
+		if p != nil {
+			num += 1
+		}
+	}
+	return num
 }

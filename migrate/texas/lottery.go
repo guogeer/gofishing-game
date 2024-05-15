@@ -118,7 +118,7 @@ func init() {
 	util.NewPeriodTimer(sys.updateNewDay, "2017-11-17", 24*time.Hour)
 }
 
-func (sys *LotterySystem) Bet(ply *TexasPlayer, areaId int, gold int64) errcode.ErrCode {
+func (sys *LotterySystem) Bet(ply *TexasPlayer, areaId int, gold int64) errcode.errcode.Error {
 	if ply.BagObj().NumItem(gameutils.ItemIdGold) < gold {
 		return errcode.MoreGold
 	}

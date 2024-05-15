@@ -36,7 +36,7 @@ func (ply *lotteryPlayer) AfterEnter() {
 	}
 }
 
-func (ply *lotteryPlayer) TryLeave() ErrCode {
+func (ply *lotteryPlayer) TryLeave() errcode.Error {
 	for _, bet := range ply.areas {
 		if bet > 0 {
 			return AlreadyBet
@@ -62,7 +62,7 @@ func (ply *lotteryPlayer) GameOver() {
 func (ply *lotteryPlayer) Bet(clientArea int, gold int64) {
 	room := ply.Room()
 	subId := room.SubId
-	if room.Status != service.RoomStatusPlaying {
+	if room.Status != roomutils.RoomStatusPlaying {
 		return
 	}
 	log.Infof("player %d bet area %d gold %d", ply.Id, clientArea, gold)
@@ -127,7 +127,7 @@ func (ply *lotteryPlayer) GetUserInfo(otherId int) *lotteryUserInfo {
 }
 
 func (ply *lotteryPlayer) Room() *lotteryRoom {
-	if room := roomutils.GetRoomObj(ply.Player).CardRoom(); room != nil {
+	if room := roomutils.GetRoomObj(ply.Player).CustomRoom(); room != nil {
 		return room.(*lotteryRoom)
 	}
 	return nil

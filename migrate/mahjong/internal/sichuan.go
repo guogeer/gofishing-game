@@ -260,7 +260,7 @@ func (sc *SichuanMahjong) OnWin() {
 			addition2["MSHC"] = t
 		}
 
-		// detail := ChipChip{SeatId: p.SeatId, Operate: mjutils.OperateWin, Score: score}
+		// detail := ChipChip{SeatId: p.GetSeatIndex(), Operate: mjutils.OperateWin, Score: score}
 		detail := ChipDetail{Seats: 1 << uint(p.GetSeatIndex()), Operate: mjutils.OperateWin, Chip: int64(score)}
 		// 接跑
 		if p.drawCard == -1 {

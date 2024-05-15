@@ -76,7 +76,7 @@ func (room *FruitRoom) OnEnter(player *service.Player) {
 	var seats []SeatPlayerInfo
 	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil {
-			info := SeatPlayerInfo{SeatId: p.SeatId}
+			info := SeatPlayerInfo{SeatId: p.GetSeatIndex()}
 			util.DeepCopy(&info.SimpleUserInfo, &p.UserInfo)
 			seats = append(seats, info)
 		}

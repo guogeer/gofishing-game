@@ -3,6 +3,7 @@ package threedice
 import (
 	"container/list"
 	"fmt"
+	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"math/rand"
@@ -80,14 +81,14 @@ func (room *ThreeDiceRoom) OnEnter(player *service.Player) {
 	data := map[string]any{
 		"Status":     room.Status,
 		"SubId":      room.SubId,
-		"Countdown":  room.GetShowTime(room.deadline),
+		"Countdown":  room.Countdown(),
 		"Chips":      room.Chips(),
 		"History":    room.GetLastHistory(40),
 		"Online":     len(room.AllPlayers),
 		"BetUserNum": room.countBetUser(),
 	}
 
-	if room.Status == service.RoomStatusPlaying {
+	if room.Status == roomutils.RoomStatusPlaying {
 		dealerInfo := room.systemDealer
 		if p := room.dealer; p != nil {
 			dealerInfo = p.SimpleInfo()
@@ -122,7 +123,7 @@ func (room *ThreeDiceRoom) OnEnter(player *service.Player) {
 	comer.WriteJSON("GetRoomInfo", data)
 }
 
-func (room *ThreeDiceRoom) Leave(player *service.Player) ErrCode {
+func (room *ThreeDiceRoom) Leave(player *service.Player) errcode.Error {
 	ply := player.GameAction.(*ThreeDicePlayer)
 	log.Debugf("player %d leave room %d", ply.Id, room.Id)
 	return Ok
@@ -180,7 +181,7 @@ func (room *ThreeDiceRoom) Award() {
 	room.autoTimer = util.NewTimer(room.StartGame, room.RestartTime())
 	room.deadline = time.Now().Add(room.RestartTime())
 
-	sec := room.GetShowTime(room.deadline)
+	sec := room.Countdown()
 	if typ == cardutil.ThreeDiceXiao {
 		winAreaId = 0
 	} else if typ == cardutil.ThreeDiceDa {
@@ -266,7 +267,7 @@ func (room *ThreeDiceRoom) StartGame() {
 
 	min, max := room.dealerRequiredGold()
 	room.dealerGold = rand.Int63n(max-min) + min
-	room.Broadcast("StartRobDealer", map[string]any{"Sec": room.GetShowTime(room.deadline), "MinGold": min, "MaxGold": max})
+	room.Broadcast("StartRobDealer", map[string]any{"Sec": room.Countdown(), "MinGold": min, "MaxGold": max})
 	util.NewTimer(room.chooseDealer, t)
 }
 
@@ -313,10 +314,10 @@ func (room *ThreeDiceRoom) chooseDealer() {
 		"Dealer":     dealerInfo,
 		"DealerGold": room.dealerGold,
 		"Limit":      room.limit,
-		"Sec":        room.GetShowTime(room.deadline),
+		"Sec":        room.Countdown(),
 	})
 
-	room.Status = service.RoomStatusPlaying
+	room.Status = roomutils.RoomStatusPlaying
 	room.autoTimer = util.NewTimer(room.Award, t)
 }
 

@@ -1,6 +1,7 @@
 package sangong
 
 import (
+	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"math/rand"
@@ -69,7 +70,7 @@ func (room *SangongRoom) OnEnter(player *service.Player) {
 	data := map[string]any{
 		"Status":    room.Status,
 		"SubId":     room.SubId,
-		"Countdown": room.GetShowTime(room.deadline),
+		"Countdown": room.Countdown(),
 	}
 
 	var seats []*SangongPlayerInfo
@@ -88,7 +89,7 @@ func (room *SangongRoom) OnEnter(player *service.Player) {
 	comer.WriteJSON("GetRoomInfo", data)
 }
 
-func (room *SangongRoom) Leave(player *service.Player) ErrCode {
+func (room *SangongRoom) Leave(player *service.Player) errcode.Error {
 	ply := player.GameAction.(*SangongPlayer)
 	log.Debugf("player %d leave room %d", ply.Id, room.Id)
 	return Ok
@@ -215,7 +216,7 @@ func (room *SangongRoom) Award() {
 	}
 
 	room.deadline = time.Now().Add(room.RestartTime())
-	sec := room.GetShowTime(room.deadline)
+	sec := room.Countdown()
 	// 显示其他三家手牌
 	details := make([]UserDetail, 0, 8)
 	for _, p := range room.readyPlayers() {
@@ -262,7 +263,7 @@ func (room *SangongRoom) ChooseDealer() {
 		room.dealer = nextDealers[rand.Intn(len(nextDealers))]
 
 		for _, p := range nextDealers {
-			seats = append(seats, p.SeatId)
+			seats = append(seats, p.GetSeatIndex())
 		}
 	}
 	if room.dealer != nil {
@@ -278,7 +279,7 @@ func (room *SangongRoom) ChooseDealer() {
 func (room *SangongRoom) StartDealCard() {
 	// 发牌
 	room.deadline = time.Now().Add(maxAutoTime)
-	sec := room.GetShowTime(room.deadline)
+	sec := room.Countdown()
 	for _, p := range room.readyPlayers() {
 		for k := 0; k < len(p.cards); k++ {
 			p.cards[k] = room.CardSet().Deal()
@@ -295,7 +296,7 @@ func (room *SangongRoom) StartDealCard() {
 func (room *SangongRoom) AutoFinish() {
 	room.Status = service.RoomStatusLook
 	room.deadline = time.Now().Add(maxAutoTime)
-	sec := room.GetShowTime(room.deadline)
+	sec := room.Countdown()
 
 	for _, player := range room.AllPlayers {
 		p := player.GameAction.(*SangongPlayer)
@@ -324,7 +325,7 @@ func (room *SangongRoom) StartBetting() {
 	for _, player := range room.AllPlayers {
 		p := player.GameAction.(*SangongPlayer)
 		data := map[string]any{
-			"Sec": room.GetShowTime(room.deadline),
+			"Sec": room.Countdown(),
 		}
 
 		p.WriteJSON("StartBetting", data)
@@ -362,7 +363,7 @@ func (room *SangongRoom) StartGame() {
 		room.Status = service.RoomStatusChooseDealer
 		room.deadline = time.Now().Add(maxAutoTime)
 		room.Broadcast("StartChooseDealer", map[string]any{
-			"Sec": room.GetShowTime(room.deadline)})
+			"Sec": room.Countdown()})
 		room.Timeout(func() {
 			for _, p := range room.readyPlayers() {
 				p.ChooseDealer(false)
@@ -371,7 +372,7 @@ func (room *SangongRoom) StartGame() {
 		// 等待玩家选择抢庄
 	} else if room.CanPlay(OptFangzhudangzhuang) {
 		// 房主固定为庄家
-		if host := GetPlayer(room.HostId); host != nil {
+		if host := room.GetPlayer(room.HostSeatIndex()); host != nil {
 			room.nextDealers = []*SangongPlayer{host}
 			room.ChooseDealer()
 		}

@@ -3,6 +3,7 @@
 package sangong
 
 import (
+	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 
@@ -38,7 +39,7 @@ func (ply *SangongPlayer) IsDone() bool {
 	return ply.isDone
 }
 
-func (ply *SangongPlayer) TryLeave() ErrCode {
+func (ply *SangongPlayer) TryLeave() errcode.Error {
 	room := ply.Room()
 	if room.Status != service.RoomStatusFree {
 		return Retry
@@ -167,7 +168,7 @@ func (ply *SangongPlayer) SitDown(seatId int) {
 }
 
 func (ply *SangongPlayer) Room() *SangongRoom {
-	if room := roomutils.GetRoomObj(ply.Player).CardRoom(); room != nil {
+	if room := roomutils.GetRoomObj(ply.Player).CustomRoom(); room != nil {
 		return room.(*SangongRoom)
 	}
 	return nil

@@ -346,7 +346,7 @@ func (ply *shuiguojiPlayer) GetUserInfo(otherId int) *shuiguojiUserInfo {
 }
 
 func (ply *shuiguojiPlayer) Room() *shuiguojiRoom {
-	if room := roomutils.GetRoomObj(ply.Player).CardRoom(); room != nil {
+	if room := roomutils.GetRoomObj(ply.Player).CustomRoom(); room != nil {
 		return room.(*shuiguojiRoom)
 	}
 	return nil

@@ -1,6 +1,7 @@
 package shisanshui
 
 import (
+	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"math/rand"
@@ -77,7 +78,7 @@ func (room *ShisanshuiRoom) OnEnter(player *service.Player) {
 	comer.WriteJSON("GetRoomInfo", data)
 }
 
-func (room *ShisanshuiRoom) Leave(player *service.Player) ErrCode {
+func (room *ShisanshuiRoom) Leave(player *service.Player) errcode.Error {
 	p := player.GameAction.(*ShisanshuiPlayer)
 	log.Debugf("player %d leave room %d", p.Id, room.Id)
 	return Ok
@@ -124,7 +125,7 @@ func (room *ShisanshuiRoom) StartGame() {
 	room.CardSet().Shuffle()
 
 	if room.CanPlay(OptXianghubipai) {
-		room.nextDealer = GetPlayer(room.HostId)
+		room.nextDealer = room.GetPlayer(room.HostSeatIndex())
 	}
 	// 选庄家
 	if room.nextDealer != nil {
@@ -133,7 +134,7 @@ func (room *ShisanshuiRoom) StartGame() {
 
 	room.nextDealer = nil
 	// 房主当庄
-	if host := GetPlayer(room.HostId); room.dealer == nil && host != nil && host.Room() == room {
+	if host := room.GetPlayer(room.HostSeatIndex()); room.dealer == nil && host != nil && host.Room() == room {
 		room.dealer = host
 	}
 	// 随机

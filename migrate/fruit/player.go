@@ -1,6 +1,7 @@
 package fruit
 
 import (
+	"gofishing-game/internal/errcode"
 	"gofishing-game/internal/gameutils"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
@@ -48,7 +49,7 @@ func (ply *FruitPlayer) SitDown(seatId int) {
 	}
 }
 
-func (ply *FruitPlayer) TryLeave() ErrCode {
+func (ply *FruitPlayer) TryLeave() errcode.Error {
 	if ply.fruitObj.AllBet > 0 {
 		return AlreadyBet
 	}
@@ -71,7 +72,7 @@ func (ply *FruitPlayer) GameOver() {
 }
 
 func (ply *FruitPlayer) Room() *FruitRoom {
-	if room := roomutils.GetRoomObj(ply.Player).CardRoom(); room != nil {
+	if room := roomutils.GetRoomObj(ply.Player).CustomRoom(); room != nil {
 		return room.(*FruitRoom)
 	}
 	return nil

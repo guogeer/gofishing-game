@@ -1,6 +1,7 @@
 package texas
 
 import (
+	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"third/cardutil"
@@ -71,7 +72,7 @@ func (room *TexasRoom) OnEnter(player *service.Player) {
 	data := map[string]any{
 		"Status":    room.Status,
 		"SubId":     room.SubId,
-		"Countdown": room.GetShowTime(room.deadline),
+		"Countdown": room.Countdown(),
 	}
 	if room.dealerSeat >= 0 {
 		data["DealerSeat"] = room.dealerSeat
@@ -89,7 +90,7 @@ func (room *TexasRoom) OnEnter(player *service.Player) {
 		data["BigBlind"] = room.bigBlind
 	}
 	// 断线重连增加奖池
-	if room.Status == service.RoomStatusPlaying {
+	if room.Status == roomutils.RoomStatusPlaying {
 		data["Pots"] = room.allPot[:room.potId+1]
 	}
 
@@ -107,12 +108,12 @@ func (room *TexasRoom) OnEnter(player *service.Player) {
 
 	// 玩家可能没座位
 	comer.WriteJSON("GetRoomInfo", data)
-	if room.Status == service.RoomStatusPlaying {
+	if room.Status == roomutils.RoomStatusPlaying {
 		comer.OnTurn()
 	}
 }
 
-func (room *TexasRoom) Leave(player *service.Player) ErrCode {
+func (room *TexasRoom) Leave(player *service.Player) errcode.Error {
 	ply := player.GameAction.(*TexasPlayer)
 	log.Debugf("player %d leave room %d", ply.Id, room.Id)
 	return Ok
@@ -171,7 +172,7 @@ func (room *TexasRoom) Award() {
 
 	helper := room.helper
 	room.deadline = time.Now().Add(room.RestartTime())
-	sec := room.GetShowTime(room.deadline)
+	sec := room.Countdown()
 
 	relations := make([]Relation, 0, 16)
 	for potId := 0; potId <= room.potId; potId++ {
@@ -203,7 +204,7 @@ func (room *TexasRoom) Award() {
 		gold := room.allPot[potId] / int64(len(winners))
 		for _, p := range winners {
 			p.winGold += gold
-			relations = append(relations, Relation{SeatId: p.SeatId, PotId: potId, Gold: gold})
+			relations = append(relations, Relation{SeatId: p.GetSeatIndex(), PotId: potId, Gold: gold})
 		}
 	}
 	for i := 0; i < room.NumSeat(); i++ {
@@ -318,8 +319,8 @@ func (room *TexasRoom) StartGame() {
 
 	// choose dealer
 	room.dealerSeat = room.NextSeat(room.tempDealerSeat)
-	if host := service.GetPlayer(room.HostId); host != nil && room.tempDealerSeat == -1 {
-		room.dealerSeat = host.SeatId
+	if host := service.room.GetPlayer(room.HostSeatIndex()); host != nil && room.tempDealerSeat == -1 {
+		room.dealerSeat = host.GetSeatIndex()
 	}
 	// save dealer
 	room.tempDealerSeat = room.dealerSeat
@@ -390,7 +391,7 @@ func (room *TexasRoom) StartGame() {
 
 			p.totalBlind += gold
 			p.AddBankroll(-gold)
-			room.allBlind[p.SeatId] += gold
+			room.allBlind[p.GetSeatIndex()] += gold
 		}
 	}
 
@@ -625,7 +626,7 @@ func (room *TexasRoom) AddBlind(smallBlind, bigBlind, frontBlind int64) {
 		room.smallBlind = smallBlind
 		room.bigBlind = bigBlind
 		room.blindLoop++
-	case service.RoomStatusPlaying:
+	case roomutils.RoomStatusPlaying:
 		room.nextSmallBlind = smallBlind
 		room.nextBigBlind = bigBlind
 		room.delayAddBlind = true

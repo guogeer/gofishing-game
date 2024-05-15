@@ -1,6 +1,7 @@
 package paohuzi
 
 import (
+	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"math/rand"
@@ -88,7 +89,7 @@ func (room *PaohuziRoom) OnEnter(player *service.Player) {
 	}
 }
 
-func (room *PaohuziRoom) Leave(player *service.Player) ErrCode {
+func (room *PaohuziRoom) Leave(player *service.Player) errcode.Error {
 	ply := player.GameAction.(*PaohuziPlayer)
 	log.Debugf("player %d leave room %d", ply.Id, room.Id)
 	return Ok
@@ -113,7 +114,7 @@ func (room *PaohuziRoom) StartGame() {
 	room.nextDealer = nil
 	// 优先房主
 	if room.dealer == nil {
-		room.dealer = GetPlayer(room.HostId)
+		room.dealer = room.GetPlayer(room.HostSeatIndex())
 	}
 	// 随机
 	if room.dealer == nil {
@@ -166,7 +167,7 @@ func (room *PaohuziRoom) OnWin() {
 
 	var near *PaohuziPlayer
 	for _, p := range room.winPlayers {
-		if p.SeatId == nearId {
+		if p.GetSeatIndex() == nearId {
 			near = p
 			break
 		}
@@ -253,7 +254,7 @@ func (room *PaohuziRoom) GameOver() {
 		gold := int64(quality) * unit
 		for i := 0; i < room.NumSeat(); i++ {
 			if p := room.GetPlayer(i); p != winner {
-				details[p.SeatId].Gold -= gold
+				details[p.GetSeatIndex()].Gold -= gold
 				details[winner.SeatId].Gold += gold
 			}
 		}
@@ -261,7 +262,7 @@ func (room *PaohuziRoom) GameOver() {
 
 	for i := 0; i < room.NumSeat(); i++ {
 		p := room.GetPlayer(i)
-		p.AddGold(details[p.SeatId].Gold, guid, way)
+		p.AddGold(details[p.GetSeatIndex()].Gold, guid, way)
 		if p.maxGold < p.Gold {
 			p.maxGold = p.Gold
 		}
@@ -329,7 +330,7 @@ func (room *PaohuziRoom) GetPlayer(seatId int) *PaohuziPlayer {
 func (room *PaohuziRoom) Turn() {
 	// 没人可以出牌，选取出牌的下家当庄家
 	if p := room.discardPlayer; p != nil {
-		nextId := (p.SeatId + 1) % room.NumSeat()
+		nextId := (p.GetSeatIndex() + 1) % room.NumSeat()
 		next := room.GetPlayer(nextId)
 		next.Draw()
 	}

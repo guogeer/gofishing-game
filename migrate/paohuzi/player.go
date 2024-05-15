@@ -1,6 +1,7 @@
 package paohuzi
 
 import (
+	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"sort"
@@ -61,7 +62,7 @@ type PaohuziPlayer struct {
 	maxGold    int64 // 最多金币
 }
 
-func (ply *PaohuziPlayer) TryLeave() ErrCode {
+func (ply *PaohuziPlayer) TryLeave() errcode.Error {
 	room := ply.Room()
 	if room.Status != service.RoomStatusFree {
 		return Retry
@@ -127,7 +128,7 @@ func (ply *PaohuziPlayer) GetSortedCards() []int {
 }
 
 func (ply *PaohuziPlayer) Room() *PaohuziRoom {
-	if room := roomutils.GetRoomObj(ply.Player).CardRoom(); room != nil {
+	if room := roomutils.GetRoomObj(ply.Player).CustomRoom(); room != nil {
 		return room.(*PaohuziRoom)
 	}
 	return nil

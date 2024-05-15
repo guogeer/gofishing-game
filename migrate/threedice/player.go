@@ -38,7 +38,7 @@ type ThreeDicePlayer struct {
 	winGold          int64
 }
 
-func (ply *ThreeDicePlayer) TryEnter() ErrCode {
+func (ply *ThreeDicePlayer) TryEnter() errcode.Error {
 	lastClock := "00:00"
 	clock := time.Now().Format("15:04")
 	for i := 0; i < config.Row("threedicerobot"); i++ {
@@ -61,7 +61,7 @@ func (ply *ThreeDicePlayer) TryEnter() ErrCode {
 	return Ok
 }
 
-func (ply *ThreeDicePlayer) TryLeave() ErrCode {
+func (ply *ThreeDicePlayer) TryLeave() errcode.Error {
 	room := ply.Room()
 	if ply.areaId != -1 {
 		return Retry
@@ -133,7 +133,7 @@ func (ply *ThreeDicePlayer) Bet(area int, gold int64) {
 	if gold < 0 || ply.BagObj().NumItem(gameutils.ItemIdGold) < gold || area < 0 || area >= len(ply.areas) {
 		return
 	}
-	if room.Status != service.RoomStatusPlaying {
+	if room.Status != roomutils.RoomStatusPlaying {
 		return
 	}
 	if gold > room.limit[area] {
@@ -185,7 +185,7 @@ func (ply *ThreeDicePlayer) SitDown(seatId int) {
 }
 
 func (ply *ThreeDicePlayer) Room() *ThreeDiceRoom {
-	if room := roomutils.GetRoomObj(ply.Player).CardRoom(); room != nil {
+	if room := roomutils.GetRoomObj(ply.Player).CustomRoom(); room != nil {
 		return room.(*ThreeDiceRoom)
 	}
 	return nil
