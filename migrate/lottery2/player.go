@@ -7,7 +7,6 @@ import (
 	"gofishing-game/internal/gameutils"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
-	"third/cardutil"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
@@ -24,7 +23,7 @@ type lotteryUserInfo struct {
 
 type lotteryPlayer struct {
 	*service.Player
-	areas   [cardutil.ZhajinhuaTypeAll]int64
+	areas   [cardutils.ZhajinhuaTypeAll]int64
 	winGold int64
 }
 

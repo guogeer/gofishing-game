@@ -8,6 +8,7 @@ import (
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
 	"github.com/guogeer/quasar/util"
+	"github.com/guogeer/quasar/utils"
 
 	// "third/pb"
 	// "third/rpc"
@@ -43,7 +44,7 @@ type SeatArea struct {
 }
 
 type FruitRoom struct {
-	*service.Room
+	*roomutils.Room
 	BetArea  [MaxBetArea]int64
 	Chips    []int64
 	Deadline time.Time
@@ -107,7 +108,7 @@ func (room *FruitRoom) StartGame() {
 	d, _ := config.Duration("config", "FruitBetTime", "Value")
 	room.Deadline = time.Now().Add(d)
 	room.Broadcast("StartGame", map[string]any{"Sec": room.GetShowTime(room.Deadline)})
-	util.NewTimer(room.Award, d)
+	utils.NewTimer(room.Award, d)
 }
 
 func (room *FruitRoom) Award() {
@@ -158,7 +159,7 @@ func (room *FruitRoom) Award() {
 
 	d := room.RestartTime()
 	room.Deadline = time.Now().Add(d)
-	util.NewTimer(room.StartGame, d)
+	utils.NewTimer(room.StartGame, d)
 	sec := room.GetShowTime(room.Deadline)
 
 	guid := util.GUID()
@@ -253,7 +254,7 @@ func (room *FruitRoom) Award() {
 
 func (room *FruitRoom) OnTime() {
 	room.Sync()
-	util.NewTimer(room.OnTime, syncTime)
+	utils.NewTimer(room.OnTime, syncTime)
 }
 
 func (room *FruitRoom) Sync() {

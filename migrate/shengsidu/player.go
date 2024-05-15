@@ -4,7 +4,6 @@ import (
 	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
-	"third/cardutil"
 	"time"
 
 	"github.com/guogeer/quasar/log"
@@ -107,8 +106,8 @@ func (ply *ShengsiduPlayer) AutoPlay() {
 			action = []int{c}
 		} else {
 			// 最后一轮，玩家自动出牌
-			if typ != cardutil.ShengsiduNone &&
-				typ != cardutil.ShengsiduSidaisan {
+			if typ != cardutils.ShengsiduNone &&
+				typ != cardutils.ShengsiduSidaisan {
 				// isAuto = true
 				action = cards
 			} else { // 没有其他玩家出牌
@@ -151,7 +150,7 @@ func (ply *ShengsiduPlayer) AutoPlay() {
 	if isAuto {
 		d = maxAutoTime
 	} else {
-		if room.GetRoomType() == service.RoomTypeScore {
+		if room.GetRoomType() == roomutils.RoomTypeScore {
 			return
 		}
 	}
@@ -189,7 +188,7 @@ func (ply *ShengsiduPlayer) Discard(cards []int) {
 		}
 	}
 	typ, _, _ := room.helper.GetType(cards)
-	if typ == cardutil.ShengsiduNone {
+	if typ == cardutils.ShengsiduNone {
 		return
 	}
 
@@ -198,16 +197,16 @@ func (ply *ShengsiduPlayer) Discard(cards []int) {
 		total += n
 	}
 	if other := room.discardPlayer; other == nil && total != len(cards) {
-		if typ == cardutil.ShengsiduSandai2 && len(cards) < 5 {
+		if typ == cardutils.ShengsiduSandai2 && len(cards) < 5 {
 			return
 		}
-		if typ == cardutil.ShengsiduSidaisan && len(cards) < 7 {
+		if typ == cardutils.ShengsiduSidaisan && len(cards) < 7 {
 			return
 		}
-		if typ == cardutil.ShengsiduFeiji && len(cards)%5 != 0 {
+		if typ == cardutils.ShengsiduFeiji && len(cards)%5 != 0 {
 			return
 		}
-		if typ == cardutil.ShengsiduFeiji4 && len(cards)%7 != 0 {
+		if typ == cardutils.ShengsiduFeiji4 && len(cards)%7 != 0 {
 			return
 		}
 	}
@@ -235,16 +234,16 @@ func (ply *ShengsiduPlayer) Discard(cards []int) {
 	log.Debugf("player %d discard ok %v", ply.Id, cards)
 
 	typ1, _, _ := room.helper.GetType(cards)
-	isRocket := (typ1 == cardutil.ShengsiduFeiji4 && ply.discardNum == 0)
+	isRocket := (typ1 == cardutils.ShengsiduFeiji4 && ply.discardNum == 0)
 
 	ply.discardNum++
 	ply.forceDiscardCard = 0
-	/*if typ == cardutil.ShengsiduZhaDan {
+	/*if typ == cardutils.ShengsiduZhaDan {
 		ply.boomTimes++
 		ply.totalBoomTimes++
 	}
 	*/
-	// util.StopTimer(ply.autoTimer)
+	// utils.StopTimer(ply.autoTimer)
 	ply.StopTimer(service.TimerEventOperate)
 	data := map[string]any{"Cards": cards, "UId": ply.Id}
 	if cardNum := total - len(cards); cardNum < 3 {
@@ -284,7 +283,7 @@ func (ply *ShengsiduPlayer) Pass() {
 
 	// OK
 	ply.action = nil
-	// util.StopTimer(ply.autoTimer)
+	// utils.StopTimer(ply.autoTimer)
 	ply.StopTimer(service.TimerEventOperate)
 	room.Broadcast("Pass", map[string]any{"UId": ply.Id})
 	room.Turn()

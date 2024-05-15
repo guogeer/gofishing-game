@@ -1,13 +1,14 @@
 package shuiguoji
 
 import (
+	"gofishing-game/internal/cardutils"
 	"gofishing-game/service"
-	"third/cardutil"
+	"gofishing-game/service/roomutils"
 	"third/pb"
 	"third/rpc"
 	"time"
 
-	"github.com/guogeer/quasar/utils"
+	"github.com/guogeer/quasar/util"
 	"golang.org/x/net/context"
 )
 
@@ -20,7 +21,7 @@ func init() {
 			cards = append(cards, c)
 		}
 	}
-	cardutil.GetCardSystem().Init(cards)
+	cardutils.GetCardSystem().Init(cards)
 
 	uid := service.ServiceConfig().Int("sgj_pp_top_user")
 	gold := service.ServiceConfig().Int("sgj_pp_top_gold")
@@ -39,9 +40,9 @@ func init() {
 
 type shuiguojiWorld struct{}
 
-func (w *shuiguojiWorld) NewRoom(id, subId int) *service.Room {
+func (w *shuiguojiWorld) NewRoom(subId int) *roomutils.Room {
 	room := &shuiguojiRoom{}
-	room.Room = service.NewRoom(id, subId, room)
+	room.Room = roomutils.NewRoom(subId, room)
 	util.NewPeriodTimer(room.Sync, "2010-01-02 00:00:00", time.Second)
 	return room.Room
 }

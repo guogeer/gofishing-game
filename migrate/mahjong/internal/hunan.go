@@ -185,7 +185,7 @@ func (h *HunanMahjong) GameOver() {
 
 type HunanMahjongWorld struct{}
 
-func (w *HunanMahjongWorld) NewRoom(id, subId int) *roomutils.Room {
+func (w *HunanMahjongWorld) NewRoom(subId int) *roomutils.Room {
 	r := NewMahjongRoom(id, subId)
 	r.localMahjong = &HunanMahjong{
 		room:      r,

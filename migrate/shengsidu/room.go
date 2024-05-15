@@ -5,7 +5,6 @@ import (
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"math/rand"
-	"third/cardutil"
 
 	"github.com/guogeer/quasar/log"
 	"github.com/guogeer/quasar/util"
@@ -47,9 +46,9 @@ type Bill struct {
 }
 
 type ShengsiduRoom struct {
-	*service.Room
+	*roomutils.Room
 
-	helper *cardutil.ShengsiduHelper
+	helper *cardutils.ShengsiduHelper
 
 	dealer, nextDealer  *ShengsiduPlayer
 	discardPlayer       *ShengsiduPlayer
@@ -114,7 +113,7 @@ func (room *ShengsiduRoom) OnLeave(player *service.Player) {
 }
 
 func (room *ShengsiduRoom) OnCreate() {
-	room.CardSet().Recover(cardutil.GetAllCards()...)
+	room.CardSet().Recover(cardutils.GetAllCards()...)
 	room.Room.OnCreate()
 }
 
@@ -158,7 +157,7 @@ func (room *ShengsiduRoom) Award() {
 	}
 
 	guid := util.GUID()
-	way := service.GetName()
+	way := service.GetServerName()
 	unit := room.Unit()
 
 	winPlayer := room.winPlayer
@@ -373,11 +372,11 @@ func (room *ShengsiduRoom) Turn() {
 	current := room.expectDiscardPlayer
 	if p := room.discardPlayer; p != nil {
 		cards := p.GetSortedCards()
-		next := room.GetPlayer((current.SeatId + 1) % room.NumSeat())
+		next := room.GetPlayer((current.SeatIndex + 1) % room.NumSeat())
 		// 最后出的炸弹才给钱
 		if len(cards) == 0 || p == next {
 			typ, _, _ := room.helper.GetType(p.action)
-			if typ == cardutil.ShengsiduZhadan {
+			if typ == cardutils.ShengsiduZhadan {
 				p.boomTimes++
 				p.totalBoomTimes++
 			}

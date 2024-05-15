@@ -5,11 +5,11 @@ import (
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"math/rand"
-	"third/cardutil"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
 	"github.com/guogeer/quasar/util"
+	"github.com/guogeer/quasar/utils"
 
 	// "third/pb"
 	// "third/rpc"
@@ -23,9 +23,9 @@ var (
 )
 
 type PaohuziRoom struct {
-	*service.Room
+	*roomutils.Room
 
-	helper *cardutil.PaohuziHelper
+	helper *cardutils.PaohuziHelper
 
 	dealer, nextDealer  *PaohuziPlayer
 	discardPlayer       *PaohuziPlayer
@@ -42,7 +42,7 @@ type PaohuziRoom struct {
 	lastCard int
 
 	autoTime  time.Time
-	autoTimer *util.Timer
+	autoTimer *utils.Timer
 }
 
 func (room *PaohuziRoom) OnEnter(player *service.Player) {
@@ -128,7 +128,7 @@ func (room *PaohuziRoom) StartGame() {
 	// 提龙
 	for i := 0; i < room.NumSeat(); i++ {
 		p := room.GetPlayer(i)
-		for _, c := range cardutil.GetAllCards() {
+		for _, c := range cardutils.GetAllCards() {
 			if p.cards[c] == 4 {
 				meld := room.helper.NewMeld([]int{c, 0, 0, 0})
 				room.Broadcast("Kong", map[string]any{"UId": p.Id, "Meld": meld})
@@ -156,12 +156,12 @@ func (room *PaohuziRoom) OnWin() {
 
 	startId, nearId := roomutils.NoSeat, roomutils.NoSeat
 	if other := room.discardPlayer; other != nil {
-		startId = other.SeatId
+		startId = other.SeatIndex
 	}
 	for _, other := range others {
 		if nearId == roomutils.NoSeat ||
-			room.distance(startId, nearId) > room.distance(startId, other.SeatId) {
-			nearId = other.SeatId
+			room.distance(startId, nearId) > room.distance(startId, other.SeatIndex) {
+			nearId = other.SeatIndex
 		}
 	}
 
@@ -190,7 +190,7 @@ func (room *PaohuziRoom) Award() {
 
 func (room *PaohuziRoom) GameOver() {
 	guid := util.GUID()
-	way := service.GetName()
+	way := service.GetServerName()
 	unit, _ := config.Int("Room", room.SubId, "Unit")
 
 	room.autoTime = time.Now().Add(room.RestartTime())
@@ -208,7 +208,7 @@ func (room *PaohuziRoom) GameOver() {
 
 		kong := 0
 		for _, meld := range p.melds {
-			if meld.Type == cardutil.PaohuziInvisibleKong {
+			if meld.Type == cardutils.PaohuziInvisibleKong {
 				if meld.Cards[0]&0xf0 == 0x00 {
 					kong += 1
 				} else {
@@ -231,7 +231,7 @@ func (room *PaohuziRoom) GameOver() {
 		winOpt := winner.TryWin()
 
 		winner.winTimes++
-		details[winner.SeatId].Win = winOpt
+		details[winner.SeatIndex].Win = winOpt
 		score := room.helper.Sum(winOpt.Melds) + room.helper.Sum(winOpt.Split)
 
 		quality := 1
@@ -255,7 +255,7 @@ func (room *PaohuziRoom) GameOver() {
 		for i := 0; i < room.NumSeat(); i++ {
 			if p := room.GetPlayer(i); p != winner {
 				details[p.GetSeatIndex()].Gold -= gold
-				details[winner.SeatId].Gold += gold
+				details[winner.SeatIndex].Gold += gold
 			}
 		}
 	}

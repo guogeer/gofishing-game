@@ -546,7 +546,7 @@ func NewChaoshanMahjongWorld() *chaoshanMahjongWorld {
 	return &chaoshanMahjongWorld{}
 }
 
-func (w *chaoshanMahjongWorld) NewRoom(id, subId int) *roomutils.Room {
+func (w *chaoshanMahjongWorld) NewRoom(subId int) *roomutils.Room {
 	r := NewMahjongRoom(id, subId)
 	r.SetNoPlay(OptBoom)
 	r.SetNoPlay(OptMaGenGang)

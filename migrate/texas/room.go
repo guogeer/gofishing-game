@@ -4,7 +4,6 @@ import (
 	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
-	"third/cardutil"
 	"time"
 
 	"github.com/guogeer/quasar/config"
@@ -34,13 +33,13 @@ type TexasRoomInfo struct {
 }
 
 type TexasRoom struct {
-	*service.Room
+	*roomutils.Room
 
 	activePlayer *TexasPlayer
 	winner       *TexasPlayer
 
 	deadline time.Time
-	helper   *cardutil.TexasHelper
+	helper   *cardutils.TexasHelper
 
 	potId int
 
@@ -102,7 +101,7 @@ func (room *TexasRoom) OnEnter(player *service.Player) {
 		}
 	}
 	data["SeatPlayers"] = seats
-	if comer.SeatId == roomutils.NoSeat {
+	if comer.SeatIndex == roomutils.NoSeat {
 		data["PersonInfo"] = comer.GetUserInfo(true)
 	}
 
@@ -359,8 +358,8 @@ func (room *TexasRoom) StartGame() {
 	bb.AddBankroll(-bb.totalBlind)
 
 	room.raise = 2 * room.bigBlind
-	room.allBlind[sb.SeatId] = sb.totalBlind
-	room.allBlind[bb.SeatId] = bb.totalBlind
+	room.allBlind[sb.SeatIndex] = sb.totalBlind
+	room.allBlind[bb.SeatIndex] = bb.totalBlind
 
 	counter = 0 // 统计老玩家数量
 	for i := 0; i < room.NumSeat(); i++ {
@@ -460,7 +459,7 @@ func (room *TexasRoom) OnTakeAction() {
 	room.activePlayer = nil
 	act.AutoPlay() // 亮牌
 
-	nextId := room.NextSeat(act.SeatId)
+	nextId := room.NextSeat(act.SeatIndex)
 	next := room.GetPlayer(nextId)
 	// 加注
 	raise := 2 * act.totalBlind
@@ -613,7 +612,7 @@ func (room *TexasRoom) NextSeat(seatId int) int {
 		nextId := (seatId + i + 1) % room.NumSeat()
 		next := room.GetPlayer(nextId)
 		if next != nil && next.IsPlaying() && next.bankroll > 0 {
-			return next.SeatId
+			return next.SeatIndex
 		}
 	}
 	return roomutils.NoSeat

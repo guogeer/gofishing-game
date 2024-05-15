@@ -5,14 +5,13 @@ import (
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"sort"
-	"third/cardutil"
 
 	"github.com/guogeer/quasar/log"
 )
 
 type OperateTip struct {
 	Type  int
-	Melds []cardutil.PaohuziMeld `json:",omitempty"`
+	Melds []cardutils.PaohuziMeld `json:",omitempty"`
 }
 
 // 玩家信息
@@ -27,7 +26,7 @@ type PaohuziUserInfo struct {
 
 	IsReady, IsReadyHand, IsGiveUp bool `json:",omitempty"`
 
-	Melds []cardutil.PaohuziMeld
+	Melds []cardutils.PaohuziMeld
 
 	DrawCard, DiscardCard int `json:",omitempty"`
 }
@@ -53,7 +52,7 @@ type PaohuziPlayer struct {
 	unablePongCards map[int]bool
 	unableWinCards  map[int]bool
 
-	melds       []cardutil.PaohuziMeld
+	melds       []cardutils.PaohuziMeld
 	operateTips []OperateTip
 
 	winTimes   int   // 胡牌次数
@@ -160,7 +159,7 @@ func (ply *PaohuziPlayer) Draw() {
 		return
 	}
 	// 暗杠
-	if t := ply.GetKongType(drawCard); t == cardutil.PaohuziInvisibleKong {
+	if t := ply.GetKongType(drawCard); t == cardutils.PaohuziInvisibleKong {
 		room.expectKongPlayer = ply
 		ply.Kong()
 		return
@@ -175,7 +174,7 @@ func (ply *PaohuziPlayer) Draw() {
 		if other.IsAbleChow() {
 			samples := room.helper.TryChow(other.GetSortedCards(), drawCard)
 			for _, sample := range samples {
-				tips = append(tips, OperateTip{Type: cardutil.PaohuziChow, Melds: sample})
+				tips = append(tips, OperateTip{Type: cardutils.PaohuziChow, Melds: sample})
 			}
 			room.expectChowPlayers[other.Id] = other
 			other.Timeout(func() { other.Pass() })
@@ -183,14 +182,14 @@ func (ply *PaohuziPlayer) Draw() {
 		// 碰
 		if other.IsAblePong() {
 			meld := room.helper.NewMeld(meldCards[:3])
-			tips = append(tips, OperateTip{Type: cardutil.PaohuziPong, Melds: []cardutil.PaohuziMeld{meld}})
+			tips = append(tips, OperateTip{Type: cardutils.PaohuziPong, Melds: []cardutils.PaohuziMeld{meld}})
 			room.expectPongPlayer = other
 			other.Timeout(func() { other.Pass() })
 		}
 		// 胡息
 		if other.TryWin() != nil {
 			room.expectWinPlayers[other.Id] = other
-			tips = append(tips, OperateTip{Type: cardutil.PaohuziWin})
+			tips = append(tips, OperateTip{Type: cardutils.PaohuziWin})
 			other.Timeout(func() { other.Win() })
 		}
 
@@ -220,33 +219,33 @@ func (ply *PaohuziPlayer) Draw() {
 func (ply *PaohuziPlayer) GetKongType(c int) int {
 	room := ply.Room()
 
-	if !cardutil.IsCardValid(c) {
+	if !cardutils.IsCardValid(c) {
 		return -1
 	}
 	// 提龙
 	for _, m := range ply.melds {
-		if c == m.Cards[0] && m.Type == cardutil.PaohuziInvisibleTriplet {
+		if c == m.Cards[0] && m.Type == cardutils.PaohuziInvisibleTriplet {
 			if ply.drawCard == -1 {
-				return cardutil.PaohuziVisibleKong
+				return cardutils.PaohuziVisibleKong
 			}
-			return cardutil.PaohuziInvisibleKong
+			return cardutils.PaohuziInvisibleKong
 		}
-		if c == m.Cards[0] && m.Type == cardutil.PaohuziVisibleTriplet {
+		if c == m.Cards[0] && m.Type == cardutils.PaohuziVisibleTriplet {
 			for i := 0; i < room.NumSeat(); i++ {
 				if other := room.GetPlayer(i); other != nil && other.drawCard != -1 {
-					return cardutil.PaohuziVisibleKong
+					return cardutils.PaohuziVisibleKong
 				}
 			}
 		}
 	}
 	if ply.cards[c] == 3 {
 		if ply.drawCard == -1 {
-			return cardutil.PaohuziVisibleKong
+			return cardutils.PaohuziVisibleKong
 		}
-		return cardutil.PaohuziInvisibleKong
+		return cardutils.PaohuziInvisibleKong
 	}
 	if ply.cards[c] == 4 {
-		return cardutil.PaohuziInvisibleKong
+		return cardutils.PaohuziInvisibleKong
 	}
 
 	return -1
@@ -278,7 +277,7 @@ func (ply *PaohuziPlayer) Kong() {
 
 	// OK
 	meldCards := []int{kongCard, kongCard, kongCard, kongCard}
-	if typ == cardutil.PaohuziInvisibleTriplet {
+	if typ == cardutils.PaohuziInvisibleTriplet {
 		meldCards = []int{kongCard, 0, 0, 0}
 	}
 	meld := room.helper.NewMeld(meldCards)
@@ -302,8 +301,8 @@ func (ply *PaohuziPlayer) Kong() {
 	})
 
 	room.lastCard = -1
-	if ply.TryWin() != nil && typ == cardutil.PaohuziInvisibleKong {
-		ply.operateTips = []OperateTip{OperateTip{Type: cardutil.PaohuziWin}}
+	if ply.TryWin() != nil && typ == cardutils.PaohuziInvisibleKong {
+		ply.operateTips = []OperateTip{OperateTip{Type: cardutils.PaohuziWin}}
 
 		room.kongPlayer = ply
 		room.expectWinPlayers[ply.Id] = ply
@@ -327,7 +326,7 @@ func (ply *PaohuziPlayer) AfterKong() {
 	var counter int
 	for _, m := range ply.melds {
 		switch m.Type {
-		case cardutil.PaohuziVisibleKong, cardutil.PaohuziInvisibleKong:
+		case cardutils.PaohuziVisibleKong, cardutils.PaohuziInvisibleKong:
 			counter++
 		}
 	}
@@ -422,7 +421,7 @@ func (ply *PaohuziPlayer) Chow(chowCards [][3]int) {
 
 	log.Infof("player %d chow card %d", ply.Id, room.lastCard)
 
-	melds := make([]cardutil.PaohuziMeld, 0, 1)
+	melds := make([]cardutils.PaohuziMeld, 0, 1)
 	for _, tri := range chowCards {
 		melds = append(melds, room.helper.NewMeld(tri[:]))
 	}
@@ -497,7 +496,7 @@ func (ply *PaohuziPlayer) Pong() {
 
 	room.lastCard = -1
 	if ply.drawCard > 0 && ply.TryWin() != nil {
-		ply.operateTips = []OperateTip{OperateTip{Type: cardutil.PaohuziWin}}
+		ply.operateTips = []OperateTip{OperateTip{Type: cardutils.PaohuziWin}}
 
 		room.pongPlayer = ply
 		room.expectWinPlayers[ply.Id] = ply
@@ -605,7 +604,7 @@ func (ply *PaohuziPlayer) Discard(discardCard int) {
 			if other.IsAbleChow() {
 				samples := room.helper.TryChow(other.GetSortedCards(), discardCard)
 				for _, sample := range samples {
-					tips = append(tips, OperateTip{Type: cardutil.PaohuziChow, Melds: sample})
+					tips = append(tips, OperateTip{Type: cardutils.PaohuziChow, Melds: sample})
 				}
 				room.expectChowPlayers[other.Id] = other
 				other.Timeout(func() { other.Pass() })
@@ -613,14 +612,14 @@ func (ply *PaohuziPlayer) Discard(discardCard int) {
 			// 碰
 			if other.IsAblePong() {
 				meld := room.helper.NewMeld(meldCards[:3])
-				tips = append(tips, OperateTip{Type: cardutil.PaohuziPong, Melds: []cardutil.PaohuziMeld{meld}})
+				tips = append(tips, OperateTip{Type: cardutils.PaohuziPong, Melds: []cardutils.PaohuziMeld{meld}})
 				room.expectPongPlayer = other
 				other.Timeout(func() { other.Pass() })
 			}
 			// 胡
 			if other.TryWin() != nil {
 				room.expectWinPlayers[other.Id] = other
-				tips = append(tips, OperateTip{Type: cardutil.PaohuziWin})
+				tips = append(tips, OperateTip{Type: cardutils.PaohuziWin})
 				other.Timeout(func() { other.Win() })
 			}
 
@@ -714,12 +713,12 @@ func (ply *PaohuziPlayer) IsAbleChow() bool {
 	if ply.isGiveUp || ply.isReadyHand {
 		return false
 	}
-	if !cardutil.IsCardValid(chowCard) {
+	if !cardutils.IsCardValid(chowCard) {
 		return false
 	}
 	// 上家出牌
 	lastId := (ply.GetSeatIndex() + room.NumSeat() - 1) % room.NumSeat()
-	if other := room.discardPlayer; other != nil && lastId != other.SeatId {
+	if other := room.discardPlayer; other != nil && lastId != other.SeatIndex {
 		return false
 	}
 	other := room.GetPlayer(lastId)
@@ -753,7 +752,7 @@ func (ply *PaohuziPlayer) IsAblePong() bool {
 	if ply.isReadyHand && ply.drawCard == -1 {
 		return false
 	}
-	if !cardutil.IsCardValid(pongCard) {
+	if !cardutils.IsCardValid(pongCard) {
 		return false
 	}
 	if ply.cards[pongCard] != 2 {
@@ -777,8 +776,8 @@ func (ply *PaohuziPlayer) IsAblePong() bool {
 }
 
 type WinOption struct {
-	Melds []cardutil.PaohuziMeld
-	Split []cardutil.PaohuziMeld
+	Melds []cardutils.PaohuziMeld
+	Split []cardutils.PaohuziMeld
 	Pair  int
 }
 
@@ -790,7 +789,7 @@ func (ply *PaohuziPlayer) TryWin() (winOpt *WinOption) {
 	}
 
 	maxScore := -1 // 考虑到无胡
-	check := func(melds []cardutil.PaohuziMeld, cards []int) {
+	check := func(melds []cardutils.PaohuziMeld, cards []int) {
 		splitOpt := room.helper.TryWin(cards)
 		if splitOpt == nil {
 			return
@@ -807,7 +806,7 @@ func (ply *PaohuziPlayer) TryWin() (winOpt *WinOption) {
 		}
 	}
 
-	var melds []cardutil.PaohuziMeld
+	var melds []cardutils.PaohuziMeld
 	melds = append(melds, ply.melds...)
 	// 22 (300) + 3 => 22 (3000) or 22 333 + 3 => 22 (3000)
 	if room.pongPlayer == ply || room.kongPlayer == ply {
@@ -848,7 +847,7 @@ func (ply *PaohuziPlayer) Timeout(f func()) {
 
 	room := ply.Room()
 	roomType := room.GetRoomType()
-	if roomType == service.RoomTypeScore {
+	if roomType == roomutils.RoomTypeScore {
 		return
 	}
 
@@ -866,7 +865,7 @@ func (ply *PaohuziPlayer) tryDiscard() {
 	ply.unableWinCards = make(map[int]bool)
 
 	discardCard := -1
-	for _, c := range cardutil.GetAllCards() {
+	for _, c := range cardutils.GetAllCards() {
 		if cardNum := ply.cards[c]; cardNum < 3 && cardNum > 0 {
 			discardCard = c
 			break

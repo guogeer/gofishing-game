@@ -1,15 +1,17 @@
 package sangong
 
 import (
+	"gofishing-game/internal/cardutils"
+	"gofishing-game/migrate/internal/cardrule"
 	"gofishing-game/service"
-	"third/cardutil"
+	"gofishing-game/service/roomutils"
 	"time"
 )
 
 type SangongWorld struct{}
 
 func init() {
-	service.CreateWorld("三公", &SangongWorld{})
+	service.CreateWorld(&SangongWorld{})
 
 	var cards []int
 	for color := 0; color < 4; color++ {
@@ -19,35 +21,35 @@ func init() {
 		}
 	}
 
-	cardutil.GetCardSystem().Init(cards)
+	cardutils.GetCardSystem().Init(cards)
 }
 
-func (w *SangongWorld) NewRoom(id, subId int) *service.Room {
+func (w *SangongWorld) NewRoom(subId int) *roomutils.Room {
 	r := &SangongRoom{
-		helper: cardutil.NewSangongHelper(),
+		helper: cardrule.NewSangongHelper(),
 	}
-	r.Room = service.NewRoom(id, subId, r)
-	r.SetRestartTime(18 * time.Second)
+	r.Room = roomutils.NewRoom(subId, r)
+	r.SetFreeDuration(18 * time.Second)
 
 	r.SetPlay(OptFangzhudangzhuang)
 	r.SetNoPlay(OptWuzhuang)
 	r.SetNoPlay(OptZiyouqiangzhuang)
 
-	r.SetPlay(OptChouma1)
-	r.SetNoPlay(OptChouma2)
-	r.SetNoPlay(OptChouma3)
-	r.SetNoPlay(OptChouma5)
-	r.SetNoPlay(OptChouma8)
-	r.SetNoPlay(OptChouma10)
-	r.SetNoPlay(OptChouma20)
+	r.SetPlay(OptChouma, 1)
+	r.SetNoPlay(OptChouma, 2)
+	r.SetNoPlay(OptChouma, 3)
+	r.SetNoPlay(OptChouma, 5)
+	r.SetNoPlay(OptChouma, 8)
+	r.SetNoPlay(OptChouma, 10)
+	r.SetNoPlay(OptChouma, 20)
 
-	r.SetPlay(service.OptAutoPlay)                    // 自动代打
-	r.SetNoPlay(service.OptForbidEnterAfterGameStart) // 游戏开始后禁止进入游戏
+	r.SetPlay(roomutils.OptAutoPlay)                    // 自动代打
+	r.SetNoPlay(roomutils.OptForbidEnterAfterGameStart) // 游戏开始后禁止进入游戏
 	return r.Room
 }
 
 func (w *SangongWorld) GetName() string {
-	return "sg"
+	return "sangong"
 }
 
 func (w *SangongWorld) NewPlayer() *service.Player {

@@ -101,7 +101,7 @@ func (ply *ThreeDicePlayer) RobDealer(gold int64) {
 	if gold > ply.BagObj().NumItem(gameutils.ItemIdGold) {
 		code = MoreGold
 	}
-	if room.Status != service.RoomStatusRobDealer {
+	if room.Status != roomutils.RoomStatusRobDealer {
 		code = errcode.Retry
 	}
 	minDealer, maxDealer := room.dealerRequiredGold()
@@ -162,7 +162,7 @@ func (ply *ThreeDicePlayer) GetUserInfo(self bool) *ThreeDiceUserInfo {
 	}
 
 	room := ply.Room()
-	if room.Status == service.RoomStatusRobDealer && ply.robDealerElement != nil && self {
+	if room.Status == roomutils.RoomStatusRobDealer && ply.robDealerElement != nil && self {
 		info.IsRobDealer = true
 	}
 	return info

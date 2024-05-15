@@ -49,7 +49,7 @@ func (rank *PrizePoolRank) update(user *PrizePoolUser) {
 }
 
 type shuiguojiRoom struct {
-	*service.Room
+	*roomutils.Room
 
 	lastPrizePool int64
 }
@@ -67,7 +67,7 @@ func (room *shuiguojiRoom) OnEnter(player *service.Player) {
 
 	// 自动坐下
 	seatId := room.GetEmptySeat()
-	if comer.SeatId == roomutils.NoSeat && seatId != roomutils.NoSeat {
+	if comer.SeatIndex == roomutils.NoSeat && seatId != roomutils.NoSeat {
 		comer.RoomObj.SitDown(seatId)
 
 		info := comer.GetUserInfo(0)

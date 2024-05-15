@@ -302,7 +302,7 @@ func (w *NeimengguWorld) GetName() string {
 	return "nmgmj"
 }
 
-func (w *NeimengguWorld) NewRoom(id, subId int) *roomutils.Room {
+func (w *NeimengguWorld) NewRoom(subId int) *roomutils.Room {
 	r := NewMahjongRoom(id, subId)
 	r.SetNoPlay(OptYiKouXiang)
 	r.SetNoPlay(OptBuDaiZiPai)

@@ -2,30 +2,29 @@ package sangong
 
 import (
 	"gofishing-game/internal/errcode"
+	"gofishing-game/migrate/internal/cardrule"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"math/rand"
-	"third/cardutil"
 	"time"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/util"
+	"github.com/guogeer/quasar/utils"
 )
 
 const (
-	OptNone              = iota
-	OptFangzhudangzhuang // 房主当庄
-	OptWuzhuang          // 无庄
-	OptZiyouqiangzhuang  // 自由抢庄
+	OptFangzhudangzhuang = "房主当庄" // 房主当庄
+	OptWuzhuang          = "无庄"   // 无庄
+	OptZiyouqiangzhuang  = "自由抢庄" // 自由抢庄
 
-	OptChouma1  // 筹码1
-	OptChouma2  // 筹码2
-	OptChouma3  // 筹码3
-	OptChouma5  // 筹码5
-	OptChouma8  // 筹码8
-	OptChouma10 // 筹码10
-	OptChouma20 // 筹码20
+	OptChouma = "筹码_%d" // 筹码1
+)
+
+const (
+	RoomStatusLook = 100 + iota
+	RoomStatusBet
+	RoomStatusChooseDealer
 )
 
 var (
@@ -33,38 +32,25 @@ var (
 )
 
 type UserDetail struct {
-	UId  int
-	Gold int64
-	// Cards []int
+	Uid  int   `json:"uid,omitempty"`
+	Gold int64 `json:"gold,omitempty"`
 }
 
 type SangongRoom struct {
-	*service.Room
+	*roomutils.Room
 
 	dealer      *SangongPlayer
 	nextDealers []*SangongPlayer
 	deadline    time.Time
-	helper      *cardutil.SangongHelper
+	helper      *cardrule.SangongHelper
 
 	isAbleStart, isAbleEnd bool // 房主开始游戏
-	autoTimer              *util.Timer
+	autoTimer              *utils.Timer
 }
 
 func (room *SangongRoom) OnEnter(player *service.Player) {
-	room.Room.OnEnter(player)
-
 	comer := player.GameAction.(*SangongPlayer)
 	log.Infof("player %d enter room %d", comer.Id, room.Id)
-
-	// 自动坐下
-	seatId := room.GetEmptySeat()
-	if comer.SeatId == roomutils.NoSeat && seatId != roomutils.NoSeat {
-		// comer.SitDown()
-		comer.RoomObj.SitDown(seatId)
-
-		info := comer.GetUserInfo(false)
-		room.Broadcast("SitDown", map[string]any{"Code": Ok, "Info": info}, comer.Id)
-	}
 
 	// 玩家重连
 	data := map[string]any{
@@ -96,8 +82,6 @@ func (room *SangongRoom) Leave(player *service.Player) errcode.Error {
 }
 
 func (room *SangongRoom) OnLeave(player *service.Player) {
-	room.Room.OnLeave(player)
-
 	p := player.GameAction.(*SangongPlayer)
 	if p == room.dealer {
 		room.dealer = nil
@@ -106,12 +90,10 @@ func (room *SangongRoom) OnLeave(player *service.Player) {
 
 func (room *SangongRoom) OnCreate() {
 	room.isAbleStart = false
-	room.Room.OnCreate()
 }
 
 func (room *SangongRoom) Award() {
-	guid := util.GUID()
-	way := "user." + service.GetName()
+	way := service.GetServerName()
 	unit, _ := config.Int("Room", room.SubId, "Unit")
 
 	for i := 0; i < room.NumSeat(); i++ {
@@ -159,13 +141,13 @@ func (room *SangongRoom) Award() {
 				if gold > 0 {
 					winner.winGold += gold
 					loser.winGold -= gold
-					relations = append(relations, Relation{Winner: winner.SeatId, Loser: loser.SeatId, Gold: gold})
+					relations = append(relations, Relation{Winner: winner.GetSeatIndex(), Loser: loser.GetSeatIndex(), Gold: gold})
 				}
 			}
 			chips[i] = 0
 		}
 		for _, p := range readyPlayers {
-			p.AddGold(p.winGold, guid, way)
+			p.AddGold(p.winGold, way, service.WithNoItemLog())
 		}
 	} else {
 		// 默认和庄家比较
@@ -186,8 +168,8 @@ func (room *SangongRoom) Award() {
 			}
 
 			gold := int64(chip) * unit
-			if gold > loser.Gold && !room.IsTypeScore()e {
-				gold = loser.Gold
+			if gold > loser.NumGold() && !room.IsTypeScore() {
+				gold = loser.NumGold()
 			}
 
 			winner.winGold += gold
@@ -198,8 +180,8 @@ func (room *SangongRoom) Award() {
 		}
 
 		dealerLostGold := dealerWinGold - dealer.winGold
-		if dealer.winGold+dealer.Gold < 0 && !room.IsTypeScore()e {
-			dealer.winGold = -dealer.Gold
+		if dealer.winGold+dealer.NumGold() < 0 && !room.IsTypeScore() {
+			dealer.winGold = -dealer.NumGold()
 		}
 
 		dealerRealLostGold := dealerWinGold - dealer.winGold
@@ -211,16 +193,16 @@ func (room *SangongRoom) Award() {
 				}
 				p.winGold = gold
 			}
-			p.AddGold(p.winGold, guid, way)
+			p.AddGold(p.winGold, way, service.WithNoItemLog())
 		}
 	}
 
-	room.deadline = time.Now().Add(room.RestartTime())
+	room.deadline = time.Now().Add(room.FreeDuration())
 	sec := room.Countdown()
 	// 显示其他三家手牌
 	details := make([]UserDetail, 0, 8)
 	for _, p := range room.readyPlayers() {
-		details = append(details, UserDetail{UId: p.Id, Gold: p.winGold})
+		details = append(details, UserDetail{Uid: p.Id, Gold: p.winGold})
 	}
 	room.Broadcast("Award", map[string]any{"Details": details, "Sec": sec, "Relations": relations})
 
@@ -235,13 +217,13 @@ func (room *SangongRoom) GameOver() {
 		details := make([]UserDetail, 0, 8)
 		for i := 0; i < room.NumSeat(); i++ {
 			if p := room.GetPlayer(i); p != nil {
-				details = append(details, UserDetail{UId: p.Id, Gold: p.Gold})
+				details = append(details, UserDetail{Uid: p.Id, Gold: p.NumGold()})
 			}
 		}
 		room.Broadcast("TotalAward", map[string]any{"Details": details})
 	}
 	room.Room.GameOver()
-	util.StopTimer(room.autoTimer)
+	utils.StopTimer(room.autoTimer)
 }
 
 // 游戏中玩家
@@ -294,11 +276,11 @@ func (room *SangongRoom) StartDealCard() {
 }
 
 func (room *SangongRoom) AutoFinish() {
-	room.Status = service.RoomStatusLook
+	room.Status = RoomStatusLook
 	room.deadline = time.Now().Add(maxAutoTime)
 	sec := room.Countdown()
 
-	for _, player := range room.AllPlayers {
+	for _, player := range room.GetAllPlayers() {
 		p := player.GameAction.(*SangongPlayer)
 		data := map[string]any{
 			"Sec": sec,
@@ -319,10 +301,10 @@ func (room *SangongRoom) AutoFinish() {
 // 选择押注
 func (room *SangongRoom) StartBetting() {
 	// 没有庄家，如通比牛牛，直接选择摸牌
-	room.Status = service.RoomStatusBet
+	room.Status = RoomStatusBet
 	room.deadline = time.Now().Add(maxAutoTime)
 
-	for _, player := range room.AllPlayers {
+	for _, player := range room.GetAllPlayers() {
 		p := player.GameAction.(*SangongPlayer)
 		data := map[string]any{
 			"Sec": room.Countdown(),
@@ -360,7 +342,7 @@ func (room *SangongRoom) StartGame() {
 	room.StartDealCard()
 	// 自由抢庄
 	if room.CanPlay(OptZiyouqiangzhuang) {
-		room.Status = service.RoomStatusChooseDealer
+		room.Status = RoomStatusChooseDealer
 		room.deadline = time.Now().Add(maxAutoTime)
 		room.Broadcast("StartChooseDealer", map[string]any{
 			"Sec": room.Countdown()})
@@ -416,19 +398,19 @@ func (room *SangongRoom) OnFinish() {
 	room.Award()
 }
 
-func (room *SangongRoom) GetPlayer(seatId int) *SangongPlayer {
-	if seatId < 0 || seatId >= room.NumSeat() {
+func (room *SangongRoom) GetPlayer(seatIndex int) *SangongPlayer {
+	if seatIndex < 0 || seatIndex >= room.NumSeat() {
 		return nil
 	}
-	if p := room.SeatPlayers[seatId]; p != nil {
+	if p := room.FindPlayer(seatIndex); p != nil {
 		return p.GameAction.(*SangongPlayer)
 	}
 	return nil
 }
 
 func (room *SangongRoom) Timeout(f func()) {
-	if room.CanPlay(service.OptAutoPlay) {
-		util.StopTimer(room.autoTimer)
-		room.autoTimer = util.NewTimer(f, maxAutoTime)
+	if room.CanPlay(roomutils.OptAutoPlay) {
+		utils.StopTimer(room.autoTimer)
+		room.autoTimer = utils.NewTimer(f, maxAutoTime)
 	}
 }

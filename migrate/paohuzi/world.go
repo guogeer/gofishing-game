@@ -2,7 +2,7 @@ package paohuzi
 
 import (
 	"gofishing-game/service"
-	"third/cardutil"
+	"gofishing-game/service/roomutils"
 )
 
 type PaohuziWorld struct{}
@@ -19,17 +19,17 @@ func init() {
 		c = value | 0x10
 		cards = append(cards, c, c, c, c)
 	}
-	cardutil.GetCardSystem().Init(cards)
+	cardutils.GetCardSystem().Init(cards)
 }
 
-func (w *PaohuziWorld) NewRoom(id, subId int) *service.Room {
+func (w *PaohuziWorld) NewRoom(subId int) *roomutils.Room {
 	r := &PaohuziRoom{
-		helper: cardutil.NewPaohuziHelper(),
+		helper: cardutils.NewPaohuziHelper(),
 
 		expectChowPlayers: make(map[int]*PaohuziPlayer),
 		expectWinPlayers:  make(map[int]*PaohuziPlayer),
 	}
-	r.Room = service.NewRoom(id, subId, r)
+	r.Room = roomutils.NewRoom(subId, r)
 	r.SetPlay(service.OptZeroSeat + 3)
 	r.SetNoPlay(service.OptZeroSeat + 2)
 

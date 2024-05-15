@@ -225,12 +225,12 @@ func (ply *PaodekuaiPlayer) Discard(cards []int) {
 
 	ply.discardNum++
 	ply.forceDiscardCard = 0
-	/*if typ == cardutil.PaodekuaiZhaDan {
+	/*if typ == cardutils.PaodekuaiZhaDan {
 		ply.boomTimes++
 		ply.totalBoomTimes++
 	}
 	*/
-	// util.StopTimer(ply.autoTimer)
+	// utils.StopTimer(ply.autoTimer)
 	utils.StopTimer(ply.operateTimer)
 	data := map[string]interface{}{"Cards": cards, "UId": ply.Id}
 	if cardNum := total - len(cards); cardNum < 3 {
@@ -266,7 +266,7 @@ func (ply *PaodekuaiPlayer) Pass() {
 
 	// OK
 	ply.action = nil
-	// util.StopTimer(ply.autoTimer)
+	// utils.StopTimer(ply.autoTimer)
 	utils.StopTimer(ply.operateTimer)
 	room.Broadcast("Pass", map[string]interface{}{"UId": ply.Id})
 	room.Turn()

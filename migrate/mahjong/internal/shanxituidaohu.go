@@ -86,7 +86,7 @@ func (mj *ShanxituidaohuMahjong) Award() {
 						}
 					}
 				case mjutils.MeldStraightKong:
-					bill := &bills[meld.SeatId]
+					bill := &bills[meld.SeatIndex]
 					detail.Times = 3
 					detail.Chip = -int64(detail.Times) * unit
 					bill.Details = append(bill.Details, detail)
@@ -175,7 +175,7 @@ func (w *ShanxituidaohuWorld) GetName() string {
 	return "shanxituidaohumj"
 }
 
-func (w *ShanxituidaohuWorld) NewRoom(id, subId int) *roomutils.Room {
+func (w *ShanxituidaohuWorld) NewRoom(subId int) *roomutils.Room {
 	r := NewMahjongRoom(id, subId)
 	r.SetPlay(OptBuDaiFeng) // 不带风
 	r.SetPlay(OptBaoTing)   // 报听

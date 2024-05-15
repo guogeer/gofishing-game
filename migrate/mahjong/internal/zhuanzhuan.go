@@ -260,7 +260,7 @@ func (w *ZhuanzhuanWorld) GetName() string {
 	return "zzmj"
 }
 
-func (w *ZhuanzhuanWorld) NewRoom(id, subId int) *roomutils.Room {
+func (w *ZhuanzhuanWorld) NewRoom(subId int) *roomutils.Room {
 	r := NewMahjongRoom(id, subId)
 	r.SetPlay(OptAbleRobKong)
 	r.SetNoPlay(OptBoom)

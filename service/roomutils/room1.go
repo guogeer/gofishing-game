@@ -191,11 +191,11 @@ func (room *Room) HostSeatIndex() int {
 }
 
 // TODO 积分场逻辑。待实现
-func (room *Room) SetPlay(opt string) {
+func (room *Room) SetPlay(opt string, args ...any) {
 }
 
 // TODO 积分场逻辑。待实现
-func (room *Room) SetNoPlay(opt string) {
+func (room *Room) SetNoPlay(opt string, args ...any) {
 }
 
 func (room *Room) GetPlayValue(prefix string) int {

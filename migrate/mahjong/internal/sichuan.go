@@ -724,7 +724,7 @@ func (w *SichuanWorld) GetName() string {
 	return w.name
 }
 
-func (w *SichuanWorld) NewRoom(id, subId int) *roomutils.Room {
+func (w *SichuanWorld) NewRoom(subId int) *roomutils.Room {
 	r := NewMahjongRoom(id, subId)
 	r.SetPlay(OptZiMoJiaFan)
 	r.SetNoPlay(OptDianGangHuaFangPao) // 点杠花放炮

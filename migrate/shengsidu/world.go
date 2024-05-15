@@ -2,7 +2,7 @@ package shengsidu
 
 import (
 	"gofishing-game/service"
-	"third/cardutil"
+	"gofishing-game/service/roomutils"
 )
 
 type ShengsiduWorld struct{}
@@ -18,14 +18,14 @@ func init() {
 		}
 	}
 
-	cardutil.GetCardSystem().Init(cards)
+	cardutils.GetCardSystem().Init(cards)
 }
 
-func (w *ShengsiduWorld) NewRoom(id, subId int) *service.Room {
+func (w *ShengsiduWorld) NewRoom(subId int) *roomutils.Room {
 	r := &ShengsiduRoom{
-		helper: cardutil.NewShengsiduHelper(),
+		helper: cardutils.NewShengsiduHelper(),
 	}
-	r.Room = service.NewRoom(id, subId, r)
+	r.Room = roomutils.NewRoom(subId, r)
 
 	r.SetPlay(OptXianshipai)
 	r.SetNoPlay(OptBuxianshipai)

@@ -2,8 +2,9 @@ package fruit
 
 import (
 	"gofishing-game/service"
+	"gofishing-game/service/roomutils"
 
-	"github.com/guogeer/quasar/util"
+	"github.com/guogeer/quasar/utils"
 )
 
 type FruitWorld struct{}
@@ -12,11 +13,11 @@ func init() {
 	service.CreateWorld(&FruitWorld{})
 }
 
-func (w *FruitWorld) NewRoom(id, subId int) *service.Room {
+func (w *FruitWorld) NewRoom(subId int) *roomutils.Room {
 	r := &FruitRoom{}
-	r.Room = service.NewRoom(id, subId, r)
+	r.Room = roomutils.NewRoom(subId, r)
 	// 定时同步
-	util.NewTimer(r.OnTime, syncTime)
+	utils.NewTimer(r.OnTime, syncTime)
 	// r.StartGame()
 	return r.Room
 }

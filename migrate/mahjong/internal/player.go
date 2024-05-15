@@ -270,7 +270,7 @@ func (ply *MahjongPlayer) GetUserInfo(otherId int) *MahjongPlayerInfo {
 	data.IsBust = ply.isBust
 	data.IsReady = roomutils.GetRoomObj(other.Player).IsReady()
 	data.IsAutoPlay = ply.isAutoPlay
-	data.SeatId = ply.GetSeatIndex()
+	data.SeatIndex = ply.GetSeatIndex()
 	data.Melds = ply.melds
 	data.DrawCard = ply.drawCard
 	data.IP = ply.IP
@@ -697,7 +697,7 @@ func (ply *MahjongPlayer) Kong(c int) {
 	} else {
 		m := mjutils.Meld{Card: c, Type: type_}
 		if other := room.discardPlayer; other != nil {
-			m.SeatId = other.GetSeatIndex()
+			m.SeatIndex = other.GetSeatIndex()
 		}
 		ply.melds = append(ply.melds, m)
 	}
@@ -879,7 +879,7 @@ func (ply *MahjongPlayer) Chow(c int) {
 	// OK
 	m := mjutils.Meld{Card: c, Type: mjutils.MeldSequence}
 	if other := room.discardPlayer; other != nil {
-		m.SeatId = other.GetSeatIndex()
+		m.SeatIndex = other.GetSeatIndex()
 	}
 	ply.melds = append(ply.melds, m)
 	cards[dc]++
@@ -983,7 +983,7 @@ func (ply *MahjongPlayer) Pong() {
 	ply.delayPong = false
 	m := mjutils.Meld{Card: dc, Type: mjutils.MeldTriplet}
 	if other := room.discardPlayer; other != nil {
-		m.SeatId = other.GetSeatIndex()
+		m.SeatIndex = other.GetSeatIndex()
 	}
 	ply.melds = append(ply.melds, m) // 增加一个刻子
 	log.Infof("player %d pong card %d", ply.Id, dc)

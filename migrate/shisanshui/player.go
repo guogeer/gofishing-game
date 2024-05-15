@@ -4,7 +4,6 @@ import (
 	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
-	"third/cardutil"
 	"time"
 
 	"github.com/guogeer/quasar/log"
@@ -17,16 +16,16 @@ type ShisanshuiUserInfo struct {
 	SeatId  int
 	IsReady bool `json:",omitempty"`
 
-	Cards, SplitCards []int                       `json:",omitempty"`
-	IsSplitCards      bool                        `json:",omitempty"`
-	ResultSet         []cardutil.ShisanshuiResult `json:",omitempty"`
+	Cards, SplitCards []int                        `json:",omitempty"`
+	IsSplitCards      bool                         `json:",omitempty"`
+	ResultSet         []cardutils.ShisanshuiResult `json:",omitempty"`
 }
 
 type ShisanshuiPlayer struct {
 	*service.Player
 
 	splitCards, cards []int
-	resultSet         []cardutil.ShisanshuiResult
+	resultSet         []cardutils.ShisanshuiResult
 }
 
 func (ply *ShisanshuiPlayer) TryLeave() errcode.Error {

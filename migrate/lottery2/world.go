@@ -2,11 +2,11 @@ package lottery
 
 import (
 	"gofishing-game/service"
-	"third/cardutil"
+	"gofishing-game/service/roomutils"
 	"time"
 
 	"github.com/guogeer/quasar/config"
-	"github.com/guogeer/quasar/utils"
+	"github.com/guogeer/quasar/util"
 )
 
 type lotteryWorld struct{}
@@ -22,17 +22,17 @@ func init() {
 		}
 	}
 
-	cardutil.GetCardSystem().Init(cards)
+	cardutils.GetCardSystem().Init(cards)
 }
 
-func (w *lotteryWorld) NewRoom(id, subId int) *service.Room {
-	helper := cardutil.NewZhajinhuaHelper()
+func (w *lotteryWorld) NewRoom(subId int) *roomutils.Room {
+	helper := cardutils.NewZhajinhuaHelper()
 	helper.SetOption("AAA")
 	room := &lotteryRoom{
 		helper: helper,
 	}
-	room.Room = service.NewRoom(id, subId, room)
-	room.SetRestartTime(18 * time.Second)
+	room.Room = roomutils.NewRoom(subId, room)
+	room.SetFreeDuration(18 * time.Second)
 	util.NewPeriodTimer(room.Sync, "2001-01-01", time.Second)
 
 	// 代号时时乐捕鱼

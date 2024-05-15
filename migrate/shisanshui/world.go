@@ -2,7 +2,7 @@ package shisanshui
 
 import (
 	"gofishing-game/service"
-	"third/cardutil"
+	"gofishing-game/service/roomutils"
 	"time"
 )
 
@@ -19,16 +19,16 @@ func init() {
 		}
 	}
 
-	cardutil.GetCardSystem().Init(cards)
+	cardutils.GetCardSystem().Init(cards)
 }
 
-func (w *ShisanshuiWorld) NewRoom(id, subId int) *service.Room {
+func (w *ShisanshuiWorld) NewRoom(subId int) *roomutils.Room {
 	room := &ShisanshuiRoom{
-		helper: cardutil.NewShisanshuiHelper(),
+		helper: cardutils.NewShisanshuiHelper(),
 	}
-	room.Room = service.NewRoom(id, subId, room)
+	room.Room = roomutils.NewRoom(subId, room)
 
-	room.SetRestartTime(60 * time.Second)
+	room.SetFreeDuration(60 * time.Second)
 	room.SetNoPlay(OptDaxiaowang)
 
 	room.SetPlay(OptXianghubipai)

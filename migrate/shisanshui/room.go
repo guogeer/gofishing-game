@@ -5,7 +5,6 @@ import (
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"math/rand"
-	"third/cardutil"
 
 	"github.com/guogeer/quasar/log"
 	"github.com/guogeer/quasar/util"
@@ -31,9 +30,9 @@ var (
 )
 
 type ShisanshuiRoom struct {
-	*service.Room
+	*roomutils.Room
 
-	helper *cardutil.ShisanshuiHelper
+	helper *cardutils.ShisanshuiHelper
 
 	autoTime           time.Time
 	dealer, nextDealer *ShisanshuiPlayer
@@ -97,7 +96,7 @@ func (room *ShisanshuiRoom) OnLeave(player *service.Player) {
 }
 
 func (room *ShisanshuiRoom) OnCreate() {
-	// room.CardSet().Recover(cardutil.GetAllCards()...)
+	// room.CardSet().Recover(cardutils.GetAllCards()...)
 	room.Room.OnCreate()
 	room.CardSet().Remove(0xf0, 0xf1)
 	if room.CanPlay(OptDaxiaowang) {
@@ -168,7 +167,7 @@ func (room *ShisanshuiRoom) OnSplitCards() {
 
 func (room *ShisanshuiRoom) Award() {
 	guid := util.GUID()
-	way := service.GetName()
+	way := service.GetServerName()
 	// unit, _ := config.Int("Room", room.SubId, "Unit")
 	unit := room.Unit()
 
@@ -221,31 +220,31 @@ func (room *ShisanshuiRoom) Award() {
 					if typ != 0 && room.helper.Less(other.splitCards, p.splitCards) {
 						score := 0
 						switch typ {
-						case cardutil.ShisanshuiZhizunqinglong:
+						case cardutils.ShisanshuiZhizunqinglong:
 							score = 108
-						case cardutil.ShisanshuiYitiaolong:
+						case cardutils.ShisanshuiYitiaolong:
 							score = 36
-						case cardutil.ShisanshuiShierhuangzu:
+						case cardutils.ShisanshuiShierhuangzu:
 							score = 24
-						case cardutil.ShisanshuiSantonghuashun:
+						case cardutils.ShisanshuiSantonghuashun:
 							score = 22
-						case cardutil.ShisanshuiSanfentianxia:
+						case cardutils.ShisanshuiSanfentianxia:
 							score = 20
-						case cardutil.ShisanshuiQuanda:
+						case cardutils.ShisanshuiQuanda:
 							score = 15
-						case cardutil.ShisanshuiQuanxiao:
+						case cardutils.ShisanshuiQuanxiao:
 							score = 12
-						case cardutil.ShisanshuiCouyise:
+						case cardutils.ShisanshuiCouyise:
 							score = 10
-						case cardutil.ShisanshuiSitaosantiao:
+						case cardutils.ShisanshuiSitaosantiao:
 							score = 6
-						case cardutil.ShisanshuiWuduisantiao:
+						case cardutils.ShisanshuiWuduisantiao:
 							score = 5
-						case cardutil.ShisanshuiLiuduiban:
+						case cardutils.ShisanshuiLiuduiban:
 							score = 5
-						case cardutil.ShisanshuiSanshunzi:
+						case cardutils.ShisanshuiSanshunzi:
 							score = 5
-						case cardutil.ShisanshuiSantonghua:
+						case cardutils.ShisanshuiSantonghua:
 							score = 5
 						}
 						tempUsers[k].Teshupaixing += score
@@ -258,7 +257,7 @@ func (room *ShisanshuiRoom) Award() {
 
 							score := 1
 							switch t, _ := room.helper.GetPartType(p.splitCards[:3]); t {
-							case cardutil.ShisanshuiSantiao:
+							case cardutils.ShisanshuiSantiao:
 								score = 3
 							}
 							tempUsers[k].AllParts[0] = score
@@ -269,13 +268,13 @@ func (room *ShisanshuiRoom) Award() {
 
 							score := 1
 							switch t, _ := room.helper.GetPartType(p.splitCards[3:8]); t {
-							case cardutil.ShisanshuiHulu:
+							case cardutils.ShisanshuiHulu:
 								score = 2
-							case cardutil.ShisanshuiTiezhi:
+							case cardutils.ShisanshuiTiezhi:
 								score = 8
-							case cardutil.ShisanshuiTonghuashun:
+							case cardutils.ShisanshuiTonghuashun:
 								score = 10
-							case cardutil.ShisanshuiWutong:
+							case cardutils.ShisanshuiWutong:
 								score = 15
 							}
 							tempUsers[k].AllParts[1] = score
@@ -286,11 +285,11 @@ func (room *ShisanshuiRoom) Award() {
 
 							score := 1
 							switch t, _ := room.helper.GetPartType(p.splitCards[8:]); t {
-							case cardutil.ShisanshuiTiezhi:
+							case cardutils.ShisanshuiTiezhi:
 								score = 4
-							case cardutil.ShisanshuiTonghuashun:
+							case cardutils.ShisanshuiTonghuashun:
 								score = 5
-							case cardutil.ShisanshuiWutong:
+							case cardutils.ShisanshuiWutong:
 								score = 7
 							}
 							tempUsers[k].AllParts[2] = score

@@ -7,11 +7,11 @@ import (
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"math/rand"
-	"third/cardutil"
 	"time"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
+	"github.com/guogeer/quasar/utils"
 )
 
 var (
@@ -31,12 +31,12 @@ var (
 )
 
 func init() {
-	helper := cardutil.NewThreeDiceHelper()
+	helper := cardutils.NewThreeDiceHelper()
 	for i := 1; i <= 6; i++ {
 		for j := 1; j <= 6; j++ {
 			for k := 1; k <= 6; k++ {
 				typ := helper.GetType(i, j, k)
-				if typ == cardutil.ThreeDiceBaozi {
+				if typ == cardutils.ThreeDiceBaozi {
 					baoziResultSet = append(baoziResultSet, 100*i+10*j+k)
 				} else {
 					otherResultSet = append(otherResultSet, 100*i+10*j+k)
@@ -47,22 +47,22 @@ func init() {
 }
 
 type ThreeDiceRoom struct {
-	*service.Room
+	*roomutils.Room
 
 	systemDealer *service.SimpleUserInfo
 	dealer       *ThreeDicePlayer
 	dealerGold   int64
 
-	autoTimer     *util.Timer
+	autoTimer     *utils.Timer
 	deadline      time.Time
 	tempDealer    int
 	last          [64]int
 	lasti         int
 	robDealerList *list.List
-	helper        *cardutil.ThreeDiceHelper
+	helper        *cardutils.ThreeDiceHelper
 
 	areas, limit [2]int64
-	syncTimer    *util.Timer
+	syncTimer    *utils.Timer
 }
 
 func (room *ThreeDiceRoom) OnEnter(player *service.Player) {
@@ -73,7 +73,7 @@ func (room *ThreeDiceRoom) OnEnter(player *service.Player) {
 
 	// 自动坐下
 	seatId := room.GetEmptySeat()
-	if comer.SeatId == roomutils.NoSeat && seatId != roomutils.NoSeat && !comer.IsRobot() {
+	if comer.SeatIndex == roomutils.NoSeat && seatId != roomutils.NoSeat && !comer.IsRobot() {
 		comer.SitDown(seatId)
 	}
 
@@ -140,7 +140,7 @@ func (room *ThreeDiceRoom) OnLeave(player *service.Player) {
 
 func (room *ThreeDiceRoom) Award() {
 	guid := util.GUID()
-	way := "user." + service.GetName()
+	way := "user." + service.GetServerName()
 
 	baoziPercent := -0.1
 	if room.dealer != nil {
@@ -177,14 +177,14 @@ func (room *ThreeDiceRoom) Award() {
 	var winAreaId = -1
 	var dealerWinGold int64
 
-	util.StopTimer(room.autoTimer)
-	room.autoTimer = util.NewTimer(room.StartGame, room.RestartTime())
+	utils.StopTimer(room.autoTimer)
+	room.autoTimer = utils.NewTimer(room.StartGame, room.RestartTime())
 	room.deadline = time.Now().Add(room.RestartTime())
 
 	sec := room.Countdown()
-	if typ == cardutil.ThreeDiceXiao {
+	if typ == cardutils.ThreeDiceXiao {
 		winAreaId = 0
-	} else if typ == cardutil.ThreeDiceDa {
+	} else if typ == cardutils.ThreeDiceDa {
 		winAreaId = 1
 	}
 	// 大赢家
@@ -262,13 +262,13 @@ func (room *ThreeDiceRoom) StartGame() {
 	if d, ok := config.Duration("threedice", "RobDealerTime", "Value"); ok {
 		t = d
 	}
-	room.Status = service.RoomStatusRobDealer
+	room.Status = roomutils.RoomStatusRobDealer
 	room.deadline = time.Now().Add(t)
 
 	min, max := room.dealerRequiredGold()
 	room.dealerGold = rand.Int63n(max-min) + min
 	room.Broadcast("StartRobDealer", map[string]any{"Sec": room.Countdown(), "MinGold": min, "MaxGold": max})
-	util.NewTimer(room.chooseDealer, t)
+	utils.NewTimer(room.chooseDealer, t)
 }
 
 func (room *ThreeDiceRoom) chooseDealer() {
@@ -318,7 +318,7 @@ func (room *ThreeDiceRoom) chooseDealer() {
 	})
 
 	room.Status = roomutils.RoomStatusPlaying
-	room.autoTimer = util.NewTimer(room.Award, t)
+	room.autoTimer = utils.NewTimer(room.Award, t)
 }
 
 func (room *ThreeDiceRoom) GetPlayer(seatId int) *ThreeDicePlayer {

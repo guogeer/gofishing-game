@@ -3,10 +3,10 @@ package threedice
 import (
 	"container/list"
 	"gofishing-game/service"
-	"third/cardutil"
+	"gofishing-game/service/roomutils"
 	"time"
 
-	"github.com/guogeer/quasar/utils"
+	"github.com/guogeer/quasar/util"
 )
 
 func init() {
@@ -15,13 +15,13 @@ func init() {
 
 type ThreeDiceWorld struct{}
 
-func (w *ThreeDiceWorld) NewRoom(id, subId int) *service.Room {
+func (w *ThreeDiceWorld) NewRoom(subId int) *roomutils.Room {
 	room := &ThreeDiceRoom{
-		helper:        cardutil.NewThreeDiceHelper(),
+		helper:        cardutils.NewThreeDiceHelper(),
 		robDealerList: list.New(),
 	}
-	room.Room = service.NewRoom(id, subId, room)
-	room.SetRestartTime(18 * time.Second)
+	room.Room = roomutils.NewRoom(subId, room)
+	room.SetFreeDuration(18 * time.Second)
 
 	room.syncTimer = util.NewPeriodTimer(room.Sync, "2017-11-28", 2*time.Second)
 	// room.StartGame()

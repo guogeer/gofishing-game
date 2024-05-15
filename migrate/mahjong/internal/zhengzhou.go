@@ -166,8 +166,8 @@ func (mj *ZhengzhouMahjong) Award() {
 						}
 					}
 				case mjutils.MeldBentKong, mjutils.MeldStraightKong:
-					other := room.GetPlayer(meld.SeatId)
-					bill := &bills[meld.SeatId]
+					other := room.GetPlayer(meld.SeatIndex)
+					bill := &bills[meld.SeatIndex]
 					detail.Times = 1
 					if room.CanPlay(OptGangPao) {
 						otherObj := other.localObj.(*ZhengzhouObj)
@@ -302,7 +302,7 @@ func (w *ZhengzhouWorld) GetName() string {
 	return "zhengzhoumj"
 }
 
-func (w *ZhengzhouWorld) NewRoom(id, subId int) *roomutils.Room {
+func (w *ZhengzhouWorld) NewRoom(subId int) *roomutils.Room {
 	r := NewMahjongRoom(id, subId)
 	r.SetPlay(OptBoom)
 	r.SetPlay(OptDaiPao)

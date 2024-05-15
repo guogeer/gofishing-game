@@ -39,7 +39,7 @@ type LotteryRecord struct {
 
 type LotteryUser struct {
 	*service.SimpleUserInfo
-	areas [cardutil.TexasTypeAll]int64
+	areas [cardutils.TexasTypeAll]int64
 
 	pos         int
 	WinGold     int64
@@ -72,13 +72,13 @@ func (h *LotteryUserHeap) Pop() interface{} {
 }
 
 type LotterySystem struct {
-	autoTimer *util.Timer
+	autoTimer *utils.Timer
 	deadline  time.Time
 
 	history *list.List
-	areas   [cardutil.TexasTypeAll]int64
-	helper  *cardutil.TexasHelper
-	cardSet *cardutil.CardSet
+	areas   [cardutils.TexasTypeAll]int64
+	helper  *cardutils.TexasHelper
+	cardSet *cardutils.CardSet
 	users   map[int]*LotteryUser
 
 	todayRank, yesterdayRank []LotteryUser
@@ -96,8 +96,8 @@ var defaultLotterySystem = NewLotterySystem()
 func NewLotterySystem() *LotterySystem {
 	sys := &LotterySystem{
 		history:       list.New(),
-		helper:        cardutil.NewTexasHelper(),
-		cardSet:       cardutil.NewCardSet(),
+		helper:        cardutils.NewTexasHelper(),
+		cardSet:       cardutils.NewCardSet(),
 		users:         make(map[int]*LotteryUser),
 		usersInRank:   make(map[int]*LotteryUser),
 		todayRank:     make([]LotteryUser, 0, LotteryRankSize),
@@ -162,7 +162,7 @@ func (sys *LotterySystem) StartBetting() {
 	sys.Status = LotteryStatusBet
 
 	sys.deadline = time.Now().Add(maxBetTime)
-	sys.autoTimer = util.NewTimer(sys.Award, maxBetTime)
+	sys.autoTimer = utils.NewTimer(sys.Award, maxBetTime)
 
 	now := time.Now()
 	date := now.Year()*1000000 + int(now.Month())*100 + now.Day()
@@ -184,10 +184,10 @@ func (sys *LotterySystem) StartBetting() {
 func (sys *LotterySystem) Award() {
 	sys.Status = LotteryStatusFree
 	sys.deadline = time.Now().Add(maxBetTime)
-	sys.autoTimer = util.NewTimer(sys.StartBetting, maxFreeTime)
+	sys.autoTimer = utils.NewTimer(sys.StartBetting, maxFreeTime)
 
 	var totalGold, userWinGold, sharePrizePool int64
-	var allCardType [cardutil.TexasTypeAll]int
+	var allCardType [cardutils.TexasTypeAll]int
 	for i := 0; i < config.Row("texas_lottery"); i++ {
 		rowId := config.RowId(i)
 		cardType, _ := config.Int("texas_lottery", rowId, "ID")
@@ -205,7 +205,7 @@ func (sys *LotterySystem) Award() {
 	for _, gold := range sys.areas {
 		totalGold += gold
 	}
-	if winAreaId == cardutil.TexasStraightFlush || winAreaId == cardutil.TexasRoyalFlush {
+	if winAreaId == cardutils.TexasStraightFlush || winAreaId == cardutils.TexasRoyalFlush {
 		if sys.areas[winAreaId] > 0 {
 			sharePrizePool = int64(float64(sys.prizePool) * sharePrizePoolPercent / 100)
 			sys.prizePool -= sharePrizePool
@@ -214,9 +214,9 @@ func (sys *LotterySystem) Award() {
 
 	guid := util.GUID()
 	winTimes, _ := config.Float("texas_lottery", winAreaId, "Times")
-	totalFlushGold := sys.areas[cardutil.TexasStraightFlush] + sys.areas[cardutil.TexasRoyalFlush]
+	totalFlushGold := sys.areas[cardutils.TexasStraightFlush] + sys.areas[cardutils.TexasRoyalFlush]
 	for _, user := range sys.users {
-		userFlushGold := user.areas[cardutil.TexasStraightFlush] + user.areas[cardutil.TexasRoyalFlush]
+		userFlushGold := user.areas[cardutils.TexasStraightFlush] + user.areas[cardutils.TexasRoyalFlush]
 		if gold := user.areas[winAreaId]; gold > 0 {
 			winGold := int64(float64(gold) * winTimes)
 			if totalFlushGold > 0 {

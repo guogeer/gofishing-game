@@ -4,6 +4,7 @@ package sangong
 
 import (
 	"gofishing-game/internal/errcode"
+	"gofishing-game/internal/gameutils"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 
@@ -41,6 +42,19 @@ func (ply *SangongPlayer) IsDone() bool {
 	return ply.isDone
 }
 
+func (ply *SangongPlayer) TryEnter() errcode.Error {
+	return nil
+}
+
+func (ply *SangongPlayer) BeforeEnter() {
+}
+
+func (ply *SangongPlayer) AfterEnter() {
+}
+
+func (ply *SangongPlayer) BeforeLeave() {
+}
+
 func (ply *SangongPlayer) TryLeave() errcode.Error {
 	room := ply.Room()
 	if room.Status != 0 {
@@ -70,7 +84,7 @@ func (ply *SangongPlayer) Finish() {
 
 	room := ply.Room()
 	log.Debug("finish", ply.cards, room.Status)
-	if room.Status != service.RoomStatusLook {
+	if room.Status != RoomStatusLook {
 		return
 	}
 
@@ -100,7 +114,7 @@ func (ply *SangongPlayer) Bet(chip int) {
 	if ply.chip != -1 {
 		return
 	}
-	if room.Status != service.RoomStatusBet {
+	if room.Status != RoomStatusBet {
 		return
 	}
 
@@ -130,7 +144,7 @@ func (ply *SangongPlayer) ChooseDealer(b bool) {
 	if b {
 		ply.robOrNot = 1
 	}
-	room.Broadcast("ChooseDealer", map[string]any{"Code": Ok, "UId": ply.Id, "Ans": b})
+	room.Broadcast("ChooseDealer", gameutils.MergeError(nil, map[string]any{"uid": ply.Id, "Ans": b}))
 	room.OnChooseDealer()
 }
 
@@ -144,7 +158,7 @@ func (ply *SangongPlayer) GetUserInfo(self bool) *SangongPlayerInfo {
 	info.Chip = ply.chip
 
 	room := ply.Room()
-	if room.Status == service.RoomStatusLook && roomutils.GetRoomObj(ply.Player).IsReady() {
+	if room.Status == RoomStatusLook && roomutils.GetRoomObj(ply.Player).IsReady() {
 		info.IsDone = ply.IsDone()
 		info.Cards = make([]int, len(ply.cards))
 		copy(info.Cards, ply.cards)
@@ -156,17 +170,6 @@ func (ply *SangongPlayer) GetUserInfo(self bool) *SangongPlayerInfo {
 		}
 	}
 	return info
-}
-
-// 坐下
-func (ply *SangongPlayer) SitDown(seatId int) {
-	room := ply.Room()
-	if code := roomutils.GetRoomObj(ply.Player).SitDown(seatId); code != Ok {
-		return
-	}
-	// OK
-	info := ply.GetUserInfo(false)
-	room.Broadcast("SitDown", map[string]any{"Code": Ok, "Info": info})
 }
 
 func (ply *SangongPlayer) Room() *SangongRoom {
@@ -187,19 +190,10 @@ func (ply *SangongPlayer) Replay(messageId string, i interface{}) {
 func (ply *SangongPlayer) Step() int {
 	room := ply.Room()
 
-	unit := 1
-	if room.CanPlay(OptChouma2) {
-		unit = 2
-	} else if room.CanPlay(OptChouma3) {
-		unit = 3
-	} else if room.CanPlay(OptChouma5) {
-		unit = 5
-	} else if room.CanPlay(OptChouma8) {
-		unit = 8
-	} else if room.CanPlay(OptChouma10) {
-		unit = 10
-	} else if room.CanPlay(OptChouma20) {
-		unit = 20
-	}
+	unit := room.GetPlayValue(OptChouma)
 	return unit
+}
+
+func (ply *SangongPlayer) GetSeatIndex() int {
+	return roomutils.GetRoomObj(ply.Player).GetSeatIndex()
 }

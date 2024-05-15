@@ -4,13 +4,13 @@ import (
 	"container/list"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
-	"third/cardutil"
 	"time"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
 	"github.com/guogeer/quasar/randutil"
 	"github.com/guogeer/quasar/util"
+	"github.com/guogeer/quasar/utils"
 )
 
 const (
@@ -39,11 +39,11 @@ type AwardRecord struct {
 }
 
 type lotteryRoom struct {
-	*service.Room
+	*roomutils.Room
 
 	deadline          time.Time
-	helper            *cardutil.ZhajinhuaHelper
-	areas, robotAreas [cardutil.ZhajinhuaTypeAll]int64
+	helper            *cardutils.ZhajinhuaHelper
+	areas, robotAreas [cardutils.ZhajinhuaTypeAll]int64
 	history           []int
 	awards            list.List
 	isFishing         bool // 代号时时乐捕鱼
@@ -81,7 +81,7 @@ func (room *lotteryRoom) OnEnter(player *service.Player) {
 		}
 	}
 	data["SeatPlayers"] = seats
-	if comer.SeatId == roomutils.NoSeat {
+	if comer.SeatIndex == roomutils.NoSeat {
 		data["PersonInfo"] = comer.GetUserInfo(comer.Id)
 	}
 	comer.WriteJSON("GetRoomInfo", data)
@@ -206,10 +206,10 @@ func (room *lotteryRoom) Award() {
 
 	restartTime := room.RestartTime()
 	room.deadline = time.Now().Add(restartTime)
-	util.NewTimer(room.StartGame, restartTime)
+	utils.NewTimer(room.StartGame, restartTime)
 
 	result := make([]int, 0, 8)
-	for i := 0; i < cardutil.ZhajinhuaTypeAll; i++ {
+	for i := 0; i < cardutils.ZhajinhuaTypeAll; i++ {
 		result = append(result, i)
 	}
 	result[1], result[typ] = result[typ], result[1]
@@ -297,7 +297,7 @@ func (room *lotteryRoom) StartGame() {
 	room.Broadcast("StartGame", map[string]any{
 		"Sec": room.Countdown(),
 	})
-	util.NewTimer(room.Award, d)
+	utils.NewTimer(room.Award, d)
 }
 
 func (room *lotteryRoom) GetPlayer(seatId int) *lotteryPlayer {

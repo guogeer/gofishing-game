@@ -432,7 +432,7 @@ func NewGuangdongWorld() *GuangdongWorld {
 	return &GuangdongWorld{}
 }
 
-func (w *GuangdongWorld) NewRoom(id, subId int) *roomutils.Room {
+func (w *GuangdongWorld) NewRoom(subId int) *roomutils.Room {
 	r := NewMahjongRoom(id, subId)
 	r.SetNoPlay(OptAbleRobKong)
 	r.SetNoPlay(OptSevenPairs)

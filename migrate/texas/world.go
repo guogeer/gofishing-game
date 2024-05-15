@@ -2,7 +2,7 @@ package texas
 
 import (
 	"gofishing-game/service"
-	"third/cardutil"
+	"gofishing-game/service/roomutils"
 	"time"
 )
 
@@ -19,11 +19,11 @@ func init() {
 		}
 	}
 
-	cardutil.GetCardSystem().Init(cards)
+	cardutils.GetCardSystem().Init(cards)
 }
 
-func (w *TexasWorld) NewRoom(id, subId int) *service.Room {
-	helper := cardutil.NewTexasHelper()
+func (w *TexasWorld) NewRoom(subId int) *roomutils.Room {
+	helper := cardutils.NewTexasHelper()
 	room := &TexasRoom{
 		helper: helper,
 		cards:  make([]int, 0, helper.Size()),
@@ -33,12 +33,12 @@ func (w *TexasWorld) NewRoom(id, subId int) *service.Room {
 		smallBlindSeat: -1,
 		bigBlindSeat:   -1,
 	}
-	room.Room = service.NewRoom(id, subId, room)
+	room.Room = roomutils.NewRoom(subId, room)
 	room.AutoStart()
-	room.SetRestartTime(18 * time.Second)
+	room.SetFreeDuration(18 * time.Second)
 
-	room.SetPlay(service.OptAutoPlay)                    // 自动代打
-	room.SetNoPlay(service.OptForbidEnterAfterGameStart) // 游戏开始后禁止进入游戏
+	room.SetPlay(roomutils.OptAutoPlay)                    // 自动代打
+	room.SetNoPlay(roomutils.OptForbidEnterAfterGameStart) // 游戏开始后禁止进入游戏
 	return room.Room
 }
 

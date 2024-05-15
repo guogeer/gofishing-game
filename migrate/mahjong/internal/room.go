@@ -96,7 +96,7 @@ type MahjongRoom struct {
 	isBatch       bool             // 批量通知金币变化
 }
 
-func NewMahjongRoom(id, subId int) *MahjongRoom {
+func NewMahjongRoom(subId int) *MahjongRoom {
 	mahjongRoom := &MahjongRoom{
 		expectWinPlayers: map[int]*MahjongPlayer{},
 	}
@@ -392,7 +392,7 @@ func (room *MahjongRoom) OnChooseColor() {
 }
 
 func (room *MahjongRoom) OnLeave(player *service.Player) {
-	// seatId := roomutils.GetRoomObj(ply.Player).SeatId
+	// seatId := roomutils.GetRoomObj(ply.Player).SeatIndex
 	// room.Room.OnLeave(player)
 
 	p := player.GameAction.(*MahjongPlayer)
@@ -536,7 +536,7 @@ func (room *MahjongRoom) Billing(bills []Bill) {
 
 		for k := 0; k < len(bill.Details); k++ {
 			detail := &bill.Details[k]
-			// detail.Seats = 1 << uint(detail.SeatId)
+			// detail.Seats = 1 << uint(detail.SeatIndex)
 			detail.Chip = int64(float64(detail.Chip*realChip) / float64(failChip))
 		}
 		// 浮点问题，金币不够摊分金币向下取整时，玩家应该破产但仍可能剩1~2个金币，就干脆送给第一个人吧
@@ -545,7 +545,7 @@ func (room *MahjongRoom) Billing(bills []Bill) {
 		for _, detail := range bill.Details {
 			seatId := detail.GetSeatIndex()
 			detail.Chip = -detail.Chip
-			// detail.SeatId = p.GetSeatIndex()
+			// detail.SeatIndex = p.GetSeatIndex()
 			detail.Seats = 1 << uint(p.GetSeatIndex())
 			// bills[seatId].Chip += detail.Chip
 			if otherBill := &bills[seatId]; len(otherBill.Details) > 0 {
@@ -577,7 +577,7 @@ func (room *MahjongRoom) Award() {
 
 	/*guid := utils.GUID()
 	itemWay := service.ItemWay{
-		Way:    "user." + service.GetName() + "_play",
+		Way:    "user." + service.GetServerName() + "_play",
 		SubId:  room.SubId,
 		IsTemp: true,
 	}

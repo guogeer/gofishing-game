@@ -14,7 +14,7 @@ func init() {
 
 type DiceWorld struct{}
 
-func (w *DiceWorld) NewRoom(id, subId int) *roomutils.Room {
+func (w *DiceWorld) NewRoom(subId int) *roomutils.Room {
 	r := &DiceRoom{}
 	r.Room = roomutils.NewRoom(subId, r)
 
