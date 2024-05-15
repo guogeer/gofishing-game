@@ -4,7 +4,6 @@ import (
 	"gofishing-game/service"
 
 	"github.com/guogeer/quasar/cmd"
-	"github.com/guogeer/quasar/log"
 	"github.com/guogeer/quasar/utils"
 )
 
@@ -35,7 +34,7 @@ func ChooseTriCards(ctx *cmd.Context, iArgs interface{}) {
 	args := iArgs.(*niuniuArgs)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
-		log.Debug("player is nil")
+
 		return
 	}
 	ply.ChooseTriCards(args.TriCards)
@@ -45,7 +44,7 @@ func Bet(ctx *cmd.Context, iArgs interface{}) {
 	args := iArgs.(*niuniuArgs)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
-		log.Debug("player is nil")
+
 		return
 	}
 	ply.Bet(args.Times)
@@ -55,7 +54,7 @@ func ChooseDealer(ctx *cmd.Context, iArgs interface{}) {
 	args := iArgs.(*niuniuArgs)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
-		log.Debug("player is nil")
+
 		return
 	}
 	ply.ChooseDealer(args.Ans)
@@ -65,7 +64,7 @@ func DoubleAndRob(ctx *cmd.Context, iArgs interface{}) {
 	args := iArgs.(*niuniuArgs)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
-		log.Debug("player is nil")
+
 		return
 	}
 	ply.DoubleAndRob(args.Times)
@@ -75,7 +74,7 @@ func SitDown(ctx *cmd.Context, iArgs interface{}) {
 	// args := iArgs.(*Args)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
-		log.Debug("player is nil")
+
 		return
 	}
 	room := ply.Room()
@@ -87,7 +86,7 @@ func EndGame(ctx *cmd.Context, iArgs interface{}) {
 	// args := iArgs.(*Args)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
-		log.Debug("player is nil")
+
 		return
 	}
 	ply.EndGame()
@@ -97,7 +96,7 @@ func SetAutoPlay(ctx *cmd.Context, iArgs interface{}) {
 	args := iArgs.(*niuniuArgs)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
-		log.Debug("player is nil")
+
 		return
 	}
 	chips := ply.Chips()

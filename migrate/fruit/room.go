@@ -15,9 +15,9 @@ import (
 )
 
 const (
-	RoomStatusFree    = iota + service.RoomStatusFree // 等待玩家准备
-	RoomStatusPlaying                                 // 游戏中
-	RoomStatusAward                                   // 结算
+	RoomStatusFree    = iota + 0 // 等待玩家准备
+	RoomStatusPlaying            // 游戏中
+	RoomStatusAward              // 结算
 )
 
 const (

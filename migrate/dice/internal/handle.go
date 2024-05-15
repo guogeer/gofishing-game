@@ -4,7 +4,6 @@ import (
 	"gofishing-game/service"
 
 	"github.com/guogeer/quasar/cmd"
-	"github.com/guogeer/quasar/log"
 )
 
 func init() {
@@ -29,7 +28,7 @@ func Bet(ctx *cmd.Context, iArgs interface{}) {
 	args := iArgs.(*diceArgs)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
-		log.Debug("player is nil")
+
 		return
 	}
 	e := ply.Bet(args.Area, args.Gold)

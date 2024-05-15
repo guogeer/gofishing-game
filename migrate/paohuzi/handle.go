@@ -4,7 +4,6 @@ import (
 	"gofishing-game/service"
 
 	"github.com/guogeer/quasar/cmd"
-	"github.com/guogeer/quasar/log"
 )
 
 type Args struct {
@@ -29,7 +28,7 @@ func Discard(ctx *cmd.Context, iArgs interface{}) {
 	args := iArgs.(*Args)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
-		log.Debug("player is nil")
+
 		return
 	}
 	ply.Discard(args.Card)
@@ -39,7 +38,7 @@ func Pass(ctx *cmd.Context, iArgs interface{}) {
 	// args := iArgs.(*Args)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
-		log.Debug("player is nil")
+
 		return
 	}
 	ply.Pass()
@@ -49,7 +48,7 @@ func Pong(ctx *cmd.Context, iArgs interface{}) {
 	// args := iArgs.(*Args)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
-		log.Debug("player is nil")
+
 		return
 	}
 	ply.Pong()
@@ -59,7 +58,7 @@ func Win(ctx *cmd.Context, iArgs interface{}) {
 	// args := iArgs.(*Args)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
-		log.Debug("player is nil")
+
 		return
 	}
 	ply.Win()

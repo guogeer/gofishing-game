@@ -41,10 +41,10 @@ type ShengsiduPlayer struct {
 
 func (ply *ShengsiduPlayer) TryLeave() errcode.Error {
 	room := ply.Room()
-	if room.Status != service.RoomStatusFree {
-		return Retry
+	if room.Status != 0 {
+		return errcode.Retry
 	}
-	return Ok
+	return nil
 }
 
 func (ply *ShengsiduPlayer) BeforeLeave() {

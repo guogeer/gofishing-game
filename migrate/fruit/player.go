@@ -53,7 +53,7 @@ func (ply *FruitPlayer) TryLeave() errcode.Error {
 	if ply.fruitObj.AllBet > 0 {
 		return AlreadyBet
 	}
-	return Ok
+	return nil
 }
 
 func (ply *FruitPlayer) BeforeLeave() {

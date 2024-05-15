@@ -4,7 +4,6 @@ import (
 	"gofishing-game/service"
 
 	"github.com/guogeer/quasar/cmd"
-	"github.com/guogeer/quasar/log"
 )
 
 func init() {
@@ -31,7 +30,7 @@ func Bet(ctx *cmd.Context, iArgs interface{}) {
 	args := iArgs.(*Args)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
-		log.Debug("player is nil")
+
 		return
 	}
 	ply.Bet(args.AreaId, args.Gold)
@@ -41,7 +40,7 @@ func RobDealer(ctx *cmd.Context, iArgs interface{}) {
 	args := iArgs.(*Args)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
-		log.Debug("player is nil")
+
 		return
 	}
 	ply.RobDealer(args.Gold)
@@ -51,7 +50,7 @@ func GetHistory(ctx *cmd.Context, iArgs interface{}) {
 	// args := iArgs.(*Args)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
-		log.Debug("player is nil")
+
 		return
 	}
 	room := ply.Room()
@@ -62,7 +61,7 @@ func SitDown(ctx *cmd.Context, iArgs interface{}) {
 	args := iArgs.(*Args)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
-		log.Debug("player is nil")
+
 		return
 	}
 	ply.SitDown(args.SeatId)

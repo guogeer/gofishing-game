@@ -42,7 +42,7 @@ func (ply *lotteryPlayer) TryLeave() errcode.Error {
 			return AlreadyBet
 		}
 	}
-	return Ok
+	return nil
 }
 
 func (ply *lotteryPlayer) BeforeLeave() {

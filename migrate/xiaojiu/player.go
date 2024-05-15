@@ -5,6 +5,7 @@ package xiaojiu
 
 import (
 	"gofishing-game/internal/errcode"
+	"gofishing-game/internal/gameutils"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 
@@ -34,18 +35,18 @@ func (ply *XiaojiuPlayer) AfterEnter() {
 func (ply *XiaojiuPlayer) TryEnter() errcode.Error {
 	room := ply.Room()
 	if room.Status != 0 || room.ExistTimes != 0 {
-		return PlayingInGame
+		return roomutils.ErrPlaying
 	}
-	return Ok
+	return nil
 }
 
 func (ply *XiaojiuPlayer) TryLeave() errcode.Error {
 	room := ply.Room()
-	if room.IsUserCreate() && room.Status != service.RoomStatusFree {
-		return Retry
+	if room.IsTypeScore() && room.Status != 0 {
+		return errcode.Retry
 	}
 
-	return Ok
+	return nil
 }
 
 func (ply *XiaojiuPlayer) BeforeLeave() {
@@ -89,7 +90,7 @@ func (ply *XiaojiuPlayer) Bet(area int, gold int64) {
 	ply.AddGold(-gold, "xiaojiu_bet", service.WithNoItemLog())
 
 	room.areas[area] += gold
-	room.Broadcast("Bet", map[string]any{"Code": Ok, "UId": ply.Id, "AreaId": area, "Gold": gold})
+	room.Broadcast("Bet", gameutils.MergeError(nil, map[string]any{"UId": ply.Id, "AreaId": area, "Gold": gold}))
 }
 
 func (ply *XiaojiuPlayer) GetUserInfo(self bool) *XiaojiuUserInfo {
@@ -105,4 +106,8 @@ func (ply *XiaojiuPlayer) Room() *XiaojiuRoom {
 		return room.(*XiaojiuRoom)
 	}
 	return nil
+}
+
+func (ply *XiaojiuPlayer) GetSeatIndex() int {
+	return roomutils.GetRoomObj(ply.Player).GetSeatIndex()
 }

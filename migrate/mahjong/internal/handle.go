@@ -165,7 +165,7 @@ func Close(ctx *cmd.Context, iArgs any) {
 	// req := iArgs.(*Args)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
-		log.Debug("player is nil")
+
 		return
 	}
 

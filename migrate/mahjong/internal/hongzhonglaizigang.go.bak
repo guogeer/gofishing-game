@@ -49,7 +49,7 @@ func (mj *HongzhonglaizigangMahjong) OnEnter(comer *MahjongPlayer) {
 	if room.Status == service.RoomStatusChoosePiao {
 		data["Piao"] = hongzhonglaizigangPiaoOptions
 	}
-	if room.CanPlay(OptZiYouXuanPiao) && room.Status != service.RoomStatusFree {
+	if room.CanPlay(OptZiYouXuanPiao) && room.Status != 0 {
 		all := make([]int, room.NumSeat())
 		for i := 0; i < room.NumSeat(); i++ {
 			if p := room.GetPlayer(i); p != nil {

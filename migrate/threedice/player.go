@@ -55,21 +55,21 @@ func (ply *ThreeDicePlayer) TryEnter() errcode.Error {
 	if room := ply.Room(); room != nil && ply.IsRobot() {
 		n := int(maxOnline) - len(room.AllPlayers)
 		if (n <= 0 || rand.Intn(n) == 0) && int(minOnline) < len(room.AllPlayers) {
-			return Retry
+			return errcode.Retry
 		}
 	}
-	return Ok
+	return nil
 }
 
 func (ply *ThreeDicePlayer) TryLeave() errcode.Error {
 	room := ply.Room()
 	if ply.areaId != -1 {
-		return Retry
+		return errcode.Retry
 	}
 	if ply == room.dealer {
-		return Retry
+		return errcode.Retry
 	}
-	return Ok
+	return nil
 }
 
 func (ply *ThreeDicePlayer) BeforeLeave() {

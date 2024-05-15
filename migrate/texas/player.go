@@ -99,10 +99,10 @@ func (ply *TexasPlayer) AfterEnter() {
 
 func (ply *TexasPlayer) TryLeave() errcode.Error {
 	room := ply.Room()
-	if room.IsUserCreate() && room.Status != service.RoomStatusFree {
-		return Retry
+	if room.IsTypeScore() && room.Status != 0 {
+		return errcode.Retry
 	}
-	return Ok
+	return nil
 }
 
 func (ply *TexasPlayer) BeforeLeave() {
@@ -144,7 +144,7 @@ func (ply *TexasPlayer) TakeAction(gold int64) {
 	room := ply.Room()
 	maxAllIn := ply.maxAllIn()
 	log.Debugf("player %d bank %d bet %d maxAllIn %d", ply.Id, ply.bankroll, gold, maxAllIn)
-	if room.Status == service.RoomStatusFree {
+	if room.Status == 0 {
 		return
 	}
 	if room.activePlayer != ply {
@@ -435,7 +435,7 @@ func (ply *TexasPlayer) SetAutoPlay(auto int) {
 
 func (ply *TexasPlayer) ShowCard(isShow bool) {
 	room := ply.Room()
-	if room.Status == service.RoomStatusFree {
+	if room.Status == 0 {
 		return
 	}
 	if ply.isShow == isShow {

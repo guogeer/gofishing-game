@@ -31,10 +31,10 @@ type ShisanshuiPlayer struct {
 
 func (ply *ShisanshuiPlayer) TryLeave() errcode.Error {
 	room := ply.Room()
-	if room.Status != service.RoomStatusFree && roomutils.GetRoomObj(ply.Player).IsReady() {
-		return Retry
+	if room.Status != 0 && roomutils.GetRoomObj(ply.Player).IsReady() {
+		return errcode.Retry
 	}
-	return Ok
+	return nil
 }
 
 func (ply *ShisanshuiPlayer) initGame() {

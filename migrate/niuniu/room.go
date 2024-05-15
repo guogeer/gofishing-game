@@ -296,7 +296,7 @@ func (room *NiuNiuRoom) Award() {
 }
 
 func (room *NiuNiuRoom) GameOver() {
-	// room.Status = service.RoomStatusFree
+	// room.Status = 0
 
 	// 积分场最后一局
 	details := make([]UserDetail, 0, 8)

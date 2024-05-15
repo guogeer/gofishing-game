@@ -5,7 +5,6 @@ import (
 
 	"github.com/guogeer/quasar/cmd"
 	"github.com/guogeer/quasar/config"
-	"github.com/guogeer/quasar/log"
 )
 
 type Args struct {
@@ -52,7 +51,7 @@ func TakeAction(ctx *cmd.Context, iArgs interface{}) {
 	args := iArgs.(*Args)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
-		log.Debug("player is nil")
+
 		return
 	}
 	ply.TakeAction(args.Gold)
@@ -62,7 +61,7 @@ func SitDown(ctx *cmd.Context, iArgs interface{}) {
 	args := iArgs.(*Args)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
-		log.Debug("player is nil")
+
 		return
 	}
 	ply.SitDown(args.SeatId)
@@ -72,7 +71,7 @@ func ChooseBankroll(ctx *cmd.Context, iArgs interface{}) {
 	args := iArgs.(*Args)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
-		log.Debug("player is nil")
+
 		return
 	}
 	ply.ChooseBankroll(args.Gold)
@@ -82,7 +81,7 @@ func SitUp(ctx *cmd.Context, iArgs interface{}) {
 	// args := iArgs.(*Args)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
-		log.Debug("player is nil")
+
 		return
 	}
 	ply.SitUp()
@@ -92,7 +91,7 @@ func SetAutoPlay(ctx *cmd.Context, iArgs interface{}) {
 	args := iArgs.(*Args)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
-		log.Debug("player is nil")
+
 		return
 	}
 	ply.SetAutoPlay(args.Auto)
@@ -102,7 +101,7 @@ func ShowCard(ctx *cmd.Context, iArgs interface{}) {
 	args := iArgs.(*Args)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
-		log.Debug("player is nil")
+
 		return
 	}
 	ply.ShowCard(args.IsShow)
@@ -112,7 +111,7 @@ func Rebuy(ctx *cmd.Context, iArgs interface{}) {
 	// args := iArgs.(*Args)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
-		log.Debug("player is nil")
+
 		return
 	}
 	ply.Rebuy()
@@ -122,7 +121,7 @@ func Addon(ctx *cmd.Context, iArgs interface{}) {
 	// args := iArgs.(*Args)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
-		log.Debug("player is nil")
+
 		return
 	}
 	ply.Addon()

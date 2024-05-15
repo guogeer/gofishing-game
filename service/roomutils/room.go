@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
 
 	"github.com/guogeer/quasar/cmd"
@@ -16,6 +17,8 @@ import (
 )
 
 var gSubGames map[int]*subGame // 所有的场次
+
+var ErrPlaying = errcode.New("playing", "wait game ending")
 
 const NoSeat = -1
 

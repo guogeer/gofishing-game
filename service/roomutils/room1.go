@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"gofishing-game/internal/cardutils"
-	"gofishing-game/internal/errcode"
 	"gofishing-game/internal/gameutils"
 	"gofishing-game/service"
 
@@ -117,19 +116,14 @@ func (room *Room) CustomRoom() CustomRoom {
 }
 
 func (room *Room) Broadcast(name string, data any, blacklist ...int) {
-	room.BroadcastErr(nil, name, data)
-}
-
-func (room *Room) BroadcastErr(err errcode.Error, name string, data any, blacklist ...int) {
 	set := make(map[int]bool)
 	for _, uid := range blacklist {
 		set[uid] = true
 	}
 
-	result := gameutils.MergeObject(err, data)
 	for _, player := range room.allPlayers {
 		if _, ok := set[player.Id]; !ok {
-			player.WriteJSON(name, result)
+			player.WriteJSON(name, data)
 		}
 	}
 }

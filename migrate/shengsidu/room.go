@@ -96,7 +96,7 @@ func (room *ShengsiduRoom) OnEnter(player *service.Player) {
 	// 玩家可能没座位
 	comer.WriteJSON("GetRoomInfo", data)
 
-	if room.Status != service.RoomStatusFree {
+	if room.Status != 0 {
 		room.OnTurn()
 	}
 }
@@ -104,7 +104,7 @@ func (room *ShengsiduRoom) OnEnter(player *service.Player) {
 func (room *ShengsiduRoom) Leave(player *service.Player) errcode.Error {
 	ply := player.GameAction.(*ShengsiduPlayer)
 	log.Debugf("player %d leave room %d", ply.Id, room.Id)
-	return Ok
+	return nil
 }
 
 func (room *ShengsiduRoom) OnLeave(player *service.Player) {
@@ -264,7 +264,7 @@ func (room *ShengsiduRoom) Award() {
 		}
 	}
 
-	// room.Status = service.RoomStatusFree
+	// room.Status = 0
 	room.autoTime = time.Now().Add(120 * time.Second)
 	sec := room.GetShowTime(room.autoTime)
 	room.Broadcast("Award", map[string]any{"Details": bills, "Times": sec, "Sec": sec})

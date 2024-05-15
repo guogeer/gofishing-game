@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/util"
+	"github.com/guogeer/quasar/utils"
 )
 
 const (
@@ -43,7 +43,7 @@ type XiaojiuRoom struct {
 	areas                 [3]int64
 	cards                 [4][2]int
 
-	autoTimer *util.Timer
+	autoTimer *utils.Timer
 }
 
 func (room *XiaojiuRoom) OnEnter(player *service.Player) {
@@ -229,9 +229,9 @@ func (room *XiaojiuRoom) GameOver() {
 
 	room.Room.GameOver()
 
-	util.StopTimer(room.autoTimer)
+	utils.StopTimer(room.autoTimer)
 	if room.ExistTimes < room.LimitTimes {
-		room.autoTimer = util.NewTimer(room.StartGame, room.FreeDuration())
+		room.autoTimer = utils.NewTimer(room.StartGame, room.FreeDuration())
 	}
 	for i := range room.cards {
 		for k := range room.cards[i] {
@@ -260,8 +260,8 @@ func (room *XiaojiuRoom) StartGame() {
 		}
 	}
 
-	util.StopTimer(room.autoTimer)
-	room.autoTimer = util.NewTimer(room.Award, t)
+	utils.StopTimer(room.autoTimer)
+	room.autoTimer = utils.NewTimer(room.Award, t)
 	room.Broadcast("StartBetting", map[string]any{"Sec": room.Countdown(), "Cards": room.cards})
 }
 

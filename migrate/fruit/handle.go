@@ -5,7 +5,6 @@ import (
 	"gofishing-game/service/roomutils"
 
 	"github.com/guogeer/quasar/cmd"
-	"github.com/guogeer/quasar/log"
 )
 
 func init() {
@@ -43,7 +42,7 @@ func Bet(ctx *cmd.Context, iArgs interface{}) {
 	args := iArgs.(*Args)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
-		log.Debug("player is nil")
+
 		return
 	}
 	ply.fruitObj.Bet(args.Area, args.Gold)
@@ -53,7 +52,7 @@ func GetHistory(ctx *cmd.Context, iArgs interface{}) {
 	args := iArgs.(*Args)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
-		log.Debug("player is nil")
+
 		return
 	}
 	n := args.PageNum

@@ -279,7 +279,7 @@ func (ply *entertainmentPlayer) CancelDealer() {
 
 	// 已当庄，游戏中不可下庄
 	room.delayCancelDealer = false
-	if room.dealer == ply && room.Status != service.RoomStatusFree {
+	if room.dealer == ply && room.Status != 0 {
 		// 结算后自动下庄
 		code = DelayCancelDealer
 		room.delayCancelDealer = true

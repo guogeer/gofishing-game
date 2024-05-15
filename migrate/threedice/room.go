@@ -126,7 +126,7 @@ func (room *ThreeDiceRoom) OnEnter(player *service.Player) {
 func (room *ThreeDiceRoom) Leave(player *service.Player) errcode.Error {
 	ply := player.GameAction.(*ThreeDicePlayer)
 	log.Debugf("player %d leave room %d", ply.Id, room.Id)
-	return Ok
+	return nil
 }
 
 func (room *ThreeDiceRoom) OnLeave(player *service.Player) {

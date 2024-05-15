@@ -4,11 +4,10 @@ import (
 	"gofishing-game/service"
 
 	"github.com/guogeer/quasar/cmd"
-	"github.com/guogeer/quasar/log"
 )
 
 func init() {
-	cmd.Bind(Bet, (*Args)(nil))
+	cmd.BindFunc(Bet, (*Args)(nil))
 }
 
 type Args struct {
@@ -28,7 +27,7 @@ func Bet(ctx *cmd.Context, iArgs interface{}) {
 	args := iArgs.(*Args)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
-		log.Debug("player is nil")
+
 		return
 	}
 	ply.Bet(args.AreaId, args.Gold)

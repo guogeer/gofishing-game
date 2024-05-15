@@ -81,7 +81,7 @@ func (room *ShisanshuiRoom) OnEnter(player *service.Player) {
 func (room *ShisanshuiRoom) Leave(player *service.Player) errcode.Error {
 	p := player.GameAction.(*ShisanshuiPlayer)
 	log.Debugf("player %d leave room %d", p.Id, room.Id)
-	return Ok
+	return nil
 }
 
 func (room *ShisanshuiRoom) OnLeave(player *service.Player) {
@@ -172,7 +172,7 @@ func (room *ShisanshuiRoom) Award() {
 	// unit, _ := config.Int("Room", room.SubId, "Unit")
 	unit := room.Unit()
 
-	// room.Status = service.RoomStatusFree
+	// room.Status = 0
 	room.autoTime = time.Now().Add(room.RestartTime())
 	sec := room.GetShowTime(room.autoTime)
 

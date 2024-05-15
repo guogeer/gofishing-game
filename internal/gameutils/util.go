@@ -3,6 +3,7 @@ package gameutils
 import (
 	"bytes"
 	"encoding/json"
+	"gofishing-game/internal/errcode"
 	"maps"
 	"reflect"
 )
@@ -28,15 +29,24 @@ func InitNilFields(obj any) {
 	}
 }
 
-func MergeObject(objs ...any) map[string]json.RawMessage {
+func marshalJSONObjects(objs ...any) ([]byte, error) {
 	result := map[string]json.RawMessage{}
 	for _, obj := range objs {
 		buf, _ := json.Marshal(obj)
 
 		m := map[string]json.RawMessage{}
 		if bytes.HasPrefix(buf, []byte("{")) {
+			json.Unmarshal(buf, &m)
 			maps.Copy(m, result)
 		}
 	}
-	return result
+	return json.Marshal(result)
+}
+
+func MergeError(e errcode.Error, obj any) []byte {
+	if e == nil {
+		e = errcode.New(errcode.CodeOk, "")
+	}
+	buf, _ := marshalJSONObjects(e, obj)
+	return buf
 }

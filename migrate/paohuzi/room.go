@@ -83,7 +83,7 @@ func (room *PaohuziRoom) OnEnter(player *service.Player) {
 	// 玩家可能没座位
 	comer.WriteJSON("GetRoomInfo", data)
 
-	if room.Status != service.RoomStatusFree {
+	if room.Status != 0 {
 		room.Timing()
 		comer.Prompt()
 	}
@@ -92,7 +92,7 @@ func (room *PaohuziRoom) OnEnter(player *service.Player) {
 func (room *PaohuziRoom) Leave(player *service.Player) errcode.Error {
 	ply := player.GameAction.(*PaohuziPlayer)
 	log.Debugf("player %d leave room %d", ply.Id, room.Id)
-	return Ok
+	return nil
 }
 
 func (room *PaohuziRoom) OnLeave(player *service.Player) {

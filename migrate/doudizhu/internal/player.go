@@ -53,7 +53,7 @@ type DoudizhuPlayer struct {
 func (ply *DoudizhuPlayer) TryLeave() errcode.Error {
 	room := roomutils.GetRoomObj(ply.Player).Room()
 	if room.Status != 0 {
-		return Retry
+		return errcode.Retry
 	}
 	return nil
 }

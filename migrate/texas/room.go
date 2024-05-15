@@ -116,7 +116,7 @@ func (room *TexasRoom) OnEnter(player *service.Player) {
 func (room *TexasRoom) Leave(player *service.Player) errcode.Error {
 	ply := player.GameAction.(*TexasPlayer)
 	log.Debugf("player %d leave room %d", ply.Id, room.Id)
-	return Ok
+	return nil
 }
 
 func (room *TexasRoom) OnLeave(player *service.Player) {
@@ -253,7 +253,7 @@ func (room *TexasRoom) Award() {
 
 func (room *TexasRoom) GameOver() {
 	// 积分场最后一局
-	if room.IsUserCreate() && room.ExistTimes+1 == room.LimitTimes {
+	if room.IsTypeScore() && room.ExistTimes+1 == room.LimitTimes {
 		room.Broadcast("TotalAward", struct{}{})
 	}
 	room.Room.GameOver()
@@ -622,7 +622,7 @@ func (room *TexasRoom) NextSeat(seatId int) int {
 // 升盲
 func (room *TexasRoom) AddBlind(smallBlind, bigBlind, frontBlind int64) {
 	switch room.Status {
-	case service.RoomStatusFree:
+	case 0:
 		room.smallBlind = smallBlind
 		room.bigBlind = bigBlind
 		room.blindLoop++

@@ -92,7 +92,7 @@ func (room *SangongRoom) OnEnter(player *service.Player) {
 func (room *SangongRoom) Leave(player *service.Player) errcode.Error {
 	ply := player.GameAction.(*SangongPlayer)
 	log.Debugf("player %d leave room %d", ply.Id, room.Id)
-	return Ok
+	return nil
 }
 
 func (room *SangongRoom) OnLeave(player *service.Player) {
@@ -228,7 +228,7 @@ func (room *SangongRoom) Award() {
 }
 
 func (room *SangongRoom) GameOver() {
-	// room.Status = service.RoomStatusFree
+	// room.Status = 0
 
 	// 积分场最后一局
 	if room.IsTypeScore() && room.ExistTimes+1 == room.LimitTimes {

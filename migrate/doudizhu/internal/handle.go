@@ -4,7 +4,6 @@ import (
 	"gofishing-game/service"
 
 	"github.com/guogeer/quasar/cmd"
-	"github.com/guogeer/quasar/log"
 )
 
 type Args struct {
@@ -33,7 +32,7 @@ func Discard(ctx *cmd.Context, iArgs any) {
 	args := iArgs.(*Args)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
-		log.Debug("player is nil")
+
 		return
 	}
 	ply.Discard(args.Cards)
@@ -43,7 +42,7 @@ func Pass(ctx *cmd.Context, iArgs any) {
 	// args := iArgs.(*Args)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
-		log.Debug("player is nil")
+
 		return
 	}
 	ply.Pass()
@@ -53,7 +52,7 @@ func Jiaodizhu(ctx *cmd.Context, iArgs any) {
 	args := iArgs.(*Args)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
-		log.Debug("player is nil")
+
 		return
 	}
 	ply.Jiaodizhu(args.Choice)
@@ -63,7 +62,7 @@ func Jiaofen(ctx *cmd.Context, iArgs any) {
 	args := iArgs.(*Args)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
-		log.Debug("player is nil")
+
 		return
 	}
 	ply.Jiaofen(args.Choice)
@@ -73,7 +72,7 @@ func Qiangdizhu(ctx *cmd.Context, iArgs any) {
 	args := iArgs.(*Args)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
-		log.Debug("player is nil")
+
 		return
 	}
 	ply.Qiangdizhu(args.Choice)
@@ -83,7 +82,7 @@ func AutoPlay(ctx *cmd.Context, iArgs any) {
 	args := iArgs.(*Args)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
-		log.Debug("player is nil")
+
 		return
 	}
 	ply.SetAutoPlay(args.Type)
