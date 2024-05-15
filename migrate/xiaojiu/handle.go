@@ -11,9 +11,9 @@ func init() {
 }
 
 type Args struct {
-	AreaId int
-	SeatId int
-	Gold   int64
+	AreaId    int
+	SeatIndex int
+	Gold      int64
 }
 
 func GetPlayerByContext(ctx *cmd.Context) *XiaojiuPlayer {

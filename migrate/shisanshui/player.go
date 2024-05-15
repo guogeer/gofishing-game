@@ -54,10 +54,10 @@ func (ply *ShisanshuiPlayer) GameOver() {
 func (ply *ShisanshuiPlayer) GetUserInfo(self bool) *ShisanshuiUserInfo {
 	info := &ShisanshuiUserInfo{}
 	info.UserInfo = ply.UserInfo
-	info.SeatId = ply.GetSeatIndex()
+	info.SeatIndex = ply.GetSeatIndex()
 	info.IsReady = roomutils.GetRoomObj(ply.Player).IsReady()
 
-	if self == true {
+	if self {
 		info.Cards = ply.cards
 		if ply.splitCards[0] > 0 {
 			info.SplitCards = ply.splitCards
@@ -81,7 +81,7 @@ func (ply *ShisanshuiPlayer) GetSortedCards() []int {
 
 func (ply *ShisanshuiPlayer) SplitCards(cards []int) {
 	log.Debugf("player %d split cards %v", ply.Id, cards)
-	if roomutils.GetRoomObj(ply.Player).IsReady() == false {
+	if !roomutils.GetRoomObj(ply.Player).IsReady() {
 		return
 	}
 	if len(cards) != len(ply.cards) || ply.splitCards[0] > 0 {
@@ -102,7 +102,7 @@ func (ply *ShisanshuiPlayer) SplitCards(cards []int) {
 
 	code := Ok
 	room := ply.Room()
-	if room.helper.IsValid(cards) == false {
+	if !room.helper.IsValid(cards) {
 		code = ShisanshuiInvalidCards
 	}
 

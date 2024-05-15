@@ -551,7 +551,7 @@ func CheckReadyHand(round *Round) []ReadyHandOption {
 	var winNum [255]int // winNum[x] 表示玩家出x，可以胡牌的可能
 	for _, c1 := range allCards {
 		for _, c2 := range allCards {
-			if able[c1][c2] == true {
+			if able[c1][c2]  {
 				winNum[c1]++
 			}
 		}
@@ -701,7 +701,7 @@ func Score(round *Round, win *WinOption) {
 	}
 
 	// 九连宝灯
-	if round.IsJiuLianBaoDeng == true {
+	if round.IsJiuLianBaoDeng  {
 		ScoreAndIgnore(JiuLianBaoDeng, 88, pointsList)
 	}
 	// 大于五
@@ -799,7 +799,7 @@ func Score(round *Round, win *WinOption) {
 	// 双暗刻、三暗刻、四暗刻
 	t = 0
 	for _, m := range melds {
-		if m.Type == mahjong.OldInvisibleKong || (m.Type == mahjong.OldInvisibleTriplet && !(m.Card == win.WinCard && round.IsHu == false)) {
+		if m.Type == mahjong.OldInvisibleKong || (m.Type == mahjong.OldInvisibleTriplet && !(m.Card == win.WinCard && !round.IsHu )) {
 			t++
 		}
 	}
@@ -984,7 +984,7 @@ func Score(round *Round, win *WinOption) {
 			break
 		}
 	}
-	if isOk == true {
+	if isOk  {
 		ScoreAndIgnore(QingYiSe, 16, pointsList)
 	}
 	// 双箭刻，箭刻
@@ -1112,7 +1112,7 @@ func Score(round *Round, win *WinOption) {
 			break
 		}
 	}
-	if isOk == true {
+	if isOk  {
 		ScoreAndIgnore(DuanYaoJiu, 2, pointsList)
 	}
 	// 门前清

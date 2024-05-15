@@ -185,7 +185,7 @@ func (room *lotteryRoom) Award() {
 			awardUser.Areas2 = append(awardUser.Areas2, p.areas[:]...)
 			awardData.Users[p.Id] = awardUser
 		}
-		if p.IsRobot == false {
+		if !p.IsRobot {
 			room.GetInvisiblePrizePool().Add(p.winGold - userBet)
 		}
 	}

@@ -38,10 +38,10 @@ type Item = gameutils.Item
 // 愚蠢的玩家
 // 机器人作弊
 type StupidUser struct {
-	UId     int
-	Cards   []int
-	SeatId  int
-	IsRobot bool `json:",omitempty"`
+	UId       int
+	Cards     []int
+	SeatIndex int
+	IsRobot   bool `json:",omitempty"`
 }
 
 type CardResult struct {
@@ -62,8 +62,8 @@ type CompareResult struct {
 // 玩家信息
 type ZhajinhuaUserInfo struct {
 	service.UserInfo
-	SeatId int
-	Cards  []int `json:",omitempty"`
+	SeatIndex int
+	Cards     []int `json:",omitempty"`
 
 	IsReady, IsLook, IsShow, IsAutoFold bool `json:",omitempty"`
 
@@ -170,7 +170,7 @@ func (ply *ZhajinhuaPlayer) GameOver() {
 // 看牌
 func (ply *ZhajinhuaPlayer) LookCard() {
 	room := ply.Room()
-	if ply.isAbleLook == false {
+	if !ply.isAbleLook {
 		return
 	}
 	data := map[string]any{"UId": ply.Id}
@@ -193,7 +193,7 @@ func (ply *ZhajinhuaPlayer) CompareCard(seatId int) {
 	}
 
 	other := room.GetPlayer(seatId)
-	if other == nil || other.IsPlaying() == false {
+	if other == nil || !other.IsPlaying() {
 		return
 	}
 	if ply.compareGold <= 0 || ply.compareGold > ply.BagObj().NumItem(gameutils.ItemIdGold) {
@@ -216,7 +216,7 @@ func (ply *ZhajinhuaPlayer) CompareCard(seatId int) {
 	loser.cause = CauseFail
 
 	room.currentChip = ply.compareGold
-	if ply.isLook == true {
+	if ply.isLook {
 		room.currentChip = (room.currentChip + 1) / 2
 	}
 
@@ -249,7 +249,7 @@ func (ply *ZhajinhuaPlayer) CompareCard(seatId int) {
 
 		// 比牌时只有自己翻看了自己的牌才能看到对方的牌，如果在比牌时没有翻看自己的牌是不能看到对方以及自己的牌
 		tempData := data
-		if ply.isLook == true {
+		if ply.isLook {
 			tempData.Self = &resultA
 			tempData.Other = &resultB
 			tempData.CompareResults = []CardResult{resultA, resultB}
@@ -266,7 +266,7 @@ func (ply *ZhajinhuaPlayer) OnAddItems(items []gameutils.Item, way string) {
 	room := ply.Room()
 	ply.Player.OnAddItems(items, way)
 	for _, item := range items {
-		if item.GetId() == gameutils.ItemIdGold && ply.isPaying == true {
+		if item.GetId() == gameutils.ItemIdGold && ply.isPaying {
 			ply.isPaying = false
 
 			t := room.maxAutoTime()
@@ -281,7 +281,7 @@ func (ply *ZhajinhuaPlayer) OnAddItems(items []gameutils.Item, way string) {
 // gold >  0, call or raise
 func (ply *ZhajinhuaPlayer) TakeAction(gold int64) {
 	room := ply.Room()
-	if ply.IsPlaying() == false {
+	if !ply.IsPlaying() {
 		return
 	}
 	if room.Status != roomutils.RoomStatusPlaying {
@@ -349,7 +349,7 @@ func (ply *ZhajinhuaPlayer) TakeAction(gold int64) {
 		room.allBet[ply.GetSeatIndex()] = ply.bet
 
 		currentChip := gold
-		if ply.isLook == true {
+		if ply.isLook {
 			currentChip = (gold + 1) / 2
 		}
 		if currentChip > room.currentChip {
@@ -398,7 +398,7 @@ func (ply *ZhajinhuaPlayer) GetUserInfo(self bool) *ZhajinhuaUserInfo {
 	info := &ZhajinhuaUserInfo{}
 	info.UserInfo = ply.UserInfo
 	// info.UId = ply.GetCharObj().Id
-	info.SeatId = ply.GetSeatIndex()
+	info.SeatIndex = ply.GetSeatIndex()
 	info.Auto = ply.auto
 	info.IsAutoFold = ply.isAutoFold
 	info.IsReady = roomutils.GetRoomObj(ply.Player).IsReady()
@@ -415,14 +415,14 @@ func (ply *ZhajinhuaPlayer) GetUserInfo(self bool) *ZhajinhuaUserInfo {
 		}
 
 		info.IsLook = ply.isLook
-		if self == true && ply.isLook {
+		if self && ply.isLook {
 			info.Cards = ply.cards[:]
 			info.CardType, _ = room.helper.GetType(ply.cards[:])
 		}
 	}
 	if room.Status == 0 && roomutils.GetRoomObj(ply.Player).IsReady() {
 		info.IsShow = ply.isShow
-		if ply.isShow == true {
+		if ply.isShow {
 			info.Cards = ply.cards[:]
 			info.CardType, _ = room.helper.GetType(ply.cards[:])
 		}
@@ -489,7 +489,7 @@ func (ply *ZhajinhuaPlayer) Chips() ([]int64, int64, int64) {
 	// TODO
 	if len(chips) == 0 {
 		call := room.currentChip
-		if ply.isLook == true {
+		if ply.isLook {
 			call *= 2
 			if ply.BagObj().NumItem(gameutils.ItemIdGold)+1 == call {
 				call = ply.BagObj().NumItem(gameutils.ItemIdGold)
@@ -502,7 +502,7 @@ func (ply *ZhajinhuaPlayer) Chips() ([]int64, int64, int64) {
 		}
 	}
 
-	if ply.isLook == true {
+	if ply.isLook {
 		for i := range chips {
 			chips[i] = chips[i] << 1
 		}
@@ -536,10 +536,10 @@ func (ply *ZhajinhuaPlayer) OnTurn() {
 		maxBet := ply.maxBet()
 		chips, call, raise := ply.Chips()
 
-		if ply.isLook == false && ply.loop >= room.lookLoopLimit && ply.IsPlaying() {
+		if !ply.isLook && ply.loop >= room.lookLoopLimit && ply.IsPlaying() {
 			ply.isAbleLook = true
 		}
-		if ply.isAbleLook == true {
+		if ply.isAbleLook {
 			data["IsAbleLook"] = true
 		}
 		// 第二轮开始比牌
@@ -578,11 +578,11 @@ func (ply *ZhajinhuaPlayer) maxBet() int64 {
 	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil && p.IsPlaying() {
 			chip := p.NumGold()
-			if p.isLook == true {
+			if p.isLook {
 				chip = (p.NumGold() + 1) / 2
 			}
 			// 有人已全压
-			if p.isAllIn == true {
+			if p.isAllIn {
 				currentChip = room.currentChip
 				break
 			}
@@ -594,7 +594,7 @@ func (ply *ZhajinhuaPlayer) maxBet() int64 {
 	if room.IsAbleAllIn() {
 		maxBet = currentChip
 	}
-	if ply.isLook == true {
+	if ply.isLook {
 		maxBet = 2 * maxBet
 		if !room.IsTypeScore() && ply.BagObj().NumItem(gameutils.ItemIdGold)+1 == maxBet {
 			maxBet = ply.BagObj().NumItem(gameutils.ItemIdGold)

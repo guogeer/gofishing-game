@@ -18,9 +18,9 @@ var (
 )
 
 type Relation struct {
-	PotId  int
-	SeatId int
-	Gold   int64
+	PotId     int
+	SeatIndex int
+	Gold      int64
 }
 
 type TexasRoomInfo struct {
@@ -204,7 +204,7 @@ func (room *TexasRoom) Award() {
 		gold := room.allPot[potId] / int64(len(winners))
 		for _, p := range winners {
 			p.winGold += gold
-			relations = append(relations, Relation{SeatId: p.GetSeatIndex(), PotId: potId, Gold: gold})
+			relations = append(relations, Relation{SeatIndex: p.GetSeatIndex(), PotId: potId, Gold: gold})
 		}
 	}
 	for i := 0; i < room.NumSeat(); i++ {
@@ -232,7 +232,7 @@ func (room *TexasRoom) Award() {
 				Match:    match,
 				CardType: typ,
 			}
-			if p.IsPlaying() == true {
+			if p.IsPlaying() {
 				users = append(users, detail)
 			}
 			if p.action == ActionFold && p.isShow {
@@ -295,7 +295,7 @@ func (room *TexasRoom) GameOver() {
 		cp.UpdateRank(users)
 		cp.MergeRoom(room.Room)
 
-		if room.delayAddBlind == true {
+		if room.delayAddBlind {
 			room.smallBlind = room.nextSmallBlind
 			room.bigBlind = room.nextBigBlind
 			room.delayAddBlind = false
@@ -528,7 +528,7 @@ func (room *TexasRoom) NewRound() {
 			room.allPot[room.potId] += bet
 
 			p.potId = room.potId
-			relations = append(relations, Relation{PotId: room.potId, SeatId: k, Gold: bet})
+			relations = append(relations, Relation{PotId: room.potId, SeatIndex: k, Gold: bet})
 		}
 	}
 
@@ -563,7 +563,7 @@ func (room *TexasRoom) NewRound() {
 				if p := room.GetPlayer(k); p != nil {
 					p.potId = room.potId
 				}
-				relations = append(relations, Relation{PotId: room.potId, SeatId: k, Gold: minBlind})
+				relations = append(relations, Relation{PotId: room.potId, SeatIndex: k, Gold: minBlind})
 			}
 		}
 	}

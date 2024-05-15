@@ -16,9 +16,9 @@ func init() {
 }
 
 type zhajinhuaArgs struct {
-	SeatId int   `json:"seatId,omitempty"`
-	Gold   int64 `json:"gold,omitempty"`
-	Auto   int   `json:"auto,omitempty"`
+	SeatIndex int   `json:"seatIndex,omitempty"`
+	Gold      int64 `json:"gold,omitempty"`
+	Auto      int   `json:"auto,omitempty"`
 }
 
 func GetPlayerByContext(ctx *cmd.Context) *ZhajinhuaPlayer {
@@ -70,7 +70,7 @@ func CompareCard(ctx *cmd.Context, iArgs interface{}) {
 	if ply == nil {
 		return
 	}
-	ply.CompareCard(args.SeatId)
+	ply.CompareCard(args.SeatIndex)
 }
 
 func SetAutoPlay(ctx *cmd.Context, iArgs interface{}) {

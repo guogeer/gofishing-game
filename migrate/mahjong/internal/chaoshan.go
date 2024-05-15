@@ -392,7 +392,7 @@ func (mj *chaoshanMahjong) Award() {
 		// 奖/买/罚马
 		{
 			boom := room.boomPlayer()
-			maima := func(masterSeatId int, horses []int, operate int) {
+			maima := func(masterSeatIndex int, horses []int, operate int) {
 				var result = &horseResults[masterSeatId]
 				var jiepaoNum, fangpaoNum, zimoNum, meizimoNum int
 

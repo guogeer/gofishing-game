@@ -53,14 +53,14 @@ func (helper *PaohuziHelper) IsAbleChow(cards []int, sample [][3]int, chow int) 
 	for _, tri := range sample {
 		found := false
 		for _, c := range tri {
-			if cardutils.IsCardValid(c) == false {
+			if !cardutils.IsCardValid(c) {
 				return false
 			}
 			if c == chow {
 				found = true
 			}
 		}
-		if found == false {
+		if !found {
 			return false
 		}
 	}
@@ -107,7 +107,7 @@ func (helper *PaohuziHelper) TryChow(cards []int, chowCard int) [][]PaohuziMeld 
 			return
 		}
 		for _, c := range chowMelds[n].Cards {
-			if cardutils.IsCardValid(c) == false || cardSet[c] < 0 || cardSet[c] > 2 {
+			if !cardutils.IsCardValid(c) || cardSet[c] < 0 || cardSet[c] > 2 {
 				return
 			}
 		}
@@ -135,13 +135,13 @@ func (helper *PaohuziHelper) GetChowMelds(chowCard int) []PaohuziMeld {
 	}
 
 	options := [][]int{
-		[]int{0x02, 0x07, 0x0a},
-		[]int{0x12, 0x17, 0x1a},
-		[]int{chowCard - 2, chowCard - 1, chowCard},
-		[]int{chowCard - 1, chowCard, chowCard + 1},
-		[]int{chowCard, chowCard + 1, chowCard + 2},
-		[]int{chowCard & 0x0f, chowCard | 0x10, chowCard},
-		[]int{oppositeCard, oppositeCard, chowCard},
+		{0x02, 0x07, 0x0a},
+		{0x12, 0x17, 0x1a},
+		{chowCard - 2, chowCard - 1, chowCard},
+		{chowCard - 1, chowCard, chowCard + 1},
+		{chowCard, chowCard + 1, chowCard + 2},
+		{chowCard & 0x0f, chowCard | 0x10, chowCard},
+		{oppositeCard, oppositeCard, chowCard},
 	}
 
 	melds := make([]PaohuziMeld, 0, 8)
@@ -151,11 +151,11 @@ func (helper *PaohuziHelper) GetChowMelds(chowCard int) []PaohuziMeld {
 			if c == chowCard {
 				found = true
 			}
-			if cardutils.IsCardValid(c) == false {
+			if !cardutils.IsCardValid(c) {
 				invalid = true
 			}
 		}
-		if found && invalid == false {
+		if found && !invalid {
 			for _, opt := range options {
 				sort.Ints(opt)
 				for i, c := range opt {
@@ -290,11 +290,11 @@ func (helper *PaohuziHelper) TryWin(cards []int) (opt *PaohuziSplitOption) {
 		for _, meld := range helper.GetChowMelds(c) {
 			enough := true
 			for _, seq := range meld.Cards {
-				if cardutils.IsCardValid(seq) == false || cardSet[seq] < 1 || cardSet[seq] == 3 {
+				if !cardutils.IsCardValid(seq) || cardSet[seq] < 1 || cardSet[seq] == 3 {
 					enough = false
 				}
 			}
-			if enough == true {
+			if enough {
 				for _, seq := range meld.Cards {
 					cardSet[seq]--
 				}

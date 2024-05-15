@@ -133,8 +133,8 @@ func (helper *TexasHelper) GetType(cards []int) (int, []int) {
 }
 
 func (helper *TexasHelper) Equal(first, second []int) bool {
-	return helper.Less(first, second) == false &&
-		helper.Less(second, first) == false
+	return !helper.Less(first, second) &&
+		!helper.Less(second, first)
 }
 
 func (helper *TexasHelper) Less(first, second []int) bool {

@@ -275,7 +275,7 @@ func (room *lotteryRoom) Award() {
 		p := player.GameAction.(*lotteryPlayer)
 
 		totalBet := p.totalBet()
-		if p.IsRobot == true {
+		if p.IsRobot {
 			totalRobotBet += totalBet
 		}
 		service.AddSomeItemLog(0, []gameutils.Item{&gameutils.NumericItem{Id: gameutils.ItemIdGold, Num: -totalRobotBet}}, service.GetServerId()+"robot_bet")
@@ -432,7 +432,7 @@ func (room *lotteryRoom) Award() {
 		}
 
 		for i := 0; i < areaNum; i++ {
-			if room.helper.Less(deals[dealerAreaId].Cards, deals[i].Cards) == false {
+			if !room.helper.Less(deals[dealerAreaId].Cards, deals[i].Cards) {
 				deals[i].Times = -deals[dealerAreaId].Times
 			}
 		}
@@ -451,7 +451,7 @@ func (room *lotteryRoom) Award() {
 			break
 		}
 
-		if isRetry == true {
+		if isRetry {
 			continue
 		}
 		// log.Debug("=========", check, systemWinGold)
@@ -546,9 +546,9 @@ func (room *lotteryRoom) Award() {
 	}
 
 	type Area struct {
-		SeatId int
-		Area   int
-		Gold   int64
+		SeatIndex int
+		Area      int
+		Gold      int64
 	}
 
 	var areas []Area
@@ -581,7 +581,7 @@ func (room *lotteryRoom) Award() {
 		if p := room.GetPlayer(i); p != nil {
 			for k, gold := range p.betAreas {
 				if gold != 0 {
-					areas = append(areas, Area{SeatId: i, Area: k, Gold: gold})
+					areas = append(areas, Area{SeatIndex: i, Area: k, Gold: gold})
 					betAreas[k] += gold
 				}
 			}
@@ -590,14 +590,14 @@ func (room *lotteryRoom) Award() {
 	// 无座玩家押注
 	for k, gold := range betAreas {
 		if sub := room.betAreas[k] - gold; sub > 0 {
-			areas = append(areas, Area{SeatId: roomutils.NoSeat, Area: k, Gold: sub})
+			areas = append(areas, Area{SeatIndex: roomutils.NoSeat, Area: k, Gold: sub})
 		}
 	}
 
 	type seatInfo struct {
-		SeatId int
-		Gold   int64
-		Prize  int64 `json:",omitempty"`
+		SeatIndex int
+		Gold      int64
+		Prize     int64 `json:",omitempty"`
 	}
 
 	// 没有座位的玩家金币
@@ -630,7 +630,7 @@ func (room *lotteryRoom) Award() {
 		bill.total = total
 
 		percent := prizePoolPercent
-		if bill.isRobot == true {
+		if bill.isRobot {
 			percent = robotPercent
 		}
 		var tax1, prize1, tax2, prize2 int64
@@ -679,9 +679,9 @@ func (room *lotteryRoom) Award() {
 				noSeatGold += bill.total + bill.prize
 			} else {
 				seat := seatInfo{
-					SeatId: roomutils.GetRoomObj(p.Player).GetSeatIndex(),
-					Gold:   bill.total + bill.prize,
-					Prize:  bill.prize,
+					SeatIndex: roomutils.GetRoomObj(p.Player).GetSeatIndex(),
+					Gold:      bill.total + bill.prize,
+					Prize:     bill.prize,
 				}
 				details = append(details, seat)
 			}
@@ -694,7 +694,7 @@ func (room *lotteryRoom) Award() {
 	var userWinGold = -room.totalUserBet()
 	for _, player := range room.GetAllPlayers() {
 		p := player.GameAction.(*lotteryPlayer)
-		if p.IsRobot == false {
+		if !p.IsRobot {
 			userWinGold += p.winGold - p.winPrize
 		}
 	}
@@ -715,7 +715,7 @@ func (room *lotteryRoom) Award() {
 	}
 
 	if noSeatGold != 0 {
-		details = append(details, seatInfo{SeatId: roomutils.NoSeat, Gold: noSeatGold})
+		details = append(details, seatInfo{SeatIndex: roomutils.NoSeat, Gold: noSeatGold})
 	}
 
 	type PersonInfo struct {
@@ -752,7 +752,7 @@ func (room *lotteryRoom) Award() {
 	var totalRobotAward int64
 	for _, player := range room.GetAllPlayers() {
 		p := player.GameAction.(*lotteryPlayer)
-		if p.IsRobot == true {
+		if p.IsRobot {
 			robot = p
 			totalRobotAward += p.winGold
 		}

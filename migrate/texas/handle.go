@@ -8,11 +8,11 @@ import (
 )
 
 type Args struct {
-	SeatId int
-	Gold   int64
-	Auto   int
-	IsShow bool
-	Level  int // 房间等级
+	SeatIndex int
+	Gold      int64
+	Auto      int
+	IsShow    bool
+	Level     int // 房间等级
 }
 
 type LotteryArgs struct {
@@ -64,7 +64,7 @@ func SitDown(ctx *cmd.Context, iArgs interface{}) {
 
 		return
 	}
-	ply.SitDown(args.SeatId)
+	ply.SitDown(args.SeatIndex)
 }
 
 func ChooseBankroll(ctx *cmd.Context, iArgs interface{}) {

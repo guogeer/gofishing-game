@@ -114,7 +114,7 @@ func (room *shuiguojiRoom) Sync() {
 		isUpdate = true
 	}
 	room.lastPrizePool = gold
-	if isUpdate == true {
+	if isUpdate {
 		room.Broadcast("Sync", map[string]any{"PrizePool": gold})
 	}
 }

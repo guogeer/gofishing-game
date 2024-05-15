@@ -147,7 +147,7 @@ func (room *PaodekuaiRoom) StartGame() {
 }
 
 func (room *PaodekuaiRoom) Award() {
-	if room.CanPlay(OptMeilunheitaosanbichu) == false {
+	if !room.CanPlay(OptMeilunheitaosanbichu) {
 		room.nextDealer = room.winPlayer
 	}
 

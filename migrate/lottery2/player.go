@@ -120,7 +120,7 @@ func (ply *lotteryPlayer) Bet(clientArea int, gold int64) {
 func (ply *lotteryPlayer) GetUserInfo(otherId int) *lotteryUserInfo {
 	info := &lotteryUserInfo{}
 	info.UserInfo = ply.GetInfo(otherId)
-	info.SeatId = ply.GetSeatIndex()
+	info.SeatIndex = ply.GetSeatIndex()
 	info.BetAreas = ply.areas[2:]
 	info.BetAreas2 = ply.areas[:]
 	return info

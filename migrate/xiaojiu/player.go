@@ -15,8 +15,8 @@ import (
 // 玩家信息
 type XiaojiuUserInfo struct {
 	service.UserInfo
-	SeatId int
-	Areas  [3]int64
+	SeatIndex int
+	Areas     [3]int64
 }
 
 type XiaojiuPlayer struct {
@@ -96,7 +96,7 @@ func (ply *XiaojiuPlayer) Bet(area int, gold int64) {
 func (ply *XiaojiuPlayer) GetUserInfo(self bool) *XiaojiuUserInfo {
 	info := &XiaojiuUserInfo{}
 	info.UserInfo = ply.UserInfo
-	info.SeatId = ply.GetSeatIndex()
+	info.SeatIndex = ply.GetSeatIndex()
 	info.Areas = ply.areas
 	return info
 }

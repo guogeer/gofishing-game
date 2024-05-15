@@ -145,12 +145,12 @@ func (room *ThreeDiceRoom) Award() {
 	baoziPercent := -0.1
 	if room.dealer != nil {
 		percent, ok := config.Float("threedice", "UserBaoziPercent", "Value")
-		if ok == true {
+		if ok {
 			baoziPercent = percent
 		}
 	} else {
 		percent, ok := config.Float("threedice", "SystemBaoziPercent", "Value")
-		if ok == true {
+		if ok {
 			baoziPercent = percent
 		}
 	}

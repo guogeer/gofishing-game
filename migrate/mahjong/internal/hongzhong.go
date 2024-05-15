@@ -96,15 +96,15 @@ func (hz *HongzhongMahjong) OnWin() {
 	hz.horses = hz.drawHorse(horseNum)
 	if horseNum > 0 && hz.horses[0] > 0 {
 		type Winner struct {
-			SeatId int
-			Horses []int
+			SeatIndex int
+			Horses    []int
 		}
 		var winners []Winner
 		for _, p := range room.winPlayers {
 			obj := p.localObj.(*HongzhongObj)
 			winners = append(winners, Winner{
-				SeatId: p.GetSeatIndex(),
-				Horses: obj.winHorse(),
+				SeatIndex: p.GetSeatIndex(),
+				Horses:    obj.winHorse(),
 			})
 		}
 

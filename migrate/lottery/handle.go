@@ -17,7 +17,7 @@ type lotteryArgs struct {
 	Area    int    `json:"area,omitempty"`
 	Gold    int64  `json:"gold,omitempty"`
 	PageNum int    `json:"pageNum,omitempty"`
-	SeatId  int    `json:"seatId,omitempty"`
+	SeatId  int    `json:"seatIndex,omitempty"`
 }
 
 type Config struct {

@@ -44,7 +44,7 @@ func (pp *InvisiblePrizePool) Check() int {
 	line, _ := config.Int("lottery", subId, "warningLine")
 
 	percent, _ := config.Float("lottery", subId, "prizePoolControlPercent")
-	if randutils.IsPercentNice(percent) == false {
+	if !randutils.IsPercentNice(percent) {
 		return 0
 	}
 	n := pp.Cap

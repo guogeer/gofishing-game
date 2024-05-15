@@ -11,10 +11,10 @@ import (
 // 玩家信息
 type NiuNiuPlayerInfo struct {
 	service.UserInfo
-	SeatId   int   `json:"seatId,omitempty"`
-	Cards    []int `json:"cards,omitempty"`
-	Chips    []int `json:"chips,omitempty"`
-	TriCards []int `json:"triCards,omitempty"` // 自动算牛的三张牌
+	SeatIndex int   `json:"seatIndex,omitempty"`
+	Cards     []int `json:"cards,omitempty"`
+	Chips     []int `json:"chips,omitempty"`
+	TriCards  []int `json:"triCards,omitempty"` // 自动算牛的三张牌
 	// 准备、房主开始游戏，亮牌、看牌
 	IsReady        bool `json:"isReady,omitempty"`
 	StartGameOrNot bool `json:"startGameOrNot,omitempty"`
@@ -89,10 +89,10 @@ func (ply *NiuNiuPlayer) initGame() {
 
 // 算牌
 func (ply *NiuNiuPlayer) ChooseTriCards(tri [3]int) {
-	if roomutils.GetRoomObj(ply.Player).IsReady() == false {
+	if !roomutils.GetRoomObj(ply.Player).IsReady() {
 		return
 	}
-	if ply.IsDone() == true {
+	if ply.IsDone() {
 		return
 	}
 
@@ -167,7 +167,7 @@ func (ply *NiuNiuPlayer) Bet(times int) {
 		}
 	}
 
-	if exist == false {
+	if !exist {
 		return
 	}
 
@@ -182,7 +182,7 @@ func (ply *NiuNiuPlayer) Bet(times int) {
 }
 
 func (ply *NiuNiuPlayer) ChooseDealer(b bool) {
-	if roomutils.GetRoomObj(ply.Player).IsReady() == false {
+	if !roomutils.GetRoomObj(ply.Player).IsReady() {
 		return
 	}
 	if ply.robOrNot != -1 {
@@ -193,7 +193,7 @@ func (ply *NiuNiuPlayer) ChooseDealer(b bool) {
 	room := ply.Room()
 
 	ply.robOrNot = 0
-	if b == true {
+	if b {
 		ply.robOrNot = 1
 	}
 	room.Broadcast("ChooseDealer", map[string]any{"code": "ok", "uid": ply.Id, "ans": b})
@@ -201,7 +201,7 @@ func (ply *NiuNiuPlayer) ChooseDealer(b bool) {
 }
 
 func (ply *NiuNiuPlayer) DoubleAndRob(times int) {
-	if roomutils.GetRoomObj(ply.Player).IsReady() == false {
+	if !roomutils.GetRoomObj(ply.Player).IsReady() {
 		return
 	}
 	if ply.robTimes != -1 {
@@ -232,7 +232,7 @@ func (ply *NiuNiuPlayer) GetUserInfo(self bool) *NiuNiuPlayerInfo {
 	info := &NiuNiuPlayerInfo{}
 	info.UserInfo = ply.UserInfo
 	// info.UId = ply.GetCharObj().Id
-	info.SeatId = ply.GetSeatIndex()
+	info.SeatIndex = ply.GetSeatIndex()
 
 	info.IsReady = roomutils.GetRoomObj(ply.Player).IsReady()
 	if t := ply.betTimes; t >= 0 {
@@ -248,14 +248,14 @@ func (ply *NiuNiuPlayer) GetUserInfo(self bool) *NiuNiuPlayerInfo {
 		info.IsDone = ply.IsDone()
 		if room.CanPlay(OptMingPaiShangZhuang) {
 			info.Cards = make([]int, len(ply.cards))
-			if self == true {
+			if self {
 				copy(info.Cards, ply.cards)
 				info.Cards[len(info.Cards)-1] = 0
 			}
 		}
 		if room.Status == RoomStatusLook {
 			info.Cards = make([]int, len(ply.cards))
-			if self == true {
+			if self {
 				info.ExpectWeight = ply.expectWeight
 				copy(info.Cards, ply.cards)
 
@@ -295,7 +295,7 @@ func (ply *NiuNiuPlayer) EndGame() {
 	if ply != room.dealer {
 		return
 	}
-	if room.isAbleEnd == false {
+	if !room.isAbleEnd {
 		return
 	}
 	room.LimitTimes = room.ExistTimes - 1
@@ -307,7 +307,7 @@ func (ply *NiuNiuPlayer) additionChip() int {
 
 	chips := ply.Chips()
 	// 闲家推注
-	if room.CanPlay(OptXianJiaTuiZhu) == false {
+	if !room.CanPlay(OptXianJiaTuiZhu) {
 		return 0
 	}
 	g := int(ply.lastWinGold)
@@ -341,7 +341,7 @@ func (ply *NiuNiuPlayer) Chips() []int {
 	if ply == room.dealer {
 		return nil
 	}
-	if roomutils.GetRoomObj(ply.Player).IsReady() == false {
+	if !roomutils.GetRoomObj(ply.Player).IsReady() {
 		return nil
 	}
 
@@ -359,7 +359,7 @@ func (ply *NiuNiuPlayer) Chips() []int {
 		}
 	}
 	if g := ply.additionChip(); g > 0 {
-		chips = append(chips)
+		chips = append(chips, g)
 	}
 	return chips
 }

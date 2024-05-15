@@ -29,7 +29,7 @@ func (w *ZhajinhuaWorld) NewRoom(subId int) *roomutils.Room {
 	room := &ZhajinhuaRoom{
 		helper: helper,
 
-		dealerSeatId: -1,
+		dealerSeatIndex: -1,
 	}
 	room.Room = roomutils.NewRoom(subId, room)
 	room.AutoStart()

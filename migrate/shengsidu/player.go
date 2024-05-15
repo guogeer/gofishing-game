@@ -73,7 +73,7 @@ func (ply *ShengsiduPlayer) GetUserInfo(self bool) *ShengsiduUserInfo {
 	info := &ShengsiduUserInfo{}
 	info.UserInfo = ply.UserInfo
 	// info.UId = ply.GetCharObj().Id
-	info.SeatId = ply.GetSeatIndex()
+	info.SeatIndex = ply.GetSeatIndex()
 	info.IsReady = roomutils.GetRoomObj(ply.Player).IsReady()
 	info.Cards = ply.GetSortedCards()
 	info.BoomTimes = ply.boomTimes
@@ -148,7 +148,7 @@ func (ply *ShengsiduPlayer) AutoPlay() {
 
 	log.Debug("time out", isAuto)
 	room.autoTime = time.Now().Add(maxOperateTime)
-	if isAuto == true {
+	if isAuto {
 		d = maxAutoTime
 	} else {
 		if room.GetRoomType() == service.RoomTypeScore {
@@ -172,7 +172,7 @@ func (ply *ShengsiduPlayer) Discard(cards []int) {
 	// 判断牌是否有效、数量足够
 	var m = make(map[int]int)
 	for _, c := range cards {
-		if room.CardSet().IsCardValid(c) == false {
+		if !room.CardSet().IsCardValid(c) {
 			return
 		}
 		m[c]++
@@ -212,7 +212,7 @@ func (ply *ShengsiduPlayer) Discard(cards []int) {
 		}
 	}
 
-	if other := room.discardPlayer; other != nil && room.helper.Less(other.action, cards) == false {
+	if other := room.discardPlayer; other != nil && !room.helper.Less(other.action, cards) {
 		return
 	}
 	// 下家报单必须出最大的单张
@@ -224,7 +224,7 @@ func (ply *ShengsiduPlayer) Discard(cards []int) {
 
 	sortedCards := ply.GetSortedCards()
 	if baodan && len(cards) == 1 && room.discardPlayer == nil &&
-		room.helper.IsOnlyIncludeSingleCard(sortedCards) == false {
+		!room.helper.IsOnlyIncludeSingleCard(sortedCards) {
 		return
 	}
 	maxCard := room.helper.MaxCard(sortedCards)
@@ -251,7 +251,7 @@ func (ply *ShengsiduPlayer) Discard(cards []int) {
 		data["CardNum"] = cardNum
 	}
 	// 火箭
-	if isRocket == true {
+	if isRocket {
 		data["IsRocket"] = true
 	}
 	room.Broadcast("Discard", data)

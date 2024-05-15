@@ -338,7 +338,7 @@ func (ply *shuiguojiPlayer) Bet(line int, chip int64) {
 func (ply *shuiguojiPlayer) GetUserInfo(otherId int) *shuiguojiUserInfo {
 	info := &shuiguojiUserInfo{}
 	info.UserInfo = ply.GetInfo(otherId)
-	info.SeatId = ply.GetSeatIndex()
+	info.SeatIndex = ply.GetSeatIndex()
 	info.Line = ply.line
 	info.Chip = ply.chip
 	info.FreeTimes = ply.freeTimes

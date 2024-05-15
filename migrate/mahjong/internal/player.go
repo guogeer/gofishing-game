@@ -21,8 +21,8 @@ import (
 )
 
 type ChipResult struct {
-	SeatId int   `json:"seatIndex"`
-	Chip   int64 `json:"gold"`
+	SeatIndex int   `json:"seatIndex"`
+	Chip      int64 `json:"gold"`
 }
 
 type OperateTip struct {
@@ -773,7 +773,7 @@ func (ply *MahjongPlayer) KongOk() {
 		}
 		log.Info("kong", unit, type_)
 
-		// detail := ChipChip{Operate: type_, Times: times, SeatId: ply.GetSeatIndex()}
+		// detail := ChipChip{Operate: type_, Times: times, SeatIndex: ply.GetSeatIndex()}
 		detail := ChipDetail{Operate: type_, Times: times, Seats: 1 << uint(ply.GetSeatIndex())}
 		if type_ == mjutils.MeldStraightKong {
 			effectPlayers = append(effectPlayers, ply.lastKong.other)
@@ -797,7 +797,7 @@ func (ply *MahjongPlayer) KongOk() {
 		for seatId, bill := range bills {
 			if len(bill.Details) > 0 {
 				one := bill.Details[0]
-				result = append(result, ChipResult{SeatId: seatId, Chip: one.Chip})
+				result = append(result, ChipResult{SeatIndex: seatId, Chip: one.Chip})
 				if seatId == ply.GetSeatIndex() {
 					ply.lastKong.Chip = one.Chip
 				} else {
@@ -1923,8 +1923,8 @@ func (ply *MahjongPlayer) Double() {
 }
 
 type OtherInfo struct {
-	SeatId int
-	Cards  []int
+	SeatIndex int
+	Cards     []int
 }
 
 func (ply *MahjongPlayer) GetOthers() []*OtherInfo {
@@ -1933,7 +1933,7 @@ func (ply *MahjongPlayer) GetOthers() []*OtherInfo {
 	for i := 0; i < room.NumSeat(); i++ {
 		if other := room.GetPlayer(i); ply != other && ply != nil {
 			cards := SortCards(other.handCards)
-			users = append(users, &OtherInfo{SeatId: i, Cards: cards})
+			users = append(users, &OtherInfo{SeatIndex: i, Cards: cards})
 		}
 	}
 	return users

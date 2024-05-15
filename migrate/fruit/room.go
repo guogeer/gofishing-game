@@ -38,8 +38,8 @@ var (
 )
 
 type SeatArea struct {
-	SeatId int
-	Area   int
+	SeatIndex int
+	Area      int
 }
 
 type FruitRoom struct {
@@ -76,7 +76,7 @@ func (room *FruitRoom) OnEnter(player *service.Player) {
 	var seats []SeatPlayerInfo
 	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil {
-			info := SeatPlayerInfo{SeatId: p.GetSeatIndex()}
+			info := SeatPlayerInfo{SeatIndex: p.GetSeatIndex()}
 			util.DeepCopy(&info.SimpleUserInfo, &p.UserInfo)
 			seats = append(seats, info)
 		}
@@ -169,7 +169,7 @@ func (room *FruitRoom) Award() {
 		if p := room.GetPlayer(i); p != nil {
 			for k, v := range p.fruitObj.BetArea {
 				if float64(v)*winArea[k] > 0 {
-					areas = append(areas, SeatArea{SeatId: i, Area: k})
+					areas = append(areas, SeatArea{SeatIndex: i, Area: k})
 					betArea[k] += v
 				}
 			}
@@ -177,7 +177,7 @@ func (room *FruitRoom) Award() {
 	}
 	for k, v := range betArea {
 		if v < room.BetArea[k] && winArea[k] > 0 {
-			areas = append(areas, SeatArea{SeatId: -1, Area: k})
+			areas = append(areas, SeatArea{SeatIndex: -1, Area: k})
 		}
 	}
 

@@ -117,7 +117,7 @@ func (helper *NiuNiuHelper) Weight(cards []int) (int, []int) {
 }
 
 func (helper *NiuNiuHelper) isWuXiaoNiu(cards []int) bool {
-	if _, ok := helper.options[NNWuXiaoNiu]; ok == false {
+	if _, ok := helper.options[NNWuXiaoNiu]; !ok {
 		return false
 	}
 
@@ -133,7 +133,7 @@ func (helper *NiuNiuHelper) isWuXiaoNiu(cards []int) bool {
 }
 
 func (helper *NiuNiuHelper) isWuHuaNiu(cards []int) bool {
-	if _, ok := helper.options[NNWuHuaNiu]; ok == false {
+	if _, ok := helper.options[NNWuHuaNiu]; !ok {
 		return false
 	}
 	for _, c := range cards {
@@ -149,7 +149,7 @@ func (helper *NiuNiuHelper) isWuHuaNiu(cards []int) bool {
 }
 
 func (helper *NiuNiuHelper) isSiHuaNiu(cards []int) bool {
-	if _, ok := helper.options[NNSiHuaNiu]; ok == false {
+	if _, ok := helper.options[NNSiHuaNiu]; !ok {
 		return false
 	}
 	var counter int
@@ -169,7 +169,7 @@ func (helper *NiuNiuHelper) isSiHuaNiu(cards []int) bool {
 // 炸弹牛
 // 有四张相同的牌
 func (helper *NiuNiuHelper) isZhaDanNiu(cards []int) bool {
-	if _, ok := helper.options[NNZhaDanNiu]; ok == false {
+	if _, ok := helper.options[NNZhaDanNiu]; !ok {
 		return false
 	}
 	for i := 0; i < len(cards); i++ {

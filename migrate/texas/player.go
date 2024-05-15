@@ -137,7 +137,7 @@ func (ply *TexasPlayer) GameOver() {
 // gold =  0, check
 // gold >  0, call or raise
 func (ply *TexasPlayer) TakeAction(gold int64) {
-	if ply.IsPlaying() == false {
+	if !ply.IsPlaying() {
 		return
 	}
 
@@ -210,7 +210,7 @@ func (ply *TexasPlayer) GetUserInfo(self bool) *TexasUserInfo {
 	info := &TexasUserInfo{}
 	info.UserInfo = ply.UserInfo
 	// info.UId = ply.GetCharObj().Id
-	info.SeatId = ply.GetSeatIndex()
+	info.SeatIndex = ply.GetSeatIndex()
 	info.Action = ply.action
 	info.IsShow = ply.isShow
 	info.IsReady = roomutils.GetRoomObj(ply.Player).IsReady()
@@ -221,7 +221,7 @@ func (ply *TexasPlayer) GetUserInfo(self bool) *TexasUserInfo {
 	if room.Status == roomutils.RoomStatusPlaying && ply.IsPlaying() {
 		info.LastBlind = ply.lastBlind
 		info.TotalBlind = ply.totalBlind
-		if self == true {
+		if self {
 			info.Cards = ply.cards[:]
 			info.CardType, info.Match = ply.match()
 			info.Auto = ply.auto
@@ -447,7 +447,7 @@ func (ply *TexasPlayer) ShowCard(isShow bool) {
 
 func (ply *TexasPlayer) Rebuy() {
 	room := ply.Room()
-	if room.IsTypeTournament() == false {
+	if !room.IsTypeTournament() {
 		return
 	}
 	tournament := room.Tournament()
@@ -457,7 +457,7 @@ func (ply *TexasPlayer) Rebuy() {
 	if ply.rebuyBlind+ply.bankroll > tournament.Bankroll {
 		return
 	}
-	if tournament.IsAbleRebuy(room.blindLoop) == false {
+	if !tournament.IsAbleRebuy(room.blindLoop) {
 		return
 	}
 	if ply.rebuyTimes > tournament.RebuyTimes {
@@ -470,7 +470,7 @@ func (ply *TexasPlayer) Rebuy() {
 
 func (ply *TexasPlayer) Addon() {
 	room := ply.Room()
-	if room.IsTypeTournament() == false {
+	if !room.IsTypeTournament() {
 		return
 	}
 	tournament := room.Tournament()
@@ -480,7 +480,7 @@ func (ply *TexasPlayer) Addon() {
 	if ply.addonBlind+ply.bankroll > tournament.Bankroll*2 {
 		return
 	}
-	if tournament.IsAbleAddon(room.blindLoop) == false {
+	if !tournament.IsAbleAddon(room.blindLoop) {
 		return
 	}
 	if ply.addonTimes > tournament.AddonTimes {

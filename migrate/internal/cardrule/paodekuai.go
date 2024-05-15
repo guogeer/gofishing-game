@@ -144,7 +144,7 @@ func (helper *PaodekuaiHelper) Less(first, second []int) bool {
 
 	// log.Debug(typ1, v1, n1)
 	// log.Debug(typ2, v2, n2)
-	if helper.Sandaidui == false {
+	if !helper.Sandaidui {
 		if typ1 == PaodekuaiSandai0 || typ1 == PaodekuaiSandai1 || typ1 == PaodekuaiSandai2 {
 			typ1 = PaodekuaiSandai2
 		}
@@ -205,7 +205,7 @@ func (helper *PaodekuaiHelper) Match(cards, match []int) []int {
 			}
 			if len(ans) == 3 {
 				// 额外的牌
-				for v, _ := range values {
+				for v := range values {
 					for _, single := range cards {
 						if len(ans) >= len(match) {
 							break
@@ -322,7 +322,7 @@ func (helper *PaodekuaiHelper) Match(cards, match []int) []int {
 		}
 		if len(ans) == 3*length {
 			// 额外的牌
-			for v, _ := range values {
+			for v := range values {
 				for _, single := range cards {
 					if len(ans) >= len(match) {
 						break
@@ -350,7 +350,7 @@ func (helper *PaodekuaiHelper) Match(cards, match []int) []int {
 			}
 			if len(ans) == 4 {
 				// 额外的牌
-				for v, _ := range values {
+				for v := range values {
 					for _, single := range cards {
 						if len(ans) >= len(match) {
 							break

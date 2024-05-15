@@ -9,11 +9,11 @@ import (
 )
 
 type Args struct {
-	Area   int
-	Area2  int
-	SeatId int
-	Gold   int64
-	Type   int
+	Area      int
+	Area2     int
+	SeatIndex int
+	Gold      int64
+	Type      int
 }
 
 func init() {
@@ -51,7 +51,7 @@ func SitDown(ctx *cmd.Context, iArgs interface{}) {
 	if ply == nil {
 		return
 	}
-	ply.SitDown(args.SeatId)
+	ply.SitDown(args.SeatIndex)
 }
 
 func SitUp(ctx *cmd.Context, iArgs interface{}) {

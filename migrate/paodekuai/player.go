@@ -147,7 +147,7 @@ func (ply *PaodekuaiPlayer) AutoPlay() {
 
 	log.Debug("time out", isAuto)
 	room.autoTime = time.Now().Add(maxOperateTime)
-	if isAuto == true {
+	if isAuto {
 		d = maxAutoTime
 	} else {
 		if room.IsTypeScore() {
@@ -172,7 +172,7 @@ func (ply *PaodekuaiPlayer) Discard(cards []int) {
 	// 判断牌是否有效、数量足够
 	var m = make(map[int]int)
 	for _, c := range cards {
-		if room.CardSet().IsCardValid(c) == false {
+		if !room.CardSet().IsCardValid(c) {
 			return
 		}
 		m[c]++
@@ -198,7 +198,7 @@ func (ply *PaodekuaiPlayer) Discard(cards []int) {
 		total += n
 	}
 	helper := room.helper
-	if other := room.discardPlayer; other == nil && total != len(cards) && helper.Sandaidui == false {
+	if other := room.discardPlayer; other == nil && total != len(cards) && !helper.Sandaidui {
 		switch typ {
 		case cardrule.PaodekuaiSandai0, cardrule.PaodekuaiSandai1:
 			return
@@ -209,7 +209,7 @@ func (ply *PaodekuaiPlayer) Discard(cards []int) {
 		}
 	}
 
-	if other := room.discardPlayer; other != nil && room.helper.Less(other.action, cards) == false {
+	if other := room.discardPlayer; other != nil && !room.helper.Less(other.action, cards) {
 		return
 	}
 	// 下家报单必须出最大的牌

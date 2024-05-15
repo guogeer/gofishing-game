@@ -12,7 +12,7 @@ import (
 // 座位上的玩家
 type SeatPlayerInfo struct {
 	service.SimpleUserInfo
-	SeatId int
+	SeatIndex int
 
 	winGold int64
 }
@@ -36,7 +36,7 @@ func (ply *FruitPlayer) SitDown(seatId int) {
 		return
 	}
 	defer func() {
-		info := SeatPlayerInfo{SeatId: seatId}
+		info := SeatPlayerInfo{SeatIndex: seatId}
 		util.DeepCopy(&info.SimpleUserInfo, &ply.UserInfo)
 		room.Broadcast("SitDown", map[string]any{"Code": code, "Msg": code.String(), "Info": info})
 	}()

@@ -45,8 +45,8 @@ type ZhajinhuaRoom struct {
 	compareLoopLimit               int
 
 	// 庄家座位
-	dealerSeatId int
-	chips        []int64
+	dealerSeatIndex int
+	chips           []int64
 }
 
 func (room *ZhajinhuaRoom) OnEnter(player *service.Player) {
@@ -62,8 +62,8 @@ func (room *ZhajinhuaRoom) OnEnter(player *service.Player) {
 		"LookLoopLimit": room.lookLoopLimit,
 		"LoopLimit":     room.loopLimit,
 	}
-	if room.dealerSeatId >= 0 {
-		data["Dealer"] = room.dealerSeatId
+	if room.dealerSeatIndex >= 0 {
+		data["Dealer"] = room.dealerSeatIndex
 	}
 
 	var seats []*ZhajinhuaUserInfo
@@ -83,7 +83,7 @@ func (room *ZhajinhuaRoom) OnEnter(player *service.Player) {
 }
 
 func (room *ZhajinhuaRoom) OnCreate() {
-	room.dealerSeatId = -1
+	room.dealerSeatIndex = -1
 
 	room.loop = 0
 	room.lookLoopLimit = 0
@@ -103,7 +103,7 @@ func (room *ZhajinhuaRoom) OnCreate() {
 	// 最大轮数
 	{
 		n, ok := config.Int("zhajinhua_room", room.SubId, "LoopLimit")
-		if ok == true {
+		if ok {
 			room.loopLimit = int(n)
 		}
 	}
@@ -111,7 +111,7 @@ func (room *ZhajinhuaRoom) OnCreate() {
 	{
 		room.compareLoopLimit = 1
 		n, ok := config.Int("zhajinhua_room", room.SubId, "CompareLoopLimit")
-		if ok == true {
+		if ok {
 			room.compareLoopLimit = int(n)
 		}
 	}
@@ -119,7 +119,7 @@ func (room *ZhajinhuaRoom) OnCreate() {
 	// 闷牌轮数
 	{
 		n, ok := config.Int("zhajinhua_room", room.SubId, "LookLoopLimit")
-		if ok == true {
+		if ok {
 			room.lookLoopLimit = int(n)
 		}
 	}
@@ -127,7 +127,7 @@ func (room *ZhajinhuaRoom) OnCreate() {
 	{
 		n, ok := config.Int("zhajinhua_room", room.SubId, "MaxBet")
 		room.maxBet = 0
-		if ok == true {
+		if ok {
 			room.maxBet = n
 		}
 	}
@@ -151,7 +151,7 @@ func (room *ZhajinhuaRoom) Award() {
 			}
 		}
 		for i := 0; i < room.NumSeat(); i++ {
-			seatId := (room.dealerSeatId + 1 + i) % room.NumSeat()
+			seatId := (room.dealerSeatIndex + 1 + i) % room.NumSeat()
 			if p := room.GetPlayer(seatId); p != nil && p.IsPlaying() {
 				compareUsers++
 				if winner == nil {
@@ -169,7 +169,7 @@ func (room *ZhajinhuaRoom) Award() {
 						resultB.CardType, _ = room.helper.GetType(resultB.Cards)
 						detail.CompareResults = []CardResult{resultA, resultB}
 					}
-					if room.helper.Less(p.cards, winner.cards) == false {
+					if !room.helper.Less(p.cards, winner.cards) {
 						winner = p
 					}
 					detail.Winner = winner.Id
@@ -225,7 +225,7 @@ func (room *ZhajinhuaRoom) Award() {
 	})
 
 	winner.BagObj().Add(gameutils.ItemIdGold, winner.winGold, "zhajinhua_win", service.WithNoItemLog())
-	if isAllRobot == false {
+	if !isAllRobot {
 		service.AddSomeItemLog(winner.Id, []gameutils.Item{&gameutils.NumericItem{Id: gameutils.ItemIdGold, Num: winner.winGold}}, "user.zhajinhua_win")
 	}
 	room.GameOver()
@@ -269,14 +269,14 @@ func (room *ZhajinhuaRoom) StartGame() {
 	room.chips = []int64{1, 2, 3, 4, 5}
 	config.Scan("zhajinhua_room", room.SubId, "Chips", config.JSON(&room.chips))
 
-	dealerSeatId := room.dealerSeatId
-	room.dealerSeatId = room.NextSeat(dealerSeatId)
+	dealerSeatId := room.dealerSeatIndex
+	room.dealerSeatIndex = room.NextSeat(dealerSeatId)
 	// choose dealer
 	if host := room.GetPlayer(room.HostSeatIndex()); host != nil && dealerSeatId == -1 && host.Room() == room {
-		room.dealerSeatId = host.GetSeatIndex()
+		room.dealerSeatIndex = host.GetSeatIndex()
 	}
-	dealer := room.GetPlayer(room.dealerSeatId)
-	if dealerSeatId != room.dealerSeatId {
+	dealer := room.GetPlayer(room.dealerSeatIndex)
+	if dealerSeatId != room.dealerSeatIndex {
 		room.Broadcast("NewDealer", map[string]any{"UId": dealer.Id})
 	}
 
@@ -326,18 +326,18 @@ func (room *ZhajinhuaRoom) StartGame() {
 	users := make([]StupidUser, 0, 8)
 	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil && p.IsPlaying() {
-			users = append(users, StupidUser{UId: p.Id, SeatId: p.GetSeatIndex(), Cards: p.cards, IsRobot: p.IsRobot})
+			users = append(users, StupidUser{UId: p.Id, SeatIndex: p.GetSeatIndex(), Cards: p.cards, IsRobot: p.IsRobot})
 		}
 	}
 	for _, p := range room.GetAllPlayers() {
 		data := map[string]any{"AllBet": room.allBet[:room.NumSeat()]}
-		if p.IsRobot == true {
+		if p.IsRobot {
 			data["Users"] = users
 		}
 		p.WriteJSON("StartDealCard", data)
 	}
 
-	log.Debug("start game", room.dealerSeatId)
+	log.Debug("start game", room.dealerSeatIndex)
 	room.activePlayer = dealer
 	room.Turn()
 }
@@ -366,7 +366,7 @@ func (room *ZhajinhuaRoom) OnTakeAction() {
 		if p := room.GetPlayer(i); p != nil && p.IsPlaying() {
 			counter++
 			room.winner = p
-			if p.isAllIn == true {
+			if p.isAllIn {
 				allInUsers++
 			}
 		}
@@ -402,7 +402,7 @@ func (room *ZhajinhuaRoom) NewRound() {
 func (room *ZhajinhuaRoom) maxAutoTime() time.Duration {
 	d := maxAutoTime
 	t, ok := config.Duration("zhajinhua_room", room.SubId, "AutoDuration")
-	if ok == true {
+	if ok {
 		d = t
 	}
 	return d
@@ -441,7 +441,7 @@ func (room *ZhajinhuaRoom) IsAbleAllIn() bool {
 	}
 
 	activeUsers := room.CountActivePlayers()
-	if room.IsTypeScore() == false && activeUsers == 2 {
+	if !room.IsTypeScore() && activeUsers == 2 {
 		return true
 	}
 	return false

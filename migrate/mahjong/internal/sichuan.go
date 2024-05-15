@@ -260,7 +260,7 @@ func (sc *SichuanMahjong) OnWin() {
 			addition2["MSHC"] = t
 		}
 
-		// detail := ChipChip{SeatId: p.GetSeatIndex(), Operate: mjutils.OperateWin, Score: score}
+		// detail := ChipChip{SeatIndex: p.GetSeatIndex(), Operate: mjutils.OperateWin, Score: score}
 		detail := ChipDetail{Seats: 1 << uint(p.GetSeatIndex()), Operate: mjutils.OperateWin, Chip: int64(score)}
 		// 接跑
 		if p.drawCard == -1 {
@@ -373,7 +373,7 @@ func (sc *SichuanMahjong) OnWin() {
 	var result []ChipResult
 	for seatId, bill := range bills {
 		if len(bill.Details) > 0 {
-			result = append(result, ChipResult{SeatId: seatId, Chip: bill.Sum()})
+			result = append(result, ChipResult{SeatIndex: seatId, Chip: bill.Sum()})
 		}
 	}
 	var wins []int
@@ -388,7 +388,7 @@ func (sc *SichuanMahjong) OnWin() {
 		var result []ChipResult
 		for seatId, bill := range moveKong {
 			if len(bill.Details) > 0 {
-				result = append(result, ChipResult{SeatId: seatId, Chip: bill.Sum()})
+				result = append(result, ChipResult{SeatIndex: seatId, Chip: bill.Sum()})
 			}
 		}
 		room.Broadcast("Compute", map[string]any{"Operate": mjutils.OperateMoveKong, "Result": result})

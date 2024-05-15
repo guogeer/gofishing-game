@@ -13,14 +13,16 @@ import (
 // 玩家信息
 type SangongPlayerInfo struct {
 	service.UserInfo
-	SeatId int
-	Cards  []int `json:",omitempty"`
+	SeatIndex int   `json:"seatIndex,omitempty"`
+	Cards     []int `json:"cards,omitempty"`
 	// 准备、房主开始游戏，亮牌、看牌
-	IsReady, StartGameOrNot, IsDone bool `json:",omitempty"`
+	IsReady        bool `json:"isReady,omitempty"`
+	StartGameOrNot bool `json:"startGameOrNot,omitempty"`
+	IsDone         bool `json:"isDone,omitempty"`
 
-	Chip     int
-	RobOrNot int
-	CardType int
+	Chip     int `json:"chip,omitempty"`
+	RobOrNot int `json:"robOrNot,omitempty"`
+	CardType int `json:"cardType,omitempty"`
 }
 
 type SangongPlayer struct {
@@ -59,10 +61,10 @@ func (ply *SangongPlayer) initGame() {
 
 // 算牌
 func (ply *SangongPlayer) Finish() {
-	if roomutils.GetRoomObj(ply.Player).IsReady() == false {
+	if !roomutils.GetRoomObj(ply.Player).IsReady() {
 		return
 	}
-	if ply.IsDone() == true {
+	if ply.IsDone() {
 		return
 	}
 
@@ -89,7 +91,7 @@ func (ply *SangongPlayer) GameOver() {
 }
 
 func (ply *SangongPlayer) Bet(chip int) {
-	if roomutils.GetRoomObj(ply.Player).IsReady() == false {
+	if !roomutils.GetRoomObj(ply.Player).IsReady() {
 		return
 	}
 
@@ -114,7 +116,7 @@ func (ply *SangongPlayer) Bet(chip int) {
 }
 
 func (ply *SangongPlayer) ChooseDealer(b bool) {
-	if roomutils.GetRoomObj(ply.Player).IsReady() == false {
+	if !roomutils.GetRoomObj(ply.Player).IsReady() {
 		return
 	}
 	if ply.robOrNot != -1 {
@@ -125,7 +127,7 @@ func (ply *SangongPlayer) ChooseDealer(b bool) {
 	room := ply.Room()
 
 	ply.robOrNot = 0
-	if b == true {
+	if b {
 		ply.robOrNot = 1
 	}
 	room.Broadcast("ChooseDealer", map[string]any{"Code": Ok, "UId": ply.Id, "Ans": b})
@@ -136,7 +138,7 @@ func (ply *SangongPlayer) GetUserInfo(self bool) *SangongPlayerInfo {
 	info := &SangongPlayerInfo{}
 	info.UserInfo = ply.UserInfo
 	// info.UId = ply.GetCharObj().Id
-	info.SeatId = ply.GetSeatIndex()
+	info.SeatIndex = ply.GetSeatIndex()
 	info.IsReady = roomutils.GetRoomObj(ply.Player).IsReady()
 	info.RobOrNot = ply.robOrNot
 	info.Chip = ply.chip

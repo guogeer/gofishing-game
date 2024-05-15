@@ -72,7 +72,7 @@ type WinOption struct {
 type Meld struct {
 	Card, Type int
 
-	SeatId int // 对方座位ID
+	SeatIndex int // 对方座位ID
 }
 
 type SplitOption struct {

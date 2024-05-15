@@ -68,7 +68,7 @@ func SitDown(ctx *cmd.Context, iArgs interface{}) {
 	if ply == nil {
 		return
 	}
-	ply.SitDown(args.SeatId)
+	ply.SitDown(args.SeatIndex)
 }
 
 func SitUp(ctx *cmd.Context, iArgs interface{}) {

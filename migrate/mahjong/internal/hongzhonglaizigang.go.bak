@@ -105,7 +105,7 @@ func (mj *HongzhonglaizigangMahjong) startChoosePiao() {
 		p := room.GetPlayer(i)
 		obj := p.localObj.(*HongzhonglaizigangObj)
 		obj.piao = -1
-		if room.IsTypeScore() == false {
+		if !room.IsTypeScore()e {
 			p.AddTimer(service.TimerEventOperate, func() { obj.ChoosePiao(0) }, MaxOperateTime)
 		}
 	}
@@ -152,14 +152,14 @@ func (mj *HongzhonglaizigangMahjong) Score(copyCards []int, melds []cardutil.Mel
 	jiangyise := true
 	for _, m := range melds {
 		if m.Type == cardutil.MeldSequence ||
-			IsSameValue(m.Card, 2, 5, 8) == false {
+			!IsSameValue(m.Card, 2, 5, 8) {
 			jiangyise = false
 			break
 		}
 	}
 
 	for _, c := range cardutil.GetAllCards() {
-		if copyCards[c] > 0 && IsSameValue(c, 2, 5, 8) == false && room.IsAnyCard(c) == false {
+		if copyCards[c] > 0 && !IsSameValue(c, 2, 5, 8) && !room.IsAnyCard(c) {
 			jiangyise = false
 			break
 		}
@@ -337,7 +337,7 @@ func (mj *HongzhonglaizigangMahjong) Award() {
 			}
 			effect := make([]*MahjongPlayer, 0, 4)
 			// 大胡陪冲
-			if p.drawCard == -1 && mj.IsBigScore(score) == false {
+			if p.drawCard == -1 && !mj.IsBigScore(score) {
 				effect = append(effect, boom)
 			} else {
 				// 自摸
@@ -614,7 +614,7 @@ func (obj *HongzhonglaizigangObj) IsAbleWin() bool {
 		obj.limit = 1
 	}()
 
-	if p.IsAbleWin() == false {
+	if !p.IsAbleWin() {
 		return false
 	}
 
@@ -644,7 +644,7 @@ func (obj *HongzhonglaizigangObj) IsAbleWin() bool {
 		return true
 	}
 
-	if mj.IsBigScore(score) == false {
+	if !mj.IsBigScore(score) {
 		// log.Debug("test score", score)
 		// 杠上花才允许多个癞子
 		if copyCards[NoneCard] > obj.limit {
@@ -681,7 +681,7 @@ func (obj *HongzhonglaizigangObj) IsAbleWin() bool {
 		}
 	}
 	// 小胡2、5、8将对
-	/*if mj.IsBigScore(score) == false {
+	/*if !mj.IsBigScore(score) {
 		jiangdui := false
 		for _, opt := range Split(copyCards, 2) {
 			if len(opt.Extra) == 2 &&
@@ -690,14 +690,14 @@ func (obj *HongzhonglaizigangObj) IsAbleWin() bool {
 				jiangdui = true
 			}
 		}
-		if jiangdui == false {
+		if !jiangdu {
 			return false
 		}
 	}
 	*/
 
 	var loseTimes = 1
-	if p.drawCard == -1 && mj.IsBigScore(score) == false {
+	if p.drawCard == -1 && !mj.IsBigScore(score) {
 		boom := obj.Room().boomPlayer()
 		boomObj := boom.localObj.(*HongzhonglaizigangObj)
 		for _, t := range boomObj.getAddition(false) {

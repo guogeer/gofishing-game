@@ -7,13 +7,12 @@ import (
 )
 
 func init() {
-	cmd.Bind(Finish, (*Args)(nil))
-	cmd.Bind(Bet, (*Args)(nil))
-	cmd.Bind(ChooseDealer, (*Args)(nil))
-	cmd.Bind(SitDown, (*Args)(nil))
+	cmd.BindFunc(Finish, (*sangongArgs)(nil))
+	cmd.BindFunc(Bet, (*sangongArgs)(nil))
+	cmd.BindFunc(ChooseDealer, (*sangongArgs)(nil))
 }
 
-type Args struct {
+type sangongArgs struct {
 	Ans  bool
 	Chip int
 }
@@ -35,7 +34,7 @@ func Finish(ctx *cmd.Context, iArgs interface{}) {
 }
 
 func Bet(ctx *cmd.Context, iArgs interface{}) {
-	args := iArgs.(*Args)
+	args := iArgs.(*sangongArgs)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
 
@@ -45,23 +44,11 @@ func Bet(ctx *cmd.Context, iArgs interface{}) {
 }
 
 func ChooseDealer(ctx *cmd.Context, iArgs interface{}) {
-	args := iArgs.(*Args)
+	args := iArgs.(*sangongArgs)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
 
 		return
 	}
 	ply.ChooseDealer(args.Ans)
-}
-
-func SitDown(ctx *cmd.Context, iArgs interface{}) {
-	// args := iArgs.(*Args)
-	ply := GetPlayerByContext(ctx)
-	if ply == nil {
-
-		return
-	}
-	room := ply.Room()
-	seatId := room.GetEmptySeat()
-	ply.SitDown(seatId)
 }

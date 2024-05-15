@@ -21,7 +21,7 @@ var (
 // 座位上的玩家
 type userInfo struct {
 	service.UserInfo
-	SeatId          int   `json:"seatId,omitempty"`
+	SeatIndex       int   `json:"seatIndex,omitempty"`
 	DealerLimitGold int64 `json:"dealerLimitGold,omitempty"`
 	DealerGold      int64 `json:"dealerGold,omitempty"`
 }
@@ -49,7 +49,7 @@ func (ply *lotteryPlayer) TryEnter() errcode.Error {
 func (ply *lotteryPlayer) BeforeEnter() {
 }
 
-func (ply *lotteryPlayer) GetSeatId() int {
+func (ply *lotteryPlayer) GetSeatIndex() int {
 	roomObj := roomutils.GetRoomObj(ply.Player)
 	return roomObj.GetSeatIndex()
 }
@@ -67,7 +67,7 @@ func (ply *lotteryPlayer) AfterEnter() {
 
 func (ply *lotteryPlayer) GetUserInfo(otherId int) *userInfo {
 	info := &userInfo{
-		SeatId:          ply.GetSeatId(),
+		SeatIndex:       ply.GetSeatIndex(),
 		DealerGold:      ply.dealerGold,
 		DealerLimitGold: ply.dealerLimitGold,
 	}
@@ -148,14 +148,14 @@ func (ply *lotteryPlayer) Bet(area int, gold int64) {
 	{
 		sum := room.totalBet()
 		percent, ok := config.Float("lottery", room.SubId, "AllUserBetPercent")
-		if ok == true && room.dealer != nil && float64(sum+gold) > float64(room.dealer.dealerGold)*percent/100 {
+		if ok && room.dealer != nil && float64(sum+gold) > float64(room.dealer.dealerGold)*percent/100 {
 			err = errDealerNeedMoreGold
 		}
 	}
 	{
 		// 最低押注金币要求
 		minBetNeedGold, ok := config.Int("lottery", room.SubId, "MinBetNeedGold")
-		if ok == true && ply.BagObj().NumItem(gameutils.ItemIdGold) < minBetNeedGold {
+		if ok && ply.BagObj().NumItem(gameutils.ItemIdGold) < minBetNeedGold {
 			scale, _ := config.Int("web", "ExchangeScale", "Value")
 			if scale < 1 {
 				scale = 1
@@ -202,16 +202,16 @@ func (ply *lotteryPlayer) Bet(area int, gold int64) {
 	ply.betAreas[area] += gold
 	ply.BagObj().Add(gameutils.ItemIdGold, -gold, service.GetServerName())
 	room.OnBet(area, gold)
-	if ply.IsRobot == false {
+	if !ply.IsRobot {
 		room.userBetAreas[area] += gold
 	}
 
 	// 玩家有座位
-	if ply.GetSeatId() != roomutils.NoSeat || betArgs.BigBet > 0 {
+	if ply.GetSeatIndex() != roomutils.NoSeat || betArgs.BigBet > 0 {
 		room.Broadcast("Bet", data, ply.Id)
 	}
 	// 移除房间通知
-	if false && ply.continuousBetTimes%21 == 20 && ply.onceBet == false {
+	if false && ply.continuousBetTimes%21 == 20 && !ply.onceBet {
 		ply.onceBet = true
 		msg := fmt.Sprintf("%s玩上瘾了", ply.Nickname)
 		room.Broadcast("Broadcast", map[string]any{"Info": msg, "Message": msg})

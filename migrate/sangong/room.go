@@ -186,7 +186,7 @@ func (room *SangongRoom) Award() {
 			}
 
 			gold := int64(chip) * unit
-			if gold > loser.Gold && room.IsTypeScore() == false {
+			if gold > loser.Gold && !room.IsTypeScore()e {
 				gold = loser.Gold
 			}
 
@@ -198,7 +198,7 @@ func (room *SangongRoom) Award() {
 		}
 
 		dealerLostGold := dealerWinGold - dealer.winGold
-		if dealer.winGold+dealer.Gold < 0 && room.IsTypeScore() == false {
+		if dealer.winGold+dealer.Gold < 0 && !room.IsTypeScore()e {
 			dealer.winGold = -dealer.Gold
 		}
 
@@ -406,7 +406,7 @@ func (room *SangongRoom) OnChooseDealer() {
 
 func (room *SangongRoom) OnFinish() {
 	for _, p := range room.readyPlayers() {
-		if p.IsDone() == false {
+		if !p.IsDone() {
 			return
 		}
 	}

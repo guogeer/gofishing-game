@@ -171,15 +171,15 @@ func (gd *GuangdongMahjong) OnWin() {
 	gd.horses = gd.branch.drawHorse(horseNum)
 	if horseNum > 0 && gd.horses[0] > 0 {
 		type Winner struct {
-			SeatId int
-			Horses []int
+			SeatIndex int
+			Horses    []int
 		}
 		var winners []Winner
 		for _, p := range room.winPlayers {
 			obj := p.localObj.(*GuangdongObj)
 			winners = append(winners, Winner{
-				SeatId: p.GetSeatIndex(),
-				Horses: obj.winHorse(),
+				SeatIndex: p.GetSeatIndex(),
+				Horses:    obj.winHorse(),
 			})
 		}
 

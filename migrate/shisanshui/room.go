@@ -309,7 +309,7 @@ func (room *ShisanshuiRoom) Award() {
 					}
 				}
 			}
-			if quanleida == true {
+			if quanleida {
 				for k := range tempUsers {
 					sum := tempUsers[k].Daqiang
 					for _, score := range tempUsers[k].AllParts {

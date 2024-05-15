@@ -154,7 +154,7 @@ func (ply *ThreeDicePlayer) Bet(area int, gold int64) {
 func (ply *ThreeDicePlayer) GetUserInfo(self bool) *ThreeDiceUserInfo {
 	info := &ThreeDiceUserInfo{}
 	info.UserInfo = ply.UserInfo
-	info.SeatId = ply.GetSeatIndex()
+	info.SeatIndex = ply.GetSeatIndex()
 	info.Areas = ply.areas[:]
 	info.AreaId = ply.areaId
 	if self {

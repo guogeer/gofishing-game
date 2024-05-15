@@ -100,7 +100,7 @@ func (ply *PaohuziPlayer) GetUserInfo(self bool) *PaohuziUserInfo {
 	info := &PaohuziUserInfo{}
 	info.UserInfo = ply.UserInfo
 	// info.UId = ply.GetCharObj().Id
-	info.SeatId = ply.GetSeatIndex()
+	info.SeatIndex = ply.GetSeatIndex()
 	info.IsReady = roomutils.GetRoomObj(ply.Player).IsReady()
 	info.DrawCard = ply.drawCard
 
@@ -212,7 +212,7 @@ func (ply *PaohuziPlayer) Draw() {
 	}
 
 	room.Timing()
-	if isPass == true {
+	if isPass {
 		room.Turn()
 	}
 }
@@ -220,7 +220,7 @@ func (ply *PaohuziPlayer) Draw() {
 func (ply *PaohuziPlayer) GetKongType(c int) int {
 	room := ply.Room()
 
-	if cardutil.IsCardValid(c) == false {
+	if !cardutil.IsCardValid(c) {
 		return -1
 	}
 	// 提龙
@@ -352,7 +352,7 @@ func (ply *PaohuziPlayer) Chow(chowCards [][3]int) {
 	if _, ok := room.expectChowPlayers[ply.Id]; !ok {
 		return
 	}
-	if ply.IsAbleChow() == false {
+	if !ply.IsAbleChow() {
 		return
 	}
 	chowCard := room.lastCard
@@ -455,7 +455,7 @@ func (ply *PaohuziPlayer) Pong() {
 	if room.expectPongPlayer != ply {
 		return
 	}
-	if ply.IsAblePong() == false {
+	if !ply.IsAblePong() {
 		return
 	}
 
@@ -567,7 +567,7 @@ func (ply *PaohuziPlayer) Discard(discardCard int) {
 	PrintCards(ply.cards)
 
 	room := ply.Room()
-	if room.CardSet().IsCardValid(discardCard) == false {
+	if !room.CardSet().IsCardValid(discardCard) {
 		return
 	}
 	if cardNum := ply.cards[discardCard]; cardNum < 1 || cardNum > 2 {
@@ -644,7 +644,7 @@ func (ply *PaohuziPlayer) Discard(discardCard int) {
 	}
 
 	room.Timing()
-	if isPass == true {
+	if isPass {
 		room.Turn()
 	}
 }
@@ -671,7 +671,7 @@ func (ply *PaohuziPlayer) Pass() {
 	ply.operateTips = nil
 	delete(room.expectChowPlayers, ply.Id)
 	delete(room.expectWinPlayers, ply.Id)
-	if expectWin == true {
+	if expectWin {
 		ply.unableWinCards[room.lastCard] = true
 	}
 
@@ -714,7 +714,7 @@ func (ply *PaohuziPlayer) IsAbleChow() bool {
 	if ply.isGiveUp || ply.isReadyHand {
 		return false
 	}
-	if cardutil.IsCardValid(chowCard) == false {
+	if !cardutil.IsCardValid(chowCard) {
 		return false
 	}
 	// 上家出牌
@@ -753,7 +753,7 @@ func (ply *PaohuziPlayer) IsAblePong() bool {
 	if ply.isReadyHand && ply.drawCard == -1 {
 		return false
 	}
-	if cardutil.IsCardValid(pongCard) == false {
+	if !cardutil.IsCardValid(pongCard) {
 		return false
 	}
 	if ply.cards[pongCard] != 2 {
