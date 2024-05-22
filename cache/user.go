@@ -1,8 +1,9 @@
-package internal
+package main
 
 import (
 	"context"
-	"quasar/utils"
+
+	"github.com/guogeer/quasar/utils"
 
 	"gofishing-game/internal/dbo"
 	"gofishing-game/internal/pb"

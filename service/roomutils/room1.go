@@ -4,8 +4,9 @@ package roomutils
 // 房间
 
 import (
-	"quasar/utils"
 	"time"
+
+	"github.com/guogeer/quasar/utils"
 
 	"gofishing-game/internal/cardutils"
 	"gofishing-game/internal/gameutils"

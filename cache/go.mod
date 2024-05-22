@@ -3,7 +3,7 @@ module gofishing-game/cache
 go 1.21.1
 
 require (
-	github.com/guogeer/quasar v1.8.20220611-0.20220711111112-4278b5d80e63
+	github.com/guogeer/quasar v0.0.0
 	google.golang.org/grpc v1.60.1
 	google.golang.org/protobuf v1.32.0
 )

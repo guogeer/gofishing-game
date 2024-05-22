@@ -5,9 +5,10 @@ import (
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"math/rand"
-	"quasar/utils"
 	"strings"
 	"time"
+
+	"github.com/guogeer/quasar/utils"
 
 	"github.com/guogeer/quasar/config"
 )

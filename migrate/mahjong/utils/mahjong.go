@@ -3,9 +3,10 @@ package utils
 import (
 	"fmt"
 	"gofishing-game/internal/cardutils"
-	"quasar/utils"
 	"strconv"
 	"strings"
+
+	"github.com/guogeer/quasar/utils"
 
 	"github.com/guogeer/quasar/log"
 )

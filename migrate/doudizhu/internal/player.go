@@ -7,8 +7,9 @@ import (
 	ddzutils "gofishing-game/migrate/doudizhu/utils"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
-	"quasar/utils"
 	"time"
+
+	"github.com/guogeer/quasar/utils"
 
 	"github.com/guogeer/quasar/log"
 )

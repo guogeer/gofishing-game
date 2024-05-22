@@ -2,7 +2,6 @@ package roomutils
 
 import (
 	"encoding/json"
-	"quasar/utils"
 	"slices"
 	"strconv"
 	"strings"
@@ -14,6 +13,7 @@ import (
 	"github.com/guogeer/quasar/cmd"
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
+	"github.com/guogeer/quasar/utils"
 )
 
 var gSubGames map[int]*subGame // 所有的场次

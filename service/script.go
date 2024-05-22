@@ -2,9 +2,10 @@ package service
 
 import (
 	"fmt"
-	"quasar/utils"
 	"strings"
 	"sync"
+
+	"github.com/guogeer/quasar/utils"
 
 	"gofishing-game/internal/env"
 	"gofishing-game/internal/gameutils"

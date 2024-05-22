@@ -2,9 +2,10 @@ package gameutils
 
 import (
 	"encoding/json"
-	"quasar/utils"
 	"testing"
 	"time"
+
+	"github.com/guogeer/quasar/utils"
 )
 
 func TestCD(t *testing.T) {

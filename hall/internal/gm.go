@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"quasar/utils"
+	"github.com/guogeer/quasar/utils"
 
 	"github.com/guogeer/quasar/cmd"
 	"github.com/guogeer/quasar/log"

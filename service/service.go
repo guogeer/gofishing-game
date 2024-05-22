@@ -7,9 +7,10 @@ import (
 	"net"
 	"os"
 	"os/signal"
-	"quasar/utils"
 	"runtime"
 	"time"
+
+	"github.com/guogeer/quasar/utils"
 
 	// "gofishing-game/internal/errcode"
 	"gofishing-game/internal/pb"

@@ -2,8 +2,9 @@ package internal
 
 import (
 	"context"
-	"quasar/utils"
 	"time"
+
+	"github.com/guogeer/quasar/utils"
 
 	"gofishing-game/internal"
 	"gofishing-game/internal/errcode"

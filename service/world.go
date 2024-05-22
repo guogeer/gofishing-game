@@ -3,8 +3,9 @@ package service
 import (
 	"context"
 	"fmt"
-	"quasar/utils"
 	"time"
+
+	"github.com/guogeer/quasar/utils"
 
 	"gofishing-game/internal/gameutils"
 	"gofishing-game/internal/pb"

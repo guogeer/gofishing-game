@@ -12,9 +12,10 @@ import (
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"gofishing-game/service/system"
-	"quasar/utils"
-	"quasar/utils/randutils"
 	"time"
+
+	"github.com/guogeer/quasar/utils"
+	"github.com/guogeer/quasar/utils/randutils"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"

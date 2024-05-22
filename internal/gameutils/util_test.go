@@ -1,8 +1,9 @@
 package gameutils
 
 import (
-	"quasar/utils"
 	"testing"
+
+	"github.com/guogeer/quasar/utils"
 )
 
 func TestInitNilFields(t *testing.T) {

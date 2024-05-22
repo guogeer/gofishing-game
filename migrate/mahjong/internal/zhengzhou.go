@@ -6,8 +6,9 @@ import (
 	mjutils "gofishing-game/migrate/mahjong/utils"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
-	"quasar/utils"
 	"time"
+
+	"github.com/guogeer/quasar/utils"
 
 	"github.com/guogeer/quasar/config"
 )

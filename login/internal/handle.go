@@ -6,9 +6,10 @@ import (
 	"errors"
 	"net"
 	"net/url"
-	"quasar/utils"
 	"strings"
 	"time"
+
+	"github.com/guogeer/quasar/utils"
 
 	"gofishing-game/internal/errcode"
 	"gofishing-game/internal/pb"

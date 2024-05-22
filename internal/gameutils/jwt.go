@@ -2,7 +2,8 @@ package gameutils
 
 import (
 	"gofishing-game/internal/errcode"
-	"quasar/config"
+
+	"github.com/guogeer/quasar/config"
 
 	"github.com/golang-jwt/jwt/v4"
 )

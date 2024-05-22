@@ -9,10 +9,11 @@ import (
 	"gofishing-game/service/roomutils"
 	"gofishing-game/service/system"
 	"math/rand"
-	"quasar/utils/randutils"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/guogeer/quasar/utils/randutils"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"

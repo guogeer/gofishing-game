@@ -1,12 +1,13 @@
-package internal
+package main
 
 import (
 	"context"
 	"fmt"
-	"quasar/utils"
 	"reflect"
 	"regexp"
 	"time"
+
+	"github.com/guogeer/quasar/utils"
 
 	"gofishing-game/internal"
 	"gofishing-game/internal/dbo"

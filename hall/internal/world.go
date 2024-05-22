@@ -3,8 +3,9 @@ package internal
 import (
 	"context"
 	"encoding/json"
-	"quasar/utils"
 	"time"
+
+	"github.com/guogeer/quasar/utils"
 
 	"gofishing-game/internal/pb"
 	"gofishing-game/internal/rpc"

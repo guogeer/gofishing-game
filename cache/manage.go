@@ -1,4 +1,4 @@
-package internal
+package main
 
 // GM管理后台
 

@@ -7,9 +7,10 @@ import (
 	mjutils "gofishing-game/migrate/mahjong/utils"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
-	"quasar/utils"
 	"strconv"
 	"time"
+
+	"github.com/guogeer/quasar/utils"
 )
 
 var (
