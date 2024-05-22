@@ -49,5 +49,3 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240123012728-ef4313101c80 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/guogeer/quasar => /home/innovation/guogeer/github.com/quasar
