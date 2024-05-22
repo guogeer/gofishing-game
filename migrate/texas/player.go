@@ -3,7 +3,6 @@ package texas
 // 2017-8-22
 
 import (
-	"fmt"
 	"gofishing-game/internal/errcode"
 	"gofishing-game/internal/gameutils"
 	"gofishing-game/service"
@@ -12,7 +11,7 @@ import (
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/util"
+	"github.com/guogeer/quasar/utils"
 )
 
 const (
@@ -43,23 +42,23 @@ func maxInArray(some []int64) int64 {
 // 玩家信息
 type TexasUserInfo struct {
 	service.UserInfo
-	SeatId  int
-	Cards   []int `json:",omitempty"`
-	IsReady bool  `json:",omitempty"`
+	SeatIndex int   `json:"seatIndex,omitempty"`
+	Cards     []int `json:"cards,omitempty"`
+	IsReady   bool  `json:"isReady,omitempty"`
 
-	Bankroll        int64
-	DefaultBankroll int64
+	Bankroll        int64 `json:"bankroll,omitempty"`
+	DefaultBankroll int64 `json:"defaultBankroll,omitempty"`
 
-	Action    int `json:",omitempty"`
-	LastBlind int64
+	Action    int   `json:"action,omitempty"`
+	LastBlind int64 `json:"lastBlind,omitempty"`
 
-	TotalBlind int64 // 押注
+	TotalBlind int64 `json:"totalBlind,omitempty"` // 押注
 
-	IsShow bool `json:",omitempty"`
+	IsShow bool `json:"isShow,omitempty"`
 
-	Auto     int   `json:",omitempty"`
-	Match    []int `json:",omitempty"`
-	CardType int   `json:",omitempty"`
+	Auto     int   `json:"auto,omitempty"`
+	Match    []int `json:"match,omitempty"`
+	CardType int   `json:"cardType,omitempty"`
 }
 
 type TexasPlayer struct {
@@ -67,7 +66,8 @@ type TexasPlayer struct {
 
 	cards [2]int // 手牌
 
-	bankroll int64 // 筹码
+	bankroll        int64 // 筹码
+	defaultBankrool int64
 
 	potId      int
 	totalBlind int64 // 押注
@@ -84,6 +84,18 @@ type TexasPlayer struct {
 	addonBlind int64
 
 	autoFoldCounter int
+	autoTimer       *utils.Timer
+	operateTimer    *utils.Timer
+	failTimer       *utils.Timer
+	isFail          bool
+	wallet          int
+}
+
+func (ply *TexasPlayer) TryEnter() errcode.Error {
+	return nil
+}
+
+func (ply *TexasPlayer) BeforeEnter() {
 }
 
 func (ply *TexasPlayer) AfterEnter() {
@@ -94,7 +106,6 @@ func (ply *TexasPlayer) AfterEnter() {
 	if seatId != roomutils.NoSeat && ply.GetSeatIndex() == roomutils.NoSeat && bankroll > 0 {
 		ply.SitDown(seatId)
 	}
-	ply.OnlineBoxObj().Look()
 }
 
 func (ply *TexasPlayer) TryLeave() errcode.Error {
@@ -195,8 +206,8 @@ func (ply *TexasPlayer) TakeAction(gold int64) {
 	}
 
 	ply.SetAutoPlay(0) // 清除托管
-	ply.StopTimer(service.TimerEventAuto)
-	ply.StopTimer(service.TimerEventOperate)
+	utils.StopTimer(ply.autoTimer)
+	utils.StopTimer(ply.operateTimer)
 	room.Broadcast("TakeAction", data)
 	room.OnTakeAction()
 
@@ -231,31 +242,30 @@ func (ply *TexasPlayer) GetUserInfo(self bool) *TexasUserInfo {
 }
 
 // 坐下
-func (ply *TexasPlayer) SitDown(seatId int) {
+func (ply *TexasPlayer) SitDown(seatIndex int) {
 	room := ply.Room()
 	log.Debugf("player %d sit down", ply.Id)
 
-	code := Ok
+	var e errcode.Error
 	defer func() {
-		if code != Ok {
-			ply.WriteJSON("SitDown", map[string]any{"Code": code, "Msg": code.String(), "UId": ply.Id})
+		if e != nil {
+			ply.WriteErr("SitDown", nil, "uid", ply.Id)
 		}
 	}()
 	subId := room.SubId
 	minBankroll, _ := config.Int("texasroom", subId, "MinBankroll")
 	if ply.BagObj().NumItem(gameutils.ItemIdGold) < minBankroll {
-		code = MoreGold
+		e = errcode.MoreItem(gameutils.ItemIdGold)
 		return
 	}
-	if code := roomutils.GetRoomObj(ply.Player).SitDown(seatId); code != Ok {
+	if code := roomutils.GetRoomObj(ply.Player).SitDown(seatIndex); code != nil {
 		return
 	}
 	// OK
 	info := ply.GetUserInfo(false)
-	room.Broadcast("SitDown", map[string]any{"Code": Ok, "UId": ply.Id, "Info": info})
+	room.Broadcast("SitDown", gameutils.MergeError(nil, map[string]any{"uid": ply.Id, "info": info}))
 	ply.initBankroll()
 	roomutils.GetRoomObj(ply.Player).Ready()
-	ply.OnlineBoxObj().Start()
 }
 
 func (ply *TexasPlayer) initBankroll() {
@@ -275,7 +285,7 @@ func (ply *TexasPlayer) initBankroll() {
 		if bankroll > ply.BagObj().NumItem(gameutils.ItemIdGold) {
 			bankroll = ply.BagObj().NumItem(gameutils.ItemIdGold)
 		}
-		ply.AddGold(-bankroll, util.GUID(), "user.texas")
+		ply.AddGold(-bankroll, "texas")
 	}
 	ply.AddBankroll(bankroll)
 }
@@ -300,10 +310,9 @@ func (ply *TexasPlayer) SitUp() {
 		room.OnTakeAction()
 	}
 	// 回收筹码
-	ply.AddGold(ply.bankroll, util.GUID(), "user.texas_back")
+	ply.AddGold(ply.bankroll, "texas_back")
 	ply.bankroll = 0
 	roomutils.GetRoomObj(ply.Player).SitUp()
-	ply.OnlineBoxObj().Stop()
 }
 
 func (ply *TexasPlayer) Room() *TexasRoom {
@@ -328,19 +337,12 @@ func (ply *TexasPlayer) ChooseBankroll(gold int64) {
 		return
 	}
 
-	obj := ply.BaseObj()
-	dataKey := fmt.Sprintf("texas.bankroll_%d", subId)
-	obj.Add(dataKey, gold-obj.Int64(dataKey))
-	ply.WriteJSON("ChooseBankroll", map[string]any{"Gold": gold})
+	ply.defaultBankrool = gold
+	ply.WriteJSON("chooseBankroll", map[string]any{"gold": gold})
 }
 
 func (ply *TexasPlayer) defaultBankroll() int64 {
-	room := ply.Room()
-	obj := ply.BaseObj()
-	subId := room.SubId
-
-	dataKey := fmt.Sprintf("texas.bankroll_%d", subId)
-	return obj.Int64(dataKey)
+	return ply.defaultBankrool
 }
 
 func (ply *TexasPlayer) match() (int, []int) {
@@ -362,8 +364,8 @@ func (ply *TexasPlayer) OnTurn() {
 	act := room.activePlayer
 	data := map[string]any{
 		"UId":  act.Id,
-		"Sec":  room.Countdown(),
-		"Sec0": room.GetShowTime(time.Now().Add(room.maxAutoTime())),
+		"sec":  room.Countdown(),
+		"sec0": time.Now().Add(room.maxAutoTime()).Unix(),
 	}
 	if ply == act && ply.IsPlaying() {
 		totalBlind := room.allBlind[ply.GetSeatIndex()]
@@ -511,4 +513,16 @@ func (ply *TexasPlayer) maxAllIn() int64 {
 		gold = ply.bankroll
 	}
 	return gold
+}
+
+func (ply *TexasPlayer) GetSeatIndex() int {
+	return roomutils.GetRoomObj(ply.Player).GetSeatIndex()
+}
+
+// TODO
+func (ply *TexasPlayer) Fail() {
+}
+
+// 设置钱包
+func (ply *TexasPlayer) SetWallet(n int64) {
 }

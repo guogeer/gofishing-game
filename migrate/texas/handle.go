@@ -7,37 +7,26 @@ import (
 	"github.com/guogeer/quasar/config"
 )
 
-type Args struct {
-	SeatIndex int
-	Gold      int64
-	Auto      int
-	IsShow    bool
-	Level     int // 房间等级
-}
-
-type LotteryArgs struct {
-	AreaId int
-	Gold   int64
-	UId    int
+type texasArgs struct {
+	SeatIndex int   `json:"seatIndex,omitempty"`
+	Gold      int64 `json:"gold,omitempty"`
+	Auto      int   `json:"auto,omitempty"`
+	IsShow    bool  `json:"isShow,omitempty"`
+	Level     int   `json:"level,omitempty"` // 房间等级
 }
 
 func init() {
-	cmd.Bind(TakeAction, (*Args)(nil))
-	cmd.Bind(SitDown, (*Args)(nil))
-	cmd.Bind(ChooseBankroll, (*Args)(nil))
-	cmd.Bind(SitUp, (*Args)(nil))       // 站起
-	cmd.Bind(SetAutoPlay, (*Args)(nil)) // 托管
-	cmd.Bind(ShowCard, (*Args)(nil))    // 亮牌
-	cmd.Bind(Rebuy, (*Args)(nil))       // 重购
-	cmd.Bind(Addon, (*Args)(nil))       // 增购
+	cmd.BindFunc(TakeAction, (*texasArgs)(nil))
+	cmd.BindFunc(SitDown, (*texasArgs)(nil))
+	cmd.BindFunc(ChooseBankroll, (*texasArgs)(nil))
+	cmd.BindFunc(SitUp, (*texasArgs)(nil))       // 站起
+	cmd.BindFunc(SetAutoPlay, (*texasArgs)(nil)) // 托管
+	cmd.BindFunc(ShowCard, (*texasArgs)(nil))    // 亮牌
+	cmd.BindFunc(Rebuy, (*texasArgs)(nil))       // 重购
+	cmd.BindFunc(Addon, (*texasArgs)(nil))       // 增购
 
-	cmd.Bind(BetLottery, (*LotteryArgs)(nil))
-	cmd.Bind(LookLottery, (*LotteryArgs)(nil))
-	cmd.Bind(GetLotteryHistory, (*LotteryArgs)(nil))
-	cmd.Bind(GetLotteryRank, (*LotteryArgs)(nil))
-
-	cmd.Bind(SetWallet, (*Args)(nil))
-	cmd.Bind(RecommendRooms, (*Args)(nil))
+	cmd.BindFunc(SetWallet, (*texasArgs)(nil))
+	cmd.BindFunc(funcRecommendRooms, (*texasArgs)(nil))
 }
 
 func GetPlayerByContext(ctx *cmd.Context) *TexasPlayer {
@@ -48,7 +37,7 @@ func GetPlayerByContext(ctx *cmd.Context) *TexasPlayer {
 }
 
 func TakeAction(ctx *cmd.Context, iArgs interface{}) {
-	args := iArgs.(*Args)
+	args := iArgs.(*texasArgs)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
 
@@ -58,7 +47,7 @@ func TakeAction(ctx *cmd.Context, iArgs interface{}) {
 }
 
 func SitDown(ctx *cmd.Context, iArgs interface{}) {
-	args := iArgs.(*Args)
+	args := iArgs.(*texasArgs)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
 
@@ -68,7 +57,7 @@ func SitDown(ctx *cmd.Context, iArgs interface{}) {
 }
 
 func ChooseBankroll(ctx *cmd.Context, iArgs interface{}) {
-	args := iArgs.(*Args)
+	args := iArgs.(*texasArgs)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
 
@@ -88,7 +77,7 @@ func SitUp(ctx *cmd.Context, iArgs interface{}) {
 }
 
 func SetAutoPlay(ctx *cmd.Context, iArgs interface{}) {
-	args := iArgs.(*Args)
+	args := iArgs.(*texasArgs)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
 
@@ -98,7 +87,7 @@ func SetAutoPlay(ctx *cmd.Context, iArgs interface{}) {
 }
 
 func ShowCard(ctx *cmd.Context, iArgs interface{}) {
-	args := iArgs.(*Args)
+	args := iArgs.(*texasArgs)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
 
@@ -127,66 +116,8 @@ func Addon(ctx *cmd.Context, iArgs interface{}) {
 	ply.Addon()
 }
 
-func BetLottery(ctx *cmd.Context, data interface{}) {
-	args := data.(*LotteryArgs)
-	ply := GetPlayerByContext(ctx)
-	if ply == nil {
-		return
-	}
-	code := GetLotterySystem().Bet(ply, args.AreaId, args.Gold)
-	ply.WriteJSON("BetLottery", map[string]any{"Code": code, "Msg": code.String(), "Gold": args.Gold})
-}
-
-func LookLottery(ctx *cmd.Context, data interface{}) {
-	// args := data.(*LotteryArgs)
-	ply := GetPlayerByContext(ctx)
-	if ply == nil {
-		return
-	}
-	sys := GetLotterySystem()
-	params := map[string]any{
-		"Status":    sys.Status,
-		"Areas":     sys.areas,
-		"PrizePool": sys.prizePool,
-		"Sec":       service.GetShowTime(sys.deadline),
-	}
-	if e := sys.history.Back(); e != nil {
-		params["LastRecord"] = e.Value.(LotteryRecord)
-	}
-	if user, ok := sys.users[ply.Id]; ok {
-		params["MyAreas"] = user.areas
-	}
-	ply.WriteJSON("LookLottery", params)
-}
-
-func GetLotteryHistory(ctx *cmd.Context, data interface{}) {
-	// args := data.(*LotteryArgs)
-	ply := GetPlayerByContext(ctx)
-	if ply == nil {
-		return
-	}
-	sys := GetLotterySystem()
-
-	last := make([]LotteryRecord, 0, 30)
-	for e := sys.history.Front(); e != nil; e = e.Next() {
-		last = append(last, e.Value.(LotteryRecord))
-	}
-	ply.WriteJSON("GetLotteryHistory", map[string]any{"Last": last})
-}
-
-func GetLotteryRank(ctx *cmd.Context, data interface{}) {
-	// args := data.(*LotteryArgs)
-	ply := GetPlayerByContext(ctx)
-	if ply == nil {
-		return
-	}
-	sys := GetLotterySystem()
-
-	ply.WriteJSON("GetLotteryRank", map[string]any{"Yesterday": sys.yesterdayRank, "Today": sys.todayRank})
-}
-
 func SetWallet(ctx *cmd.Context, data interface{}) {
-	args := data.(*LotteryArgs)
+	args := data.(*texasArgs)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
 		return
@@ -195,10 +126,10 @@ func SetWallet(ctx *cmd.Context, data interface{}) {
 }
 
 // 推荐房间
-func RecommendRooms(ctx *cmd.Context, data interface{}) {
-	args := data.(*Args)
+func funcRecommendRooms(ctx *cmd.Context, data interface{}) {
+	args := data.(*texasArgs)
 	ss := &cmd.Session{Id: ctx.Ssid, Out: ctx.Out}
-	rooms := service.RecommendRooms(args.Level)
+	rooms := RecommendRooms(args.Level)
 
 	var roomList []TexasRoomInfo
 	for _, room := range rooms {
@@ -207,13 +138,13 @@ func RecommendRooms(ctx *cmd.Context, data interface{}) {
 		maxBankroll, _ := config.Int("texasroom", room.SubId, "MaxBankroll")
 		info := TexasRoomInfo{
 			Id:          texasRoom.Id,
-			SubId:       texasRoom.GetSubId(),
+			SubId:       texasRoom.SubId,
 			FrontBlind:  texasRoom.frontBlind,
 			SmallBlind:  texasRoom.smallBlind,
 			BigBlind:    texasRoom.bigBlind,
 			MinBankroll: minBankroll,
 			MaxBankroll: maxBankroll,
-			ActiveUsers: texasRoom.CountPlayersInSeat(),
+			ActiveUsers: texasRoom.NumSeatPlayer(),
 		}
 		roomList = append(roomList, info)
 	}

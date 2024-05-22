@@ -1,6 +1,8 @@
 package texas
 
 import (
+	"gofishing-game/internal/cardutils"
+	"gofishing-game/migrate/internal/cardrule"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"time"
@@ -9,7 +11,7 @@ import (
 type TexasWorld struct{}
 
 func init() {
-	service.CreateWorld("德州扑克", &TexasWorld{})
+	service.CreateWorld(&TexasWorld{})
 
 	var cards []int
 	for color := 0; color < 4; color++ {
@@ -23,7 +25,7 @@ func init() {
 }
 
 func (w *TexasWorld) NewRoom(subId int) *roomutils.Room {
-	helper := cardutils.NewTexasHelper()
+	helper := cardrule.NewTexasHelper()
 	room := &TexasRoom{
 		helper: helper,
 		cards:  make([]int, 0, helper.Size()),

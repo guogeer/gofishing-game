@@ -45,9 +45,10 @@ type RoomObj struct {
 	room   *Room
 
 	// TODO 待实现
-	isReady       bool
-	isObjectClone bool
-	OriginGold    int64 // TODO 未初始化
+	isReady             bool
+	isObjectClone       bool
+	OriginGold          int64 // TODO 未初始化
+	ContinuousPlayTimes int   // TODO
 }
 
 func GetRoomObj(player *service.Player) *RoomObj {

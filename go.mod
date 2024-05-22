@@ -50,4 +50,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/guogeer/quasar => /home/guogeer/github.com/quasar
+replace github.com/guogeer/quasar => /home/innovation/guogeer/github.com/quasar

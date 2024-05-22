@@ -2,12 +2,14 @@ package texas
 
 import (
 	"gofishing-game/internal/errcode"
+	"gofishing-game/migrate/internal/cardrule"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"time"
 
 	"github.com/guogeer/quasar/config"
 	"github.com/guogeer/quasar/log"
+	"github.com/guogeer/quasar/utils"
 )
 
 var (
@@ -39,7 +41,7 @@ type TexasRoom struct {
 	winner       *TexasPlayer
 
 	deadline time.Time
-	helper   *cardutils.TexasHelper
+	helper   *cardrule.TexasHelper
 
 	potId int
 
@@ -59,11 +61,10 @@ type TexasRoom struct {
 	tempDealerSeat, dealerSeat, bigBlindSeat, smallBlindSeat int // 注意，这里是大盲、小盲位置
 
 	continuousLoop int // 连续玩的局数
+	tournament     *TournamentCopy
 }
 
 func (room *TexasRoom) OnEnter(player *service.Player) {
-	room.Room.OnEnter(player)
-
 	comer := player.GameAction.(*TexasPlayer)
 	log.Infof("player %d enter room %d", comer.Id, room.Id)
 
@@ -101,7 +102,7 @@ func (room *TexasRoom) OnEnter(player *service.Player) {
 		}
 	}
 	data["SeatPlayers"] = seats
-	if comer.SeatIndex == roomutils.NoSeat {
+	if comer.GetSeatIndex() == roomutils.NoSeat {
 		data["PersonInfo"] = comer.GetUserInfo(true)
 	}
 
@@ -119,8 +120,6 @@ func (room *TexasRoom) Leave(player *service.Player) errcode.Error {
 }
 
 func (room *TexasRoom) OnLeave(player *service.Player) {
-	room.Room.OnLeave(player)
-
 	counter := 0
 	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil {
@@ -146,7 +145,7 @@ func (room *TexasRoom) OnLeave(player *service.Player) {
 
 func (room *TexasRoom) OnCreate() {
 	room.tempDealerSeat = -1
-	room.Room.OnCreate()
+	// room.Room.OnCreate()
 
 	if !room.IsTypeTournament() {
 		subId := room.SubId
@@ -170,7 +169,7 @@ func (room *TexasRoom) Award() {
 	}
 
 	helper := room.helper
-	room.deadline = time.Now().Add(room.RestartTime())
+	room.deadline = time.Now().Add(room.FreeDuration())
 	sec := room.Countdown()
 
 	relations := make([]Relation, 0, 16)
@@ -260,7 +259,7 @@ func (room *TexasRoom) GameOver() {
 	subId := room.SubId
 	minBankroll, _ := config.Int("texasroom", subId, "MinBankroll")
 	for i := 0; i < room.NumSeat(); i++ {
-		if p := room.GetPlayer(i); p != nil && p.bankroll == 0 && p.Gold < minBankroll {
+		if p := room.GetPlayer(i); p != nil && p.bankroll == 0 && p.NumGold() < minBankroll {
 			p.SitUp()
 		}
 	}
@@ -283,7 +282,7 @@ func (room *TexasRoom) GameOver() {
 
 	if room.IsTypeTournament() {
 		cp := room.Tournament()
-		users := make([]*service.TournamentUser, 0, 16)
+		users := make([]*TournamentUser, 0, 16)
 		for i := 0; i < room.NumSeat(); i++ {
 			if p := room.GetPlayer(i); p != nil && roomutils.GetRoomObj(p.Player).IsReady() {
 				user := cp.Users[p.Id]
@@ -304,9 +303,9 @@ func (room *TexasRoom) GameOver() {
 		for i := 0; i < room.NumSeat(); i++ {
 			if p := room.GetPlayer(i); p != nil && p.bankroll == 0 {
 				if cp.IsAbleRebuy(room.blindLoop) || cp.IsAbleAddon(room.blindLoop) {
-					p.AddTimer(service.TimerEventFail, roomutils.GetRoomObj(p.Player).Fail, systemFailTime)
+					p.failTimer = utils.NewTimer(p.Fail, systemFailTime)
 				} else {
-					roomutils.GetRoomObj(p.Player).Fail()
+					p.Fail()
 				}
 			}
 		}
@@ -318,7 +317,7 @@ func (room *TexasRoom) StartGame() {
 
 	// choose dealer
 	room.dealerSeat = room.NextSeat(room.tempDealerSeat)
-	if host := service.room.GetPlayer(room.HostSeatIndex()); host != nil && room.tempDealerSeat == -1 {
+	if host := room.GetPlayer(room.HostSeatIndex()); host != nil && room.tempDealerSeat == -1 {
 		room.dealerSeat = host.GetSeatIndex()
 	}
 	// save dealer
@@ -358,8 +357,8 @@ func (room *TexasRoom) StartGame() {
 	bb.AddBankroll(-bb.totalBlind)
 
 	room.raise = 2 * room.bigBlind
-	room.allBlind[sb.SeatIndex] = sb.totalBlind
-	room.allBlind[bb.SeatIndex] = bb.totalBlind
+	room.allBlind[sb.GetSeatIndex()] = sb.totalBlind
+	room.allBlind[bb.GetSeatIndex()] = bb.totalBlind
 
 	counter = 0 // 统计老玩家数量
 	for i := 0; i < room.NumSeat(); i++ {
@@ -403,7 +402,7 @@ func (room *TexasRoom) StartGame() {
 		}
 	}
 
-	for _, player := range room.AllPlayers {
+	for _, player := range room.GetAllPlayers() {
 		data := map[string]any{
 			"SmallBlindSeat": room.smallBlindSeat,
 			"BigBlindSeat":   room.bigBlindSeat,
@@ -427,11 +426,11 @@ func (room *TexasRoom) StartGame() {
 	}
 }
 
-func (room *TexasRoom) GetPlayer(seatId int) *TexasPlayer {
-	if seatId < 0 || seatId >= room.NumSeat() {
+func (room *TexasRoom) GetPlayer(seatIndex int) *TexasPlayer {
+	if seatIndex < 0 || seatIndex >= room.NumSeat() {
 		return nil
 	}
-	if p := room.SeatPlayers[seatId]; p != nil {
+	if p := room.FindPlayer(seatIndex); p != nil {
 		return p.GameAction.(*TexasPlayer)
 	}
 	return nil
@@ -459,7 +458,7 @@ func (room *TexasRoom) OnTakeAction() {
 	room.activePlayer = nil
 	act.AutoPlay() // 亮牌
 
-	nextId := room.NextSeat(act.SeatIndex)
+	nextId := room.NextSeat(act.GetSeatIndex())
 	next := room.GetPlayer(nextId)
 	// 加注
 	raise := 2 * act.totalBlind
@@ -568,7 +567,7 @@ func (room *TexasRoom) NewRound() {
 	}
 
 	log.Debug("new round", dealNum, room.allPot[:room.potId+1])
-	for _, player := range room.AllPlayers {
+	for _, player := range room.GetAllPlayers() {
 		p := player.GameAction.(*TexasPlayer)
 		data := map[string]any{
 			"Cards":     room.cards,
@@ -594,14 +593,14 @@ func (room *TexasRoom) NewRound() {
 func (room *TexasRoom) Turn() {
 	act := room.activePlayer
 	room.deadline = time.Now().Add(room.maxAutoTime())
-	act.AddTimer(service.TimerEventOperate, func() { act.TakeAction(-2) }, room.maxAutoTime())
+	act.operateTimer = utils.NewTimer(func() { act.TakeAction(-2) }, room.maxAutoTime())
 	room.OnTurn()
 
-	act.AddTimer(service.TimerEventAuto, act.AutoPlay, room.systemAutoTime())
+	act.autoTimer = utils.NewTimer(act.AutoPlay, room.systemAutoTime())
 }
 
 func (room *TexasRoom) OnTurn() {
-	for _, player := range room.AllPlayers {
+	for _, player := range room.GetAllPlayers() {
 		p := player.GameAction.(*TexasPlayer)
 		p.OnTurn()
 	}
@@ -612,7 +611,7 @@ func (room *TexasRoom) NextSeat(seatId int) int {
 		nextId := (seatId + i + 1) % room.NumSeat()
 		next := room.GetPlayer(nextId)
 		if next != nil && next.IsPlaying() && next.bankroll > 0 {
-			return next.SeatIndex
+			return next.GetSeatIndex()
 		}
 	}
 	return roomutils.NoSeat

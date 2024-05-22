@@ -220,3 +220,8 @@ func (room *Room) NumSeatPlayer() int {
 	}
 	return num
 }
+
+// TODO 比赛场逻辑
+func (room *Room) MergeTo(to *Room) {
+
+}
