@@ -13,7 +13,6 @@ import (
 )
 
 var (
-	maxAutoTime    = 60 * time.Second
 	systemFailTime = 10 * time.Second
 	systemAutoTime = 500 * time.Millisecond
 )

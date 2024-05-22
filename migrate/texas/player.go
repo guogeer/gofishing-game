@@ -88,7 +88,7 @@ type TexasPlayer struct {
 	operateTimer    *utils.Timer
 	failTimer       *utils.Timer
 	isFail          bool
-	wallet          int
+	// wallet          int
 }
 
 func (ply *TexasPlayer) TryEnter() errcode.Error {

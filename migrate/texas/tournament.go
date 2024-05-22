@@ -145,12 +145,12 @@ type TournamentCopy struct {
 	*Tournament
 
 	rooms []*list.List
-	e     *list.Element
+	// e     *list.Element
 
 	addBlindLoop  int // 升盲轮数
 	addBlindTimer *utils.Timer
 
-	failUsers int
+	// failUsers int
 }
 
 func (cp *TournamentCopy) StartGame() {
@@ -184,7 +184,7 @@ func (cp *TournamentCopy) CountActivePlayers() int {
 			room := e.Value.(*roomutils.Room)
 			for _, p := range room.GetSeatPlayers() {
 				tp := p.GameAction.(*TexasPlayer)
-				if p != nil && !tp.isFail {
+				if !tp.isFail {
 					counter++
 				}
 			}
@@ -221,7 +221,7 @@ func (cp *TournamentCopy) MergeRoom(room *roomutils.Room) {
 		var n int
 		for _, p := range tempRoom.GetAllPlayers() {
 			tp := p.GameAction.(*TexasPlayer)
-			if p != nil && tp.isFail == false {
+			if !tp.isFail {
 				n++
 			}
 		}
@@ -243,10 +243,6 @@ func (cp *TournamentCopy) MergeRoom(room *roomutils.Room) {
 	if room != pairRoom {
 		room.MergeTo(pairRoom)
 	}
-}
-
-func (room *TexasRoom) MergeTo(to *TexasRoom) {
-	return
 }
 
 func (cp *TournamentCopy) isAbleRebuyOrAddon(format string, loop int) bool {
@@ -285,7 +281,7 @@ func (cp *TournamentCopy) Award(itemString string) {
 			room := e.Value.(*roomutils.Room)
 			for _, p := range room.GetSeatPlayers() {
 				tp := p.GameAction.(*TexasPlayer)
-				if p != nil && tp.isFail == false {
+				if !tp.isFail {
 					p.BagObj().AddSomeItems(gameutils.ParseNumbericItems(itemString), way)
 				}
 			}
@@ -319,7 +315,7 @@ func (g *TournamentGame) Register(user *TournamentUser) {
 
 func (g *TournamentGame) CancelRegister(uid int) {
 	cp := g.CurrentCopy()
-	if cp.IsRegister(uid) == false {
+	if !cp.IsRegister(uid) {
 		return
 	}
 
