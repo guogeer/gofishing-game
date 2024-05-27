@@ -91,7 +91,7 @@ func (ply *SangongPlayer) Finish() {
 	// 庄家最后显示
 	typ, _ := room.helper.GetType(ply.cards)
 	room.Broadcast("Finish", map[string]any{
-		"UId":   ply.Id,
+		"uid":   ply.Id,
 		"Type":  typ,
 		"Cards": ply.cards,
 	})
@@ -125,7 +125,7 @@ func (ply *SangongPlayer) Bet(chip int) {
 
 	// OK
 	ply.chip = chip
-	room.Broadcast("Bet", map[string]any{"UId": ply.Id, "Chip": chip})
+	room.Broadcast("Bet", map[string]any{"uid": ply.Id, "Chip": chip})
 	room.OnBet()
 }
 

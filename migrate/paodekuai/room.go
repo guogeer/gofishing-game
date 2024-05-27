@@ -337,7 +337,7 @@ func (room *PaodekuaiRoom) OnTurn() {
 	current := room.expectDiscardPlayer
 
 	data := map[string]interface{}{
-		"UId":       current.Id,
+		"uid":       current.Id,
 		"countdown": room.Countdown(),
 	}
 	if c := current.forceDiscardCard; c > 0 {

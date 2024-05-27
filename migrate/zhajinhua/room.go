@@ -277,7 +277,7 @@ func (room *ZhajinhuaRoom) StartGame() {
 	}
 	dealer := room.GetPlayer(room.dealerSeatIndex)
 	if dealerSeatId != room.dealerSeatIndex {
-		room.Broadcast("NewDealer", map[string]any{"UId": dealer.Id})
+		room.Broadcast("NewDealer", map[string]any{"uid": dealer.Id})
 	}
 
 	room.currentChip = room.Unit()

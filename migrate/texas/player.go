@@ -194,7 +194,7 @@ func (ply *TexasPlayer) TakeAction(gold int64) {
 		ply.AddBankroll(-gold)
 	}
 	data := map[string]any{
-		"UId":    ply.Id,
+		"uid":    ply.Id,
 		"Gold":   gold,
 		"Action": ply.action,
 	}
@@ -294,7 +294,7 @@ func (ply *TexasPlayer) AddBankroll(bankroll int64) {
 	room := ply.Room()
 
 	ply.bankroll += bankroll
-	room.Broadcast("AddBankroll", map[string]any{"UId": ply.Id, "Gold": bankroll})
+	room.Broadcast("AddBankroll", map[string]any{"uid": ply.Id, "Gold": bankroll})
 }
 
 // 站起
@@ -363,7 +363,7 @@ func (ply *TexasPlayer) OnTurn() {
 	room := ply.Room()
 	act := room.activePlayer
 	data := map[string]any{
-		"UId":  act.Id,
+		"uid":  act.Id,
 		"sec":  room.Countdown(),
 		"sec0": time.Now().Add(room.maxAutoTime()).Unix(),
 	}
@@ -444,7 +444,7 @@ func (ply *TexasPlayer) ShowCard(isShow bool) {
 		return
 	}
 	ply.isShow = isShow
-	room.Broadcast("ShowCard", map[string]any{"UId": ply.Id, "IsShow": isShow})
+	room.Broadcast("ShowCard", map[string]any{"uid": ply.Id, "IsShow": isShow})
 }
 
 func (ply *TexasPlayer) Rebuy() {
@@ -467,7 +467,7 @@ func (ply *TexasPlayer) Rebuy() {
 	}
 	ply.rebuyTimes++
 	ply.rebuyBlind += tournament.Bankroll
-	ply.WriteJSON("Rebuy", map[string]any{"UId": ply.Id})
+	ply.WriteJSON("Rebuy", map[string]any{"uid": ply.Id})
 }
 
 func (ply *TexasPlayer) Addon() {
@@ -490,7 +490,7 @@ func (ply *TexasPlayer) Addon() {
 	}
 	ply.addonTimes++
 	ply.addonBlind += tournament.Bankroll * 2
-	ply.WriteJSON("Addon", map[string]any{"UId": ply.Id})
+	ply.WriteJSON("Addon", map[string]any{"uid": ply.Id})
 }
 
 // 全压上限，不能超过游戏中筹码第二多的玩家

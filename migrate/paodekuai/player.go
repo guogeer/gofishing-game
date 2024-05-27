@@ -232,7 +232,7 @@ func (ply *PaodekuaiPlayer) Discard(cards []int) {
 	*/
 	// utils.StopTimer(ply.autoTimer)
 	utils.StopTimer(ply.operateTimer)
-	data := map[string]interface{}{"Cards": cards, "UId": ply.Id}
+	data := map[string]interface{}{"Cards": cards, "uid": ply.Id}
 	if cardNum := total - len(cards); cardNum < 3 {
 		data["CardNum"] = cardNum
 	}
@@ -268,7 +268,7 @@ func (ply *PaodekuaiPlayer) Pass() {
 	ply.action = nil
 	// utils.StopTimer(ply.autoTimer)
 	utils.StopTimer(ply.operateTimer)
-	room.Broadcast("Pass", map[string]interface{}{"UId": ply.Id})
+	room.Broadcast("Pass", map[string]interface{}{"uid": ply.Id})
 	room.Turn()
 }
 

@@ -572,7 +572,7 @@ func (room *NiuNiuRoom) OnDoubleAndRob() {
 	seatId := seats[rand.Intn(len(seats))]
 	room.dealer = room.GetPlayer(seatId)
 	room.dealer.robTimes = times
-	room.Broadcast("NewDealer", map[string]any{"Seats": seats, "UId": room.dealer.Id, "Times": times})
+	room.Broadcast("NewDealer", map[string]any{"Seats": seats, "uid": room.dealer.Id, "Times": times})
 	// room.AutoShow()
 	room.StartBetting()
 }

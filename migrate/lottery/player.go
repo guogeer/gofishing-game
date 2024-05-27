@@ -109,7 +109,7 @@ func (ply *lotteryPlayer) Chat(t int, msg string) {
 	nickname := ply.Nickname
 	room := ply.Room()
 	room.Broadcast("Chat", map[string]any{
-		"UId":      uid,
+		"uid":      uid,
 		"Nickname": nickname,
 		"Message":  msg,
 	})
@@ -255,7 +255,7 @@ func (ply *lotteryPlayer) ApplyDealer() {
 
 	uid := ply.Id
 	data := map[string]any{
-		"UId": uid,
+		"uid": uid,
 	}
 	ply.WriteErr("applyDealer", e, data)
 	if e != nil {

@@ -134,7 +134,7 @@ func (ply *NiuNiuPlayer) ChooseTriCards(tri [3]int) {
 
 	// 庄家最后显示
 	room.Broadcast("ChooseTriCards", map[string]any{
-		"UId":    ply.Id,
+		"uid":    ply.Id,
 		"Weight": ply.weight,
 		"Times":  room.getWeightTimes(ply.weight),
 		"Cards":  ply.doneCards,
@@ -177,7 +177,7 @@ func (ply *NiuNiuPlayer) Bet(times int) {
 	// OK
 	// ply.times = times
 	ply.betTimes = times
-	room.Broadcast("Bet", map[string]any{"UId": ply.Id, "Times": times})
+	room.Broadcast("Bet", map[string]any{"uid": ply.Id, "Times": times})
 	room.OnBet()
 }
 

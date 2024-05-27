@@ -704,7 +704,7 @@ func (room *lotteryRoom) Award() {
 	if oldPrize > newPrize {
 		for rankid, rankuser := range room.GetPrizePool().Rank {
 			largs := map[string]any{
-				"UId":      rankuser.Id,
+				"uid":      rankuser.Id,
 				"Nickname": rankuser.Nickname,
 				"SubId":    room.SubId,
 				"WinPrize": rankuser.Prize,

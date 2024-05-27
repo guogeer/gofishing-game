@@ -249,7 +249,7 @@ func (room *SangongRoom) ChooseDealer() {
 		}
 	}
 	if room.dealer != nil {
-		data := map[string]any{"UId": room.dealer.Id}
+		data := map[string]any{"uid": room.dealer.Id}
 		if len(seats) > 0 {
 			data["Seats"] = seats
 		}

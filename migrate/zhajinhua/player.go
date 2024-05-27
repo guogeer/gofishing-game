@@ -173,7 +173,7 @@ func (ply *ZhajinhuaPlayer) LookCard() {
 	if !ply.isAbleLook {
 		return
 	}
-	data := map[string]any{"UId": ply.Id}
+	data := map[string]any{"uid": ply.Id}
 	room.Broadcast("LookCard", data, ply.Id)
 
 	ply.isLook = true
@@ -525,7 +525,7 @@ func (ply *ZhajinhuaPlayer) OnTurn() {
 	room := ply.Room()
 	current := room.activePlayer
 	data := map[string]any{
-		"UId": current.Id,
+		"uid": current.Id,
 		"Sec": room.Countdown(),
 	}
 	if current.isPaying {
@@ -614,7 +614,7 @@ func (ply *ZhajinhuaPlayer) ShowCard() {
 		return
 	}
 	ply.isShow = true
-	room.Broadcast("ShowCard", map[string]any{"UId": ply.Id})
+	room.Broadcast("ShowCard", map[string]any{"uid": ply.Id})
 }
 
 func (ply *ZhajinhuaPlayer) AutoPlay() {
@@ -637,7 +637,7 @@ func (ply *ZhajinhuaPlayer) OnBet(gold int64) {
 	ply.BagObj().Add(gameutils.ItemIdGold, -gold, "zhajinhua_compare", service.WithNoItemLog())
 
 	room.allBet[ply.GetSeatIndex()] = ply.bet
-	room.Broadcast("BetOk", map[string]any{"UId": ply.Id, "Gold": gold, "Action": ply.action})
+	room.Broadcast("BetOk", map[string]any{"uid": ply.Id, "Gold": gold, "Action": ply.action})
 }
 
 func (ply *ZhajinhuaPlayer) GetSeatIndex() int {
