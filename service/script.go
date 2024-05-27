@@ -211,7 +211,7 @@ func loadAllScripts() {
 }
 
 func init() {
-	cmd.Bind("FUNC_EffectScript", funcEffectLocalScript, (*scriptArgs)(nil)).SetPrivate()
-	cmd.Bind("FUNC_EffectLocalScript", funcEffectLocalScript, (*scriptArgs)(nil)).SetPrivate()
+	cmd.Bind("func_effectScript", funcEffectLocalScript, (*scriptArgs)(nil)).SetPrivate()
+	cmd.Bind("func_effectLocalScript", funcEffectLocalScript, (*scriptArgs)(nil)).SetPrivate()
 	script.PreloadModule("game", externScript)
 }

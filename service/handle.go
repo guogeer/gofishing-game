@@ -21,13 +21,13 @@ type leaveArgs struct {
 func init() {
 	cmd.Hook(hook)
 
-	cmd.Bind("FUNC_EffectTableOk", funcEffectTableOk, nil)
-	cmd.Bind("FUNC_AddItems", funcAddItems, (*addItemsArgs)(nil))
+	cmd.Bind("func_effectTableOk", funcEffectTableOk, nil)
+	cmd.Bind("func_addItems", funcAddItems, (*addItemsArgs)(nil))
 
 	cmd.Bind("Leave", funcLeave, nil)
 	cmd.Bind("Close", funcClose, nil)
 
-	cmd.Bind("FUNC_Leave", funcSysLeave, (*leaveArgs)(nil)).SetPrivate()
+	cmd.Bind("func_leave", funcSysLeave, (*leaveArgs)(nil)).SetPrivate()
 	cmd.Bind("Enter", funcEnter, (*json.RawMessage)(nil))
 }
 
@@ -116,7 +116,7 @@ func funcSysLeave(ctx *cmd.Context, data any) {
 	log.Debugf("player %d auto leave", uid)
 
 	if ply == nil {
-		ctx.Out.WriteJSON("FUNC_Leave", cmd.M{"uid": uid})
+		ctx.Out.WriteJSON("func_leave", cmd.M{"uid": uid})
 	} else {
 		ply.Leave2(ctx, nil)
 	}

@@ -283,7 +283,7 @@ func (player *Player) onLeave() {
 	player.IsSessionClose = true // 离开房间算断线
 
 	if leaveCtx != nil {
-		leaveCtx.Out.WriteJSON("FUNC_Leave", map[string]any{"uid": uid})
+		leaveCtx.Out.WriteJSON("func_leave", map[string]any{"uid": uid})
 	}
 	player.leaveCtx = nil
 }

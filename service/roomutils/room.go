@@ -73,7 +73,7 @@ func updateOnline() {
 		}
 		onlines = append(onlines, one)
 	}
-	cmd.Forward("hall", "FUNC_UpdateOnline", cmd.M{"Games": onlines})
+	cmd.Forward("hall", "func_updateOnline", cmd.M{"Games": onlines})
 }
 
 type RoomWorld interface {

@@ -326,7 +326,7 @@ func (g *TournamentGame) CancelRegister(uid int) {
 
 func (g *TournamentGame) UpdateRank(users []*TournamentUser) {
 	g.CurrentCopy().UpdateRank(users)
-	cmd.Forward("hall", "FUNC_UpdateTournamentRank", map[string]any{"users": users})
+	cmd.Forward("hall", "func_updateTournamentRank", map[string]any{"users": users})
 }
 
 // TODO 比赛场

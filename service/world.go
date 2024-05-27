@@ -153,7 +153,7 @@ func WriteMessage(ss *cmd.Session, id string, i any) {
 		log.Errorf("route message %s %v %v", id, i, err)
 		return
 	}
-	ss.WriteJSON("FUNC_Route", buf)
+	ss.WriteJSON("func_route", buf)
 }
 
 func AddItems(uid int, items []gameutils.Item, way string) {

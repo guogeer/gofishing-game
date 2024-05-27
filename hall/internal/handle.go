@@ -55,7 +55,7 @@ func FUNC_UpdateOnline(ctx *cmd.Context, data any) {
 func FUNC_SyncOnline(ctx *cmd.Context, data any) {
 	// req := data.(*service.Args)
 	online := GetWorld().GetCurrentOnline()
-	ctx.Out.WriteJSON("FUNC_SyncOnline", online)
+	ctx.Out.WriteJSON("func_syncOnline", online)
 }
 
 func S2C_GetBestGateway(ctx *cmd.Context, data any) {
@@ -71,7 +71,7 @@ func FUNC_DeleteAccount(ctx *cmd.Context, data any) {
 	rpc.CacheClient().ClearAccount(context.Background(), &pb.ClearAccountReq{
 		Uid: int32(args.Uid),
 	})
-	ctx.Out.WriteJSON("FUNC_DeleteAccount", struct{}{})
+	ctx.Out.WriteJSON("func_deleteAccount", struct{}{})
 }
 
 func FUNC_UpdateMaintain(ctx *cmd.Context, data any) {

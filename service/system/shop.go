@@ -35,7 +35,7 @@ type payArgs struct {
 func init() {
 	service.AddAction(actionKeyShop, newShopObj)
 
-	cmd.Bind("FUNC_Pay", funcPay, (*payArgs)(nil)).SetPrivate()
+	cmd.Bind("func_pay", funcPay, (*payArgs)(nil)).SetPrivate()
 }
 
 func newShopObj(p *service.Player) service.EnterAction {

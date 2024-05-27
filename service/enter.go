@@ -190,7 +190,7 @@ func (eq *enterQueue) loadAndEnter(uid int) {
 		auth, _ := rpc.CacheClient().Auth(context.Background(), &pb.AuthReq{Uid: int32(uid), Ip: ip})
 		values := strings.Split(auth.ServerLocation, ":")
 		if args.LeaveServer != "" && values[0] != "" {
-			cmd.Request(values[0], "FUNC_Leave", cmd.M{"uid": uid})
+			cmd.Request(values[0], "func_leave", cmd.M{"uid": uid})
 		}
 
 		rpc.CacheClient().Visit(context.Background(), &pb.VisitReq{Uid: int32(uid), ServerLocation: serverLocation})
@@ -222,7 +222,7 @@ func (eq *enterQueue) pop(req *enterRequest) {
 		matchServerId = values[0]
 	}
 	if matchServerId != "" {
-		ss.WriteJSON("FUNC_SwitchServer", cmd.M{"matchServerId": matchServerId, "serverName": req.ServerName, "uid": uid})
+		ss.WriteJSON("func_switchServer", cmd.M{"matchServerId": matchServerId, "serverName": req.ServerName, "uid": uid})
 	}
 
 	// 首次成功进入或者重连
