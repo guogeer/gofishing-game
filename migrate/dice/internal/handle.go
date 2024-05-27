@@ -32,7 +32,7 @@ func Bet(ctx *cmd.Context, iArgs interface{}) {
 		return
 	}
 	e := ply.Bet(args.Area, args.Gold)
-	ply.WriteErr("bet", e, "area", args.Area, "gold", args.Gold)
+	ply.WriteErr("bet", e, map[string]any{"area": args.Area, "gold": args.Gold})
 }
 
 func GetLastHistory(ctx *cmd.Context, iArgs interface{}) {

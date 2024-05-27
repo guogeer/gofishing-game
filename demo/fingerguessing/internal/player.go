@@ -161,7 +161,7 @@ func funcChooseGesture(ctx *cmd.Context, data any) {
 	}
 
 	e := getFingerGuessingPlayer(ply).ChooseGesture(args.Gesture)
-	ply.WriteErr("chooseGesture", e, "gesture", args.Gesture, "uid", ply.Id)
+	ply.WriteErr("chooseGesture", e, map[string]any{"gesture": args.Gesture, "uid": ply.Id})
 	roomObj := roomutils.GetRoomObj(ply)
 	if roomObj.GetSeatIndex() != roomutils.NoSeat {
 		roomObj.Room().Broadcast("chooseGesture", map[string]any{

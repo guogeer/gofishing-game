@@ -1065,7 +1065,7 @@ func (ply *MahjongPlayer) Win() {
 
 	ply.operateTips = nil
 	ply.readyHandTips = nil
-	ply.WriteErr("win", nil)
+	ply.WriteErr("win", nil, nil)
 
 	// OK
 	utils.StopTimer(ply.operateTimer)
@@ -1276,7 +1276,7 @@ func (ply *MahjongPlayer) Pass() {
 	log.Debugf("player %d pass", ply.Id)
 	// OK
 	utils.StopTimer(ply.operateTimer)
-	ply.WriteErr("pass", nil)
+	ply.WriteErr("pass", nil, nil)
 
 	ply.delayChow = false
 	ply.delayPong = false

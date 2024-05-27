@@ -115,7 +115,7 @@ func ChangeDealerGold(ctx *cmd.Context, iArgs interface{}) {
 	if args.Gold < minDealerGold {
 		e = errcode.Retry
 	}
-	ply.WriteErr("changeDealerGold", e, "gold", args.Gold)
+	ply.WriteErr("changeDealerGold", e, map[string]any{"gold": args.Gold})
 	if e != nil {
 		return
 	}

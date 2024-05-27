@@ -231,7 +231,7 @@ func (obj *mailObj) Draw(id int64) {
 			if pbMail == nil || pbMail.Id == 0 {
 				e = errcode.Retry
 			}
-			p.WriteErr("drawMail", e)
+			p.WriteErr("drawMail", e, nil)
 			if e != nil {
 				return
 			}

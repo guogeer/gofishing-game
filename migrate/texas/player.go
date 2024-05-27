@@ -249,7 +249,7 @@ func (ply *TexasPlayer) SitDown(seatIndex int) {
 	var e errcode.Error
 	defer func() {
 		if e != nil {
-			ply.WriteErr("sitDown", nil, "uid", ply.Id)
+			ply.WriteErr("sitDown", nil, map[string]any{"uid": ply.Id})
 		}
 	}()
 	subId := room.SubId

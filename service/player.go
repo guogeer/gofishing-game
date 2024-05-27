@@ -5,7 +5,6 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"gofishing-game/internal/errcode"
@@ -162,7 +161,7 @@ func (player *Player) OnEnter() {
 	}
 
 	player.IsSessionClose = false
-	player.WriteErr("enter", nil)
+	player.WriteErr("enter", nil, nil)
 	items := player.bagObj.GetItems()
 	//log.Debugf("player %v OnEnter items %v", player.Id, items)
 	player.SetClientValue("items", items)
@@ -348,19 +347,13 @@ func (player *Player) WriteJSON(name string, data any) {
 	}
 }
 
-func (player *Player) WriteErr(name string, e errcode.Error, args ...any) {
-	if len(args)%2 != 0 {
-		panic("length of args mod 2 not zero")
-	}
+func (player *Player) WriteErr(name string, e errcode.Error, data any) {
 	if e == nil {
 		e = ok
 	}
-	data := cmd.M{"code": e.GetCode(), "msg": e.Error()}
-	for i := 0; i+1 < len(args); i += 2 {
-		data[fmt.Sprintf("%v", args[i])] = args[i+1]
-	}
+	errData := gameutils.MergeError(e, data)
 	if !player.IsSessionClose {
-		WriteMessage(player.session, name, data)
+		WriteMessage(player.session, name, errData)
 	}
 }
 

@@ -305,7 +305,7 @@ func (ply *ZhajinhuaPlayer) TakeAction(gold int64) {
 	}
 	if !room.IsTypeScore() && gold > ply.BagObj().NumItem(gameutils.ItemIdGold) {
 		e := errcode.MoreItem(gameutils.ItemIdGold)
-		ply.WriteErr("takeAction", e, "uid", ply.Id)
+		ply.WriteErr("takeAction", e, map[string]any{"uid": ply.Id})
 
 		ply.isPaying = true
 		utils.ResetTimer(ply.operateTimer, maxPayTime)
@@ -471,7 +471,7 @@ func (ply *ZhajinhuaPlayer) ChangeRoom() {
 	ply.SitUp()
 
 	e := roomutils.GetRoomObj(ply.Player).ChangeRoom()
-	ply.WriteErr("changeRoom", e)
+	ply.WriteErr("changeRoom", e, nil)
 	if e != nil {
 		return
 	}
