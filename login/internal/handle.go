@@ -50,7 +50,7 @@ func Auth(req *pb.AccountInfo) (string, errcode.Error) {
 }
 
 func GetBestGateway() (string, error) {
-	data, err := cmd.Request("router", "C2S_GetBestGateway", nil)
+	data, err := cmd.Request("router", "c2s_getBestGateway", nil)
 	if err != nil {
 		return "", err
 	}

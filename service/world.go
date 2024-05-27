@@ -88,7 +88,7 @@ func Broadcast2Gateway(messageId string, i any) {
 	if err != nil {
 		return
 	}
-	cmd.Route("router", "C2S_Broadcast", data)
+	cmd.Route("router", "c2s_broadcast", data)
 }
 
 func BroadcastNotification(notification string) {
