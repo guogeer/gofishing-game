@@ -170,7 +170,7 @@ func (ply *DoudizhuPlayer) SetAutoPlay(t int) {
 	}
 
 	isAutoPlay := ply.isAutoPlay
-	room.Broadcast("AutoPlay", map[string]any{"code": errcode.CodeOk, "type": t, "uid": ply.Id})
+	room.Broadcast("autoPlay", map[string]any{"code": errcode.CodeOk, "type": t, "uid": ply.Id})
 
 	ply.isAutoPlay = (t != 0)
 	// 玩家选择托管，立即操作
@@ -218,7 +218,7 @@ func (ply *DoudizhuPlayer) Discard(cards []int) {
 	log.Debugf("player %d discard ok %v", ply.Id, cards)
 
 	ply.discardTimes++
-	data := map[string]any{"Cards": cards, "uid": ply.Id}
+	data := map[string]any{"cards": cards, "uid": ply.Id}
 	if typ == ddzutils.DoudizhuZhadan || typ == ddzutils.DoudizhuWangzha {
 		ply.boomTimes++
 		ply.totalBoomTimes++
@@ -237,11 +237,11 @@ func (ply *DoudizhuPlayer) Discard(cards []int) {
 			multiple = 1
 		}
 		room.currentTimes *= multiple
-		data["BoomTimes"] = multiple
-		data["CurrentTimes"] = room.currentTimes
+		data["boomTimes"] = multiple
+		data["currentTimes"] = room.currentTimes
 	}
 	utils.StopTimer(ply.operateTimer)
-	room.Broadcast("Discard", data)
+	room.Broadcast("discard", data)
 
 	for _, c := range cards {
 		ply.cards[c]--
@@ -269,7 +269,7 @@ func (ply *DoudizhuPlayer) Jiaodizhu(choice int) {
 	if choice != 0 {
 		choice = 1
 	}
-	room.Broadcast("Jiaodizhu", map[string]any{"Choice": choice, "uid": ply.Id})
+	room.Broadcast("jiaodizhu", map[string]any{"choice": choice, "uid": ply.Id})
 	ply.jiaodizhu = choice
 	room.OnJiaodizhu()
 }
@@ -293,11 +293,11 @@ func (ply *DoudizhuPlayer) Qiangdizhu(choice int) {
 		room.currentTimes *= 2
 	}
 	response := map[string]any{
-		"Choice":       choice,
+		"choice":       choice,
 		"uid":          ply.Id,
-		"CurrentTimes": room.currentTimes,
+		"currentTimes": room.currentTimes,
 	}
-	room.Broadcast("Qiangdizhu", response)
+	room.Broadcast("qiangdizhu", response)
 	ply.qiangdizhu = choice
 	room.OnQiangdizhu()
 }
@@ -317,7 +317,7 @@ func (ply *DoudizhuPlayer) Jiaofen(choice int) {
 	if other := room.choosePlayer; other != nil && choice > 0 && choice <= other.jiaofen {
 		return
 	}
-	room.Broadcast("Jiaofen", map[string]any{"Choice": choice, "uid": ply.Id})
+	room.Broadcast("jiaofen", map[string]any{"choice": choice, "uid": ply.Id})
 	ply.jiaofen = choice
 	room.OnJiaofen()
 }
@@ -337,7 +337,7 @@ func (ply *DoudizhuPlayer) Pass() {
 	// OK
 	ply.action = nil
 	utils.StopTimer(ply.operateTimer)
-	room.Broadcast("Pass", map[string]any{"uid": ply.Id})
+	room.Broadcast("pass", map[string]any{"uid": ply.Id})
 	room.Turn()
 }
 
@@ -363,7 +363,7 @@ func (ply *DoudizhuPlayer) Room() *DoudizhuRoom {
 /*
 func (ply *DoudizhuPlayer) Replay(messageId string, i any) {
 	switch messageId {
-	case "StartDealCard":
+	case "startDealCard":
 		room := ply.Room()
 		data := i.(map[string]any)
 		all := make([][]int, room.NumSeat())
@@ -371,8 +371,8 @@ func (ply *DoudizhuPlayer) Replay(messageId string, i any) {
 			other := room.GetPlayer(k)
 			all[k] = other.GetSortedCards()
 		}
-		data["All"] = all
-		defer func() { delete(data, "All") }()
+		data["all"] = all
+		defer func() { delete(data, "all") }()
 	}
 	ply.Player.Replay(messageId, i)
 }

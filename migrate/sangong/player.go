@@ -90,10 +90,10 @@ func (ply *SangongPlayer) Finish() {
 
 	// 庄家最后显示
 	typ, _ := room.helper.GetType(ply.cards)
-	room.Broadcast("Finish", map[string]any{
+	room.Broadcast("finish", map[string]any{
 		"uid":   ply.Id,
-		"Type":  typ,
-		"Cards": ply.cards,
+		"type":  typ,
+		"cards": ply.cards,
 	})
 
 	ply.isDone = true
@@ -125,7 +125,7 @@ func (ply *SangongPlayer) Bet(chip int) {
 
 	// OK
 	ply.chip = chip
-	room.Broadcast("Bet", map[string]any{"uid": ply.Id, "Chip": chip})
+	room.Broadcast("bet", map[string]any{"uid": ply.Id, "chip": chip})
 	room.OnBet()
 }
 
@@ -144,7 +144,7 @@ func (ply *SangongPlayer) ChooseDealer(b bool) {
 	if b {
 		ply.robOrNot = 1
 	}
-	room.Broadcast("ChooseDealer", gameutils.MergeError(nil, map[string]any{"uid": ply.Id, "Ans": b}))
+	room.Broadcast("chooseDealer", gameutils.MergeError(nil, map[string]any{"uid": ply.Id, "ans": b}))
 	room.OnChooseDealer()
 }
 
@@ -181,7 +181,7 @@ func (ply *SangongPlayer) Room() *SangongRoom {
 
 func (ply *SangongPlayer) Replay(messageId string, i interface{}) {
 	switch messageId {
-	case "SitDown":
+	case "sitDown":
 		return
 	}
 	ply.Player.Replay(messageId, i)

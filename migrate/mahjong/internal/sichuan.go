@@ -43,11 +43,11 @@ func NewSichuanMahjong() *SichuanMahjong {
 			QingShiBaLuoHan: 256,
 		},
 		copyAdditionList: map[string]int{
-			"ZM":  1,
-			"GEN": 1,
-			"GSH": 1,
-			"QGH": 1,
-			"GSP": 1,
+			"自摸":  1,
+			"根":   1,
+			"杠上花": 1,
+			"抢杠胡": 1,
+			"杠上炮": 1,
 		},
 	}
 	return sc
@@ -72,16 +72,16 @@ func NewSichuanMahjongEx() *SichuanMahjong {
 			DuanYaoJiu:    2,
 		},
 		copyAdditionList: map[string]int{
-			"ZM":   1, // 自摸
-			"GEN":  1, // 根
-			"QGH":  1, // 抢杠胡
-			"GSH":  1, // 杠上花
-			"GSP":  1, // 杠上炮
-			"MSHC": 1, // 妙手回春，最后一张牌自摸
-			"JGD":  1, // 金钩钓
-			"HDLY": 1, // 海底捞月，最后一张牌接炮
-			"TH":   3, // 天胡
-			"DH":   2, // 地胡
+			"自摸":   1, // 自摸
+			"根":    1, // 根
+			"抢杠胡":  1, // 抢杠胡
+			"杠上花":  1, // 杠上花
+			"杠上炮":  1, // 杠上炮
+			"妙手回春": 1, // 妙手回春，最后一张牌自摸
+			"金钩钓":  1, // 金钩钓
+			"海底捞月": 1, // 海底捞月，最后一张牌接炮
+			"天胡":   3, // 天胡
+			"地胡":   2, // 地胡
 		},
 	}
 	return sc
@@ -131,8 +131,8 @@ func (sc *SichuanMahjong) OnCreateRoom() {
 	}
 
 	if !room.CanPlay(OptTianDiHu) {
-		sc.SetAddition("TH", 0)
-		sc.SetAddition("DH", 0)
+		sc.SetAddition("天胡", 0)
+		sc.SetAddition("地胡", 0)
 	}
 	if !room.CanPlay(OptMenQingZhongZhang) {
 		sc.SetPoints(MenQing, 0)
@@ -221,8 +221,8 @@ func (sc *SichuanMahjong) OnWin() {
 			if t := sc.GetPoints(TianHu); t > 0 {
 				score2, points2 = TianHu, t
 			}
-			if t := sc.GetAddition("TH"); t > 0 {
-				addition2["TH"] = t
+			if t := sc.GetAddition("天胡"); t > 0 {
+				addition2["天胡"] = t
 			}
 		}
 		// 庄家打第一张牌闲家胡牌，地胡
@@ -230,8 +230,8 @@ func (sc *SichuanMahjong) OnWin() {
 			if t := sc.GetPoints(DiHu); t > 0 {
 				score2, points2 = DiHu, t
 			}
-			if t := sc.GetAddition("DH"); t > 0 {
-				addition2["DH"] = t
+			if t := sc.GetAddition("地胡"); t > 0 {
+				addition2["地胡"] = t
 			}
 		}
 
@@ -248,16 +248,16 @@ func (sc *SichuanMahjong) OnWin() {
 		if points < points2 {
 			score = score2
 		}
-		addition2["GEN"] = sc.CountGen(score, copyCards[:], p.melds)
+		addition2["根"] = sc.CountGen(score, copyCards[:], p.melds)
 
-		if t := sc.GetAddition("JGD"); t > 0 && len(p.melds) == 4 {
-			addition2["JGD"] = t
+		if t := sc.GetAddition("金钩钓"); t > 0 && len(p.melds) == 4 {
+			addition2["金钩钓"] = t
 		}
-		if t := sc.GetAddition("HDLY"); t > 0 && p.drawCard == -1 && room.CardSet().Count() == 0 {
-			addition2["HDLY"] = t
+		if t := sc.GetAddition("海底捞月"); t > 0 && p.drawCard == -1 && room.CardSet().Count() == 0 {
+			addition2["海底捞月"] = t
 		}
-		if t := sc.GetAddition("MSHC"); t > 0 && p.drawCard != -1 && room.CardSet().Count() == 0 {
-			addition2["MSHC"] = t
+		if t := sc.GetAddition("妙手回春"); t > 0 && p.drawCard != -1 && room.CardSet().Count() == 0 {
+			addition2["妙手回春"] = t
 		}
 
 		// detail := ChipChip{SeatIndex: p.GetSeatIndex(), Operate: mjutils.OperateWin, Score: score}
@@ -271,12 +271,12 @@ func (sc *SichuanMahjong) OnWin() {
 			// 抢杠胡，别人杠牌，没人出牌
 			if kongPlayer != nil && kongPlayer != p && discardPlayer == nil {
 				failSeatId = kongPlayer.GetSeatIndex()
-				addition2["QGH"] = 1
+				addition2["抢杠胡"] = 1
 			}
 			// 杠上炮
 			if kongPlayer != nil && discardPlayer == kongPlayer {
 				failSeatId = discardPlayer.GetSeatIndex()
-				addition2["GSP"] = 1
+				addition2["杠上炮"] = 1
 
 				// 额外赔偿杠所得
 				effectSeatId = p.GetSeatIndex()
@@ -291,7 +291,7 @@ func (sc *SichuanMahjong) OnWin() {
 			// 一个策划一个坑，杠上开花维佳计自摸，严程不计
 			// 杠上开花计自摸
 			if kongPlayer == p {
-				addition2["GSH"] = 1
+				addition2["杠上花"] = 1
 				// 点杠花算点炮
 				if boom := p.lastKong.other; boom != nil && room.CanPlay(OptDianGangHuaFangPao) {
 					boomId = boom.GetSeatIndex()
@@ -299,15 +299,15 @@ func (sc *SichuanMahjong) OnWin() {
 			}
 			// 自摸加底
 			if room.CanPlay(OptZiMoJiaDi) {
-				addition2["ZM"] = 0
-				addition2["ZMJD"] = 0
+				addition2["自摸"] = 0
+				addition2["自摸加底"] = 0
 			} else {
-				addition2["ZM"] = 1
+				addition2["自摸"] = 1
 			}
 
 			// 天胡、地胡不算自摸
 			if score == TianHu || score == DiHu {
-				addition2["ZM"] = 0
+				addition2["自摸加底"] = 0
 			}
 
 			for k := 0; k < room.NumSeat(); k++ {
@@ -342,22 +342,22 @@ func (sc *SichuanMahjong) OnWin() {
 			for _, t := range addition2 {
 				total += t
 			}
-			if _, ok := addition2["ZM"]; ok {
+			if _, ok := addition2["自摸"]; ok {
 				additionId = ZiMo
 			}
-			if _, ok := addition2["GSP"]; ok {
+			if _, ok := addition2["杠上炮"]; ok {
 				additionId = GangShangPao
 			}
-			if _, ok := addition2["GSH"]; ok {
+			if _, ok := addition2["杠上花"]; ok {
 				additionId = GangShangHua
 			}
 
 			points := sc.GetPoints(int(detail.Chip))
 			times := points * int(1<<(uint(total)))
 			// 自摸加底
-			if _, ok := addition2["ZMJD"]; ok {
+			if _, ok := addition2["自摸加底"]; ok {
 				times++
-				delete(addition2, "ZMJD")
+				delete(addition2, "自摸加底")
 			}
 
 			if times > sc.LimitPoints && sc.LimitPoints > 0 {
@@ -380,7 +380,7 @@ func (sc *SichuanMahjong) OnWin() {
 	for _, p := range room.winPlayers {
 		wins = append(wins, p.Id)
 	}
-	room.Broadcast("Compute", map[string]any{"Operate": mjutils.OperateWin, "Addition": additionId, "WinPlayers": wins, "WinCard": room.lastCard, "Result": result})
+	room.Broadcast("compute", map[string]any{"operate": mjutils.OperateWin, "addition": additionId, "winPlayers": wins, "winCard": room.lastCard, "result": result})
 
 	if effectSeatId != -1 {
 		result = nil
@@ -391,7 +391,7 @@ func (sc *SichuanMahjong) OnWin() {
 				result = append(result, ChipResult{SeatIndex: seatId, Chip: bill.Sum()})
 			}
 		}
-		room.Broadcast("Compute", map[string]any{"Operate": mjutils.OperateMoveKong, "Result": result})
+		room.Broadcast("compute", map[string]any{"operate": mjutils.OperateMoveKong, "result": result})
 	}
 
 	// 破产玩家可提前离开游戏
@@ -475,7 +475,7 @@ func (h *SichuanMahjong) Award() {
 		for k := 0; k < room.NumSeat(); k++ {
 			other := room.GetPlayer(k)
 			if points := maxPoints[other.GetSeatIndex()]; points > 0 {
-				other.totalTimes["DJ"]++
+				other.totalTimes["大叫"]++
 				bill := &bills[p.GetSeatIndex()]
 				times := points
 				if times > h.LimitPoints && h.LimitPoints > 0 {
@@ -668,7 +668,7 @@ func (sc *SichuanMahjong) Score(cards []int, melds []mjutils.Meld) (int, int) {
 	}
 
 	// 另计番
-	if t := sc.GetAddition("JGD"); scores[JinGouDiao] && t > 0 {
+	if t := sc.GetAddition("另计番"); scores[JinGouDiao] && t > 0 {
 		bestPoints = bestPoints << uint(t)
 	}
 	if gen := sc.CountGen(bestScoreId, cards, melds); gen > 0 {
@@ -725,7 +725,7 @@ func (w *SichuanWorld) GetName() string {
 }
 
 func (w *SichuanWorld) NewRoom(subId int) *roomutils.Room {
-	r := NewMahjongRoom(id, subId)
+	r := NewMahjongRoom(subId)
 	r.SetPlay(OptZiMoJiaFan)
 	r.SetNoPlay(OptDianGangHuaFangPao) // 点杠花放炮
 	r.SetPlay(OptDianGangHuaZiMo)      // 默认点杠花自摸
@@ -738,7 +738,7 @@ func (w *SichuanWorld) NewRoom(subId int) *roomutils.Room {
 	r.SetNoPlay(OptHuanSanZhang)
 
 	// 换三张场次
-	tags, _ := config.String("Room", subId, "Tags")
+	tags, _ := config.String("room", subId, "tags")
 	if slices.Index(strings.Split(tags, ","), "exchange_tri_cards") >= 0 {
 		r.SetPlay(OptHuanSanZhang)
 	}

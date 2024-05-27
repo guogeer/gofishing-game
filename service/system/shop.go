@@ -24,7 +24,7 @@ type payArgs struct {
 	OrderId    string  `json:"orderId,omitempty"`
 	Uid        int     `json:"uid,omitempty"`
 	Price      float64 `json:"price,omitempty"`
-	GoodsId    int     `json:"GoodsId,omitempty"`
+	GoodsId    int     `json:"goodsId,omitempty"`
 	IsTest     bool    `json:"isTest,omitempty"`
 	PaySDK     string  `json:"paySDK,omitempty"`
 	Group      string  `json:"group,omitempty"`
@@ -49,7 +49,7 @@ func (obj *shopObj) BeforeEnter() {
 func (obj *shopObj) onPayOk(paySDK, orderId string, goodsId int) {
 	var group string
 	var price float64
-	config.Scan("Shop", goodsId, "group,price", &group, &price)
+	config.Scan("shop", goodsId, "group,price", &group, &price)
 
 	obj.player.WriteJSON("payOk", cmd.M{
 		"shopId":  goodsId,
@@ -69,7 +69,7 @@ func funcPay(ctx *cmd.Context, data any) {
 
 	var price float64
 	var reward string
-	config.Scan("Shop", args.GoodsId, "Price,Reward", &price, &reward)
+	config.Scan("shop", args.GoodsId, "price,reward", &price, &reward)
 	log.Infof("player %d pay id %d rmb %v test %v", args.Uid, args.GoodsId, args.Price, args.IsTest)
 
 	items := gameutils.ParseNumbericItems(reward)

@@ -108,10 +108,10 @@ func (ply *lotteryPlayer) Chat(t int, msg string) {
 	uid := ply.Id
 	nickname := ply.Nickname
 	room := ply.Room()
-	room.Broadcast("Chat", map[string]any{
+	room.Broadcast("chat", map[string]any{
 		"uid":      uid,
-		"Nickname": nickname,
-		"Message":  msg,
+		"nickname": nickname,
+		"message":  msg,
 	})
 }
 
@@ -136,27 +136,27 @@ func (ply *lotteryPlayer) Bet(area int, gold int64) {
 	}
 	{
 		total := ply.totalBet()
-		percent, ok := config.Float("lottery", room.SubId, "MaxBetPercent")
+		percent, ok := config.Float("lottery", room.SubId, "maxBetPercent")
 		if ok && total+gold > int64(percent*float64(total+ply.BagObj().NumItem(gameutils.ItemIdGold))/100) {
 			err = errTooMuchBet
 		}
-		maxBet, _ := config.Int("lottery", room.SubId, "MaxBetLimit")
+		maxBet, _ := config.Int("lottery", room.SubId, "maxBetLimit")
 		if maxBet > 0 && total+gold > maxBet {
 			err = errTooMuchBet
 		}
 	}
 	{
 		sum := room.totalBet()
-		percent, ok := config.Float("lottery", room.SubId, "AllUserBetPercent")
+		percent, ok := config.Float("lottery", room.SubId, "allUserBetPercent")
 		if ok && room.dealer != nil && float64(sum+gold) > float64(room.dealer.dealerGold)*percent/100 {
 			err = errDealerNeedMoreGold
 		}
 	}
 	{
 		// 最低押注金币要求
-		minBetNeedGold, ok := config.Int("lottery", room.SubId, "MinBetNeedGold")
+		minBetNeedGold, ok := config.Int("lottery", room.SubId, "minBetNeedGold")
 		if ok && ply.BagObj().NumItem(gameutils.ItemIdGold) < minBetNeedGold {
-			scale, _ := config.Int("web", "ExchangeScale", "Value")
+			scale, _ := config.Int("web", "exchangeScale", "value")
 			if scale < 1 {
 				scale = 1
 			}
@@ -189,7 +189,7 @@ func (ply *lotteryPlayer) Bet(area int, gold int64) {
 		SubId: ply.Room().SubId,
 	}
 
-	ply.WriteJSON("Bet", data)
+	ply.WriteJSON("bet", data)
 
 	if !ply.IsRobot {
 		log.Infof("player %d bet area %d gold %d", ply.Id, area, gold)
@@ -208,13 +208,13 @@ func (ply *lotteryPlayer) Bet(area int, gold int64) {
 
 	// 玩家有座位
 	if ply.GetSeatIndex() != roomutils.NoSeat || betArgs.BigBet > 0 {
-		room.Broadcast("Bet", data, ply.Id)
+		room.Broadcast("bet", data, ply.Id)
 	}
 	// 移除房间通知
 	if false && ply.continuousBetTimes%21 == 20 && !ply.onceBet {
 		ply.onceBet = true
 		msg := fmt.Sprintf("%s玩上瘾了", ply.Nickname)
-		room.Broadcast("Broadcast", map[string]any{"Info": msg, "Message": msg})
+		room.Broadcast("droadcast", map[string]any{"info": msg, "message": msg})
 	}
 }
 
@@ -233,7 +233,7 @@ func (ply *lotteryPlayer) GameOver() {
 
 func (ply *lotteryPlayer) GetLastHistory(n int) {
 	room := ply.Room()
-	ply.WriteJSON("GetLastHistory", map[string]any{"Last": room.GetLast(n)})
+	ply.WriteJSON("getLastHistory", map[string]any{"last": room.GetLast(n)})
 }
 
 // 申请当庄
@@ -248,7 +248,7 @@ func (ply *lotteryPlayer) ApplyDealer() {
 	if ply.applyElement != nil {
 		e = errcode.Retry
 	}
-	minDealerGold, _ := config.Int("lottery", room.SubId, "MinDealerGold")
+	minDealerGold, _ := config.Int("lottery", room.SubId, "minDealerGold")
 	if ply.BagObj().NumItem(gameutils.ItemIdGold) < minDealerGold {
 		e = errcode.MoreItem(gameutils.ItemIdGold)
 	}
@@ -262,7 +262,7 @@ func (ply *lotteryPlayer) ApplyDealer() {
 		return
 	}
 	ply.applyElement = room.dealerQueue.PushBack(ply)
-	room.Broadcast("ApplyDealer", data, ply.Id)
+	room.Broadcast("applyDealer", data, ply.Id)
 }
 
 func (ply *lotteryPlayer) CancelDealer() {

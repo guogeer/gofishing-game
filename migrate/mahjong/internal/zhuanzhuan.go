@@ -39,18 +39,18 @@ func (zz *ZhuanzhuanMahjong) OnCreateRoom() {
 func (zz *ZhuanzhuanMahjong) OnEnter(comer *MahjongPlayer) {
 	data := map[string]any{
 		"card":  zz.ghostCard,
-		"Ghost": zz.getAnyCards(),
+		"ghost": zz.getAnyCards(),
 	}
-	comer.WriteJSON("GetLocalMahjong", data)
+	comer.WriteJSON("getLocalMahjong", data)
 }
 
 func (zz *ZhuanzhuanMahjong) OnReady() {
 	room := zz.room
 
 	room.StartDealCard()
-	room.Broadcast("ChooseGhostCard", map[string]any{
+	room.Broadcast("chooseGhostCard", map[string]any{
 		"card":  zz.ghostCard,
-		"Ghost": zz.getAnyCards(),
+		"ghost": zz.getAnyCards(),
 	})
 	room.dealer.OnDraw()
 }
@@ -109,9 +109,9 @@ func (zz *ZhuanzhuanMahjong) OnWin() {
 			})
 		}
 
-		room.Broadcast("BuyHorse", map[string]any{
-			"Horses":  zz.horses,
-			"Winners": winners,
+		room.Broadcast("buyHorse", map[string]any{
+			"horses":  zz.horses,
+			"winners": winners,
 		})
 	}
 	room.Award()
@@ -119,7 +119,7 @@ func (zz *ZhuanzhuanMahjong) OnWin() {
 
 func (zz *ZhuanzhuanMahjong) Award() {
 	room := zz.room
-	unit, _ := config.Int("Room", room.SubId, "Unit")
+	unit, _ := config.Int("room", room.SubId, "unit")
 
 	// 庄闲
 	if room.CanPlay(OptZhuangXian) {
@@ -192,14 +192,14 @@ func (zz *ZhuanzhuanMahjong) Award() {
 		addition2 := map[string]int{}
 
 		if n := len(winHorses); n > 0 {
-			addition2["MA"] = n
+			addition2["ma"] = n
 		}
 
 		// 自摸
 		if p.drawCard != -1 {
-			addition2["ZM"] = 2
+			addition2["zm"] = 2
 		} else {
-			addition2["JP"] = 1
+			addition2["jp"] = 1
 		}
 
 		sum := 0
@@ -261,7 +261,7 @@ func (w *ZhuanzhuanWorld) GetName() string {
 }
 
 func (w *ZhuanzhuanWorld) NewRoom(subId int) *roomutils.Room {
-	r := NewMahjongRoom(id, subId)
+	r := NewMahjongRoom(subId)
 	r.SetPlay(OptAbleRobKong)
 	r.SetNoPlay(OptBoom)
 	r.SetNoPlay(OptSevenPairs)

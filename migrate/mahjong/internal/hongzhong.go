@@ -34,7 +34,7 @@ func (hz *HongzhongMahjong) OnCreateRoom() {
 func (hz *HongzhongMahjong) OnEnter(comer *MahjongPlayer) {
 	data := map[string]any{
 		"card":  hz.ghostCard,
-		"Ghost": hz.getAnyCards(),
+		"ghost": hz.getAnyCards(),
 	}
 	comer.SetClientValue("localMahjong", data)
 
@@ -49,9 +49,9 @@ func (hz *HongzhongMahjong) OnReady() {
 	}
 
 	room.StartDealCard()
-	room.Broadcast("ChooseGhostCard", map[string]any{
+	room.Broadcast("chooseGhostCard", map[string]any{
 		"card":  hz.ghostCard,
-		"Ghost": hz.getAnyCards(),
+		"ghost": hz.getAnyCards(),
 	})
 	room.dealer.OnDraw()
 }
@@ -108,9 +108,9 @@ func (hz *HongzhongMahjong) OnWin() {
 			})
 		}
 
-		room.Broadcast("BuyHorse", map[string]any{
-			"Horses":  hz.horses,
-			"Winners": winners,
+		room.Broadcast("buyHorse", map[string]any{
+			"horses":  hz.horses,
+			"winners": winners,
 		})
 	}
 	room.Award()
@@ -165,14 +165,14 @@ func (hz *HongzhongMahjong) Award() {
 		addition2 := map[string]int{}
 
 		if n := len(winHorses); n > 0 {
-			addition2["MA"] = 2 * n
+			addition2["马"] = 2 * n
 		}
 
 		// 自摸
 		if p.drawCard != -1 {
-			addition2["ZM"] = 2
+			addition2["自摸"] = 2
 		} else {
-			addition2["JP"] = 1
+			addition2["接炮"] = 1
 		}
 
 		sum := 0
@@ -188,7 +188,7 @@ func (hz *HongzhongMahjong) Award() {
 			// 抢杠胡出三家
 			if room.kongPlayer != nil && room.kongPlayer != p && room.discardPlayer == nil {
 				n := room.NumSeat() - 1
-				detail.Addition2["QGH"] = n
+				detail.Addition2["抢杠胡"] = n
 				detail.Times *= n
 				detail.Chip *= int64(n)
 			}
@@ -229,7 +229,7 @@ func (w *HongzhongWorld) GetName() string {
 }
 
 func (w *HongzhongWorld) NewRoom(subId int) *roomutils.Room {
-	r := NewMahjongRoom(id, subId)
+	r := NewMahjongRoom(subId)
 	r.SetNoPlay(OptSevenPairs)
 
 	r.SetPlay(OptBuyHorse2)

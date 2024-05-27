@@ -76,7 +76,7 @@ func (mj *ZhengzhouMahjong) startChoosePao() {
 	room := mj.room
 	room.Status = roomStatusChoosePao
 	room.deadline = time.Now().Add(MaxOperateTime)
-	room.Broadcast("StartChoosePao", map[string]any{"ts": room.deadline.Unix()})
+	room.Broadcast("startChoosePao", map[string]any{"ts": room.deadline.Unix()})
 	for i := 0; i < room.NumSeat(); i++ {
 		p := room.GetPlayer(i)
 		obj := p.localObj.(*ZhengzhouObj)
@@ -107,8 +107,8 @@ func (mj *ZhengzhouMahjong) OnChoosePao() {
 		all[i] = obj.pao
 	}
 
-	room.Broadcast("FinishChoosePao", map[string]any{
-		"PaoList": all,
+	room.Broadcast("finishChoosePao", map[string]any{
+		"paoList": all,
 	})
 	mj.startPlaying()
 }
@@ -121,9 +121,9 @@ func (mj *ZhengzhouMahjong) startPlaying() {
 	if room.CanPlay(OptDaiHun) {
 		mj.ghostCard = room.CardSet().Deal()
 	}
-	room.Broadcast("ChooseGhostCard", map[string]any{
+	room.Broadcast("chooseGhostCard", map[string]any{
 		"card":  mj.ghostCard,
-		"Ghost": mj.getAnyCards(),
+		"ghost": mj.getAnyCards(),
 	})
 
 	room.dealer.OnDraw()
@@ -136,7 +136,7 @@ func (mj *ZhengzhouMahjong) OnWin() {
 
 func (mj *ZhengzhouMahjong) Award() {
 	room := mj.room
-	unit, _ := config.Int("Room", room.SubId, "Unit")
+	unit, _ := config.Int("room", room.SubId, "unit")
 
 	// 有人胡牌或荒庄不荒杠
 	if len(room.winPlayers) > 0 || room.CanPlay(OptHuangZhuangBuHuangGang) {
@@ -199,9 +199,9 @@ func (mj *ZhengzhouMahjong) Award() {
 		addition2 := map[string]int{}
 		// 自摸
 		if p.drawCard != -1 {
-			addition2["ZM"] = 0
+			addition2["自摸"] = 0
 		} else {
-			addition2["JP"] = 0
+			addition2["接炮"] = 0
 		}
 		points := 1
 		// 七对加倍
@@ -212,21 +212,21 @@ func (mj *ZhengzhouMahjong) Award() {
 		}
 		if room.CanPlay(OptQiDuiJiaBei) {
 			if pairNum+copyCards[NoneCard] > 6 && len(p.melds) == 0 {
-				addition2["QDJB"] = 0
+				addition2["七对加倍"] = 0
 				points *= 2
 			}
 		}
 		// 4混加倍
 		if room.CanPlay(OptSiHunJiaBei) {
 			if copyCards[NoneCard] == 4 {
-				addition2["SHJB"] = 0
+				addition2["四混加倍"] = 0
 				points *= 2
 			}
 		}
 		// 杠上花加倍
 		if room.CanPlay(OptGangShangHuaJiaBei) {
 			if p.drawCard != -1 && room.kongPlayer == p {
-				addition2["GSHJB"] = 0
+				addition2["杠上花加倍"] = 0
 				points *= 2
 			}
 		}
@@ -304,7 +304,7 @@ func (w *ZhengzhouWorld) GetName() string {
 }
 
 func (w *ZhengzhouWorld) NewRoom(subId int) *roomutils.Room {
-	r := NewMahjongRoom(id, subId)
+	r := NewMahjongRoom(subId)
 	r.SetPlay(OptBoom)
 	r.SetPlay(OptDaiPao)
 	r.SetPlay(OptDaiHun)
@@ -368,7 +368,7 @@ func (obj *ZhengzhouObj) ChoosePao(pao int) {
 		return
 	}
 	obj.pao = pao
-	room.Broadcast("ChoosePao", map[string]any{"uid": p.Id, "Index": pao})
+	room.Broadcast("choosePao", map[string]any{"uid": p.Id, "index": pao})
 
 	mj := room.localMahjong.(*ZhengzhouMahjong)
 	mj.OnChoosePao()

@@ -25,7 +25,7 @@ var errDelayLeave = errcode.New("delay_leave", "delay leave")
 
 // 必须可直接复制
 type UserInfo struct {
-	Id       int    `json:"uid,omitempty" alias:"Uid"`
+	Id       int    `json:"uid,omitempty" alias:"uid"`
 	Nickname string `json:"nickname,omitempty"` // 昵称
 	Icon     string `json:"icon,omitempty"`     // 头像
 	Sex      int    `json:"sex,omitempty"`      // 0:女性，1:男性
@@ -371,7 +371,7 @@ func (player *Player) updateLevel(reason string) {
 
 	for _, rowId := range config.Rows("level") {
 		var id, needExp int
-		config.Scan("level", rowId, "Level,Exp", &id, &needExp)
+		config.Scan("level", rowId, "level,exp", &id, &needExp)
 		totalNeedExp += needExp
 
 		num := player.BagObj().NumItem(gameutils.ItemIdExp)
@@ -389,13 +389,13 @@ func (player *Player) updateLevel(reason string) {
 		// 跨越等级的修复
 		var items []gameutils.Item
 		for i := level + 1; i <= player.Level; i++ {
-			reward, _ := config.String("level", i, "Reward")
+			reward, _ := config.String("level", i, "reward")
 			items = append(items, gameutils.ParseNumbericItems(reward)...)
 		}
 
 		// player.ItemObj().AddSome(items, utils.GUID(), "level_up")
 		// player.shopObj.OnLevelUp()
-		player.SetTempValue("LevelReward", items)
+		player.SetTempValue("levelReward", items)
 		for _, action := range player.enterActions {
 			if h, ok := action.(actionLevelUp); ok {
 				h.OnLevelUp(reason)

@@ -31,8 +31,8 @@ type toolArgs struct {
 }
 
 func init() {
-	cmd.Bind("GetTestTools", funcGetTestTools, (*toolArgs)(nil))
-	cmd.Bind("UseTestTool", funcUseTestTool, (*toolArgs)(nil))
+	cmd.Bind("getTestTools", funcGetTestTools, (*toolArgs)(nil))
+	cmd.Bind("useTestTool", funcUseTestTool, (*toolArgs)(nil))
 
 	AddTestTool(&testTool{})
 }
@@ -55,7 +55,7 @@ func getTestTools(uid int) []string {
 	}
 
 	uidStr := strconv.Itoa(uid)
-	godStr, _ := config.String("config", "God", "Value")
+	godStr, _ := config.String("config", "god", "value")
 	gods := strings.Split(godStr, ",")
 	if internal.IndexArrayFunc(gods, func(i int) bool { return gods[i] == uidStr }) >= 0 {
 		return testToolNames
@@ -122,7 +122,7 @@ func (tool *testTool) Test_S升级到X(ctx *cmd.Context, params string) {
 	addExp := int64(0)
 	toLevel, _ := strconv.Atoi(params)
 	for i := ply.Level + 1; i < config.NumRow("level") && i <= toLevel; i++ {
-		exp, _ := config.Int("level", i, "Exp")
+		exp, _ := config.Int("level", i, "exp")
 		addExp += exp
 	}
 

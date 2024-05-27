@@ -69,28 +69,28 @@ func (room *TexasRoom) OnEnter(player *service.Player) {
 
 	// 玩家重连
 	data := map[string]any{
-		"Status":    room.Status,
-		"SubId":     room.SubId,
-		"Countdown": room.Countdown(),
+		"status": room.Status,
+		"subId":  room.SubId,
+		"ts":     room.Countdown(),
 	}
 	if room.dealerSeat >= 0 {
-		data["DealerSeat"] = room.dealerSeat
+		data["dealerSeat"] = room.dealerSeat
 	}
 	if room.smallBlindSeat >= 0 {
-		data["SmallBlindSeat"] = room.smallBlindSeat
+		data["smallBlindSeat"] = room.smallBlindSeat
 	}
 	if room.bigBlindSeat >= 0 {
-		data["BigBlindSeat"] = room.bigBlindSeat
+		data["bigBlindSeat"] = room.bigBlindSeat
 	}
 	if room.smallBlind > 0 {
-		data["SmallBlind"] = room.smallBlind
+		data["smallBlind"] = room.smallBlind
 	}
 	if room.bigBlind >= 0 {
-		data["BigBlind"] = room.bigBlind
+		data["bigBlind"] = room.bigBlind
 	}
 	// 断线重连增加奖池
 	if room.Status == roomutils.RoomStatusPlaying {
-		data["Pots"] = room.allPot[:room.potId+1]
+		data["pots"] = room.allPot[:room.potId+1]
 	}
 
 	var seats []*TexasUserInfo
@@ -100,13 +100,13 @@ func (room *TexasRoom) OnEnter(player *service.Player) {
 			seats = append(seats, info)
 		}
 	}
-	data["SeatPlayers"] = seats
+	data["seatPlayers"] = seats
 	if comer.GetSeatIndex() == roomutils.NoSeat {
-		data["PersonInfo"] = comer.GetUserInfo(true)
+		data["personInfo"] = comer.GetUserInfo(true)
 	}
 
 	// 玩家可能没座位
-	comer.WriteJSON("GetRoomInfo", data)
+	comer.SetClientValue("roomInfo", data)
 	if room.Status == roomutils.RoomStatusPlaying {
 		comer.OnTurn()
 	}
@@ -148,8 +148,8 @@ func (room *TexasRoom) OnCreate() {
 
 	if !room.IsTypeTournament() {
 		subId := room.SubId
-		room.smallBlind, _ = config.Int("texasroom", subId, "SmallBlind")
-		room.bigBlind, _ = config.Int("texasroom", subId, "BigBlind")
+		room.smallBlind, _ = config.Int("texasroom", subId, "smallBlind")
+		room.bigBlind, _ = config.Int("texasroom", subId, "bigBlind")
 	}
 }
 
@@ -237,11 +237,11 @@ func (room *TexasRoom) Award() {
 			}
 		}
 	}
-	room.Broadcast("Award", map[string]any{
-		"Sec":       sec,
-		"Users":     users,
-		"Folders":   folders,
-		"Relations": relations,
+	room.Broadcast("award", map[string]any{
+		"sec":       sec,
+		"users":     users,
+		"folders":   folders,
+		"relations": relations,
 	})
 
 	room.continuousLoop++
@@ -251,12 +251,12 @@ func (room *TexasRoom) Award() {
 func (room *TexasRoom) GameOver() {
 	// 积分场最后一局
 	if room.IsTypeScore() && room.ExistTimes+1 == room.LimitTimes {
-		room.Broadcast("TotalAward", struct{}{})
+		room.Broadcast("totalAward", struct{}{})
 	}
 	room.Room.GameOver()
 
 	subId := room.SubId
-	minBankroll, _ := config.Int("texasroom", subId, "MinBankroll")
+	minBankroll, _ := config.Int("texasroom", subId, "minBankroll")
 	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil && p.bankroll == 0 && p.NumGold() < minBankroll {
 			p.SitUp()
@@ -366,7 +366,7 @@ func (room *TexasRoom) StartGame() {
 		}
 	}
 	subId := room.SubId
-	minReadyNum, _ := config.Int("texasroom", subId, "BigBlind")
+	minReadyNum, _ := config.Int("texasroom", subId, "bigBlind")
 	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil && p.IsPlaying() {
 			var gold int64
@@ -403,18 +403,18 @@ func (room *TexasRoom) StartGame() {
 
 	for _, player := range room.GetAllPlayers() {
 		data := map[string]any{
-			"SmallBlindSeat": room.smallBlindSeat,
-			"BigBlindSeat":   room.bigBlindSeat,
-			"AllBlind":       room.allBlind[:room.NumSeat()],
+			"smallBlindSeat": room.smallBlindSeat,
+			"bigBlindSeat":   room.bigBlindSeat,
+			"allBlind":       room.allBlind[:room.NumSeat()],
 		}
 		p := player.GameAction.(*TexasPlayer)
 		if p.IsPlaying() {
-			data["Cards"] = p.cards
+			data["cards"] = p.cards
 		}
 		if room.dealerSeat >= 0 {
-			data["DealerSeat"] = room.dealerSeat
+			data["dealerSeat"] = room.dealerSeat
 		}
-		p.WriteJSON("StartPlaying", data)
+		p.WriteJSON("startPlaying", data)
 	}
 
 	if seatId := room.NextSeat(room.bigBlindSeat); seatId == roomutils.NoSeat {
@@ -569,17 +569,17 @@ func (room *TexasRoom) NewRound() {
 	for _, player := range room.GetAllPlayers() {
 		p := player.GameAction.(*TexasPlayer)
 		data := map[string]any{
-			"Cards":     room.cards,
-			"Pots":      room.allPot[:room.potId+1],
-			"Relations": relations,
+			"cards":     room.cards,
+			"pots":      room.allPot[:room.potId+1],
+			"relations": relations,
 		}
 
 		if p.IsPlaying() {
 			typ, match := p.match()
-			data["Match"] = match
-			data["CardType"] = typ
+			data["match"] = match
+			data["cardType"] = typ
 		}
-		p.WriteJSON("NewRound", data)
+		p.WriteJSON("newRound", data)
 	}
 	if room.winner != nil || cardNum == cap(room.cards) || activeUsers < 2 {
 		room.Award()
@@ -632,16 +632,16 @@ func (room *TexasRoom) AddBlind(smallBlind, bigBlind, frontBlind int64) {
 }
 
 func (room *TexasRoom) OnAddBlind() {
-	room.Broadcast("AddBlind", map[string]any{
-		"SmallBlind":    room.smallBlind,
-		"BigBlind":      room.bigBlind,
-		"DelayAddBlind": room.delayAddBlind,
+	room.Broadcast("addBlind", map[string]any{
+		"smallBlind":    room.smallBlind,
+		"bigBlind":      room.bigBlind,
+		"delayAddBlind": room.delayAddBlind,
 	})
 }
 
 func (room *TexasRoom) systemAutoTime() time.Duration {
 	d := systemAutoTime
-	if t, ok := config.Duration("config", "TexasAutoPlayDuration", "Value"); ok {
+	if t, ok := config.Duration("config", "texasAutoPlayDuration", "value"); ok {
 		d = t
 	}
 	return d
@@ -649,7 +649,7 @@ func (room *TexasRoom) systemAutoTime() time.Duration {
 
 func (room *TexasRoom) maxAutoTime() time.Duration {
 	d := systemAutoTime
-	if t, ok := config.Duration("config", "TexasTimeoutDuration", "Value"); ok {
+	if t, ok := config.Duration("config", "texasTimeoutDuration", "value"); ok {
 		d = t
 	}
 	return d

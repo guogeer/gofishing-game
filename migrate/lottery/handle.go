@@ -93,7 +93,7 @@ func GetDealerQueue(ctx *cmd.Context, iArgs interface{}) {
 		return
 	}
 
-	ply.WriteJSON("GetDealerQueue", ply.dealerQueue())
+	ply.WriteJSON("getDealerQueue", ply.dealerQueue())
 }
 
 func Console_WhosYourDaddy(ctx *cmd.Context, iArgs interface{}) {
@@ -111,11 +111,11 @@ func ChangeDealerGold(ctx *cmd.Context, iArgs interface{}) {
 
 	var e errcode.Error
 	room := ply.Room()
-	minDealerGold, _ := config.Int("lottery", room.SubId, "MinDealerGold")
+	minDealerGold, _ := config.Int("lottery", room.SubId, "minDealerGold")
 	if args.Gold < minDealerGold {
 		e = errcode.Retry
 	}
-	ply.WriteErr("ChangeDealerGold", e, "gold", args.Gold)
+	ply.WriteErr("changeDealerGold", e, "gold", args.Gold)
 	if e != nil {
 		return
 	}

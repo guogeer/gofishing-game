@@ -71,7 +71,7 @@ func (mj *chaoshanMahjong) OnReady() {
 	for i := range mj.fama {
 		mj.fama[i] = room.CardSet().Deal()
 	}
-	room.Broadcast("StartBuyHorses", map[string]any{"Maima": len(mj.maima[0]), "Fama": len(mj.fama)})
+	room.Broadcast("startBuyHorses", map[string]any{"maima": len(mj.maima[0]), "fama": len(mj.fama)})
 
 	room.StartDealCard()
 	room.dealer.OnDraw()
@@ -384,7 +384,7 @@ func (mj *chaoshanMahjong) Award() {
 		// 抢杠胡包胡牌分
 		if p.IsRobKong() && room.CanPlay(OptQiangGangQuanBao) {
 			if extra := room.NumSeat() - 2; extra > 0 {
-				addition2["QGQB"] = 0
+				addition2["抢杠全包"] = 0
 
 				times += points * extra
 			}
@@ -393,7 +393,7 @@ func (mj *chaoshanMahjong) Award() {
 		{
 			boom := room.boomPlayer()
 			maima := func(masterSeatIndex int, horses []int, operate int) {
-				var result = &horseResults[masterSeatId]
+				var result = &horseResults[masterSeatIndex]
 				var jiepaoNum, fangpaoNum, zimoNum, meizimoNum int
 
 				winSeatId := p.GetSeatIndex()
@@ -403,12 +403,12 @@ func (mj *chaoshanMahjong) Award() {
 				}
 				for _, c := range horses {
 					otherSeatId := mj.winHorse(c)
-					if p.drawCard == -1 && otherSeatId == winSeatId && masterSeatId != boom.GetSeatIndex() {
+					if p.drawCard == -1 && otherSeatId == winSeatId && masterSeatIndex != boom.GetSeatIndex() {
 						jiepaoNum++
 						result.Goods = append(result.Goods, c)
 					}
 					if p.drawCard == -1 && otherSeatId == boom.GetSeatIndex() &&
-						masterSeatId != p.GetSeatIndex() && operate != OpJiangMa {
+						masterSeatIndex != p.GetSeatIndex() && operate != OpJiangMa {
 						fangpaoNum++
 						result.Bads = append(result.Bads, c)
 					}
@@ -422,9 +422,9 @@ func (mj *chaoshanMahjong) Award() {
 					}
 				}
 				d := ChipDetail{Operate: operate, Points: points}
-				d.Addition2 = map[string]int{"MasterSeatId": masterSeatId}
+				d.Addition2 = map[string]int{"masterSeatIndex": masterSeatIndex}
 				if jiepaoNum > 0 && boom != nil {
-					d.Seats = 1 << uint(masterSeatId)
+					d.Seats = 1 << uint(masterSeatIndex)
 					d.Times = jiepaoNum * points
 					d.Chip = -unit * int64(d.Times)
 
@@ -439,7 +439,7 @@ func (mj *chaoshanMahjong) Award() {
 					d.Chip = -unit * int64(d.Times)
 
 					myBills := make([]Bill, room.NumSeat())
-					b := &myBills[masterSeatId]
+					b := &myBills[masterSeatIndex]
 					b.Details = append(b.Details, d)
 					room.Billing(myBills)
 				}
@@ -449,7 +449,7 @@ func (mj *chaoshanMahjong) Award() {
 					d.Chip = -unit * int64(d.Times)
 
 					myBills := make([]Bill, room.NumSeat())
-					b := &myBills[masterSeatId]
+					b := &myBills[masterSeatIndex]
 					b.Details = append(b.Details, d)
 					room.Billing(myBills)
 				}
@@ -458,7 +458,7 @@ func (mj *chaoshanMahjong) Award() {
 				for i := 0; i < room.NumSeat(); i++ {
 					other := room.GetPlayer(i)
 					if zimoNum > 0 && p != other {
-						d.Seats = 1 << uint(masterSeatId)
+						d.Seats = 1 << uint(masterSeatIndex)
 						d.Times = zimoNum * points
 						d.Chip = -unit * int64(d.Times)
 						b := &myBills[i]
@@ -479,15 +479,15 @@ func (mj *chaoshanMahjong) Award() {
 		}
 		// 放炮胡
 		if p.drawCard == -1 {
-			addition2["JP"] = 0
+			addition2["接炮"] = 0
 		}
 		// 自摸
 		if p.drawCard != -1 {
-			addition2["ZM"] = 0
+			addition2["自摸"] = 0
 		}
 		// 连庄
 		if t := p.continuousDealerTimes; t > 0 && room.CanPlay(OptLianZhuang) {
-			addition2["LianZhuang"] = t
+			addition2["连庄"] = t
 			times += t
 		}
 
@@ -516,12 +516,12 @@ func (mj *chaoshanMahjong) Award() {
 	}
 
 	jiangmaSeatId := mj.jiangmaSeatId()
-	room.Broadcast("BuyHorses", map[string]any{
-		"Fama":          mj.fama,
-		"Maima":         mj.maima,
-		"Jiangma":       mj.horses,
-		"JiangmaSeatId": jiangmaSeatId,
-		"ResultSet":     horseResults,
+	room.Broadcast("buyHorses", map[string]any{
+		"fama":          mj.fama,
+		"maima":         mj.maima,
+		"jiangma":       mj.horses,
+		"jiangmaSeatId": jiangmaSeatId,
+		"resultSet":     horseResults,
 	})
 }
 
@@ -547,7 +547,7 @@ func NewChaoshanMahjongWorld() *chaoshanMahjongWorld {
 }
 
 func (w *chaoshanMahjongWorld) NewRoom(subId int) *roomutils.Room {
-	r := NewMahjongRoom(id, subId)
+	r := NewMahjongRoom(subId)
 	r.SetNoPlay(OptBoom)
 	r.SetNoPlay(OptMaGenGang)
 	r.SetNoPlay(OptShengYiQuanBuPeng)

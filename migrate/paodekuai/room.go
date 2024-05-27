@@ -239,7 +239,7 @@ func (room *PaodekuaiRoom) GameOver() {
 				})
 			}
 		}
-		room.Broadcast("TotalAward", map[string]interface{}{"Details": details})
+		room.Broadcast("totalAward", map[string]interface{}{"details": details})
 	}
 	room.Room.GameOver()
 
@@ -341,14 +341,14 @@ func (room *PaodekuaiRoom) OnTurn() {
 		"countdown": room.Countdown(),
 	}
 	if c := current.forceDiscardCard; c > 0 {
-		data["ForceCards"] = []int{c}
+		data["forceCards"] = []int{c}
 	}
 	if p := room.discardPlayer; p == nil {
-		data["NewLoop"] = true
+		data["newLoop"] = true
 	} else {
 		if ans := room.helper.Match(current.GetSortedCards(), p.action); len(ans) == 0 {
-			data["Pass"] = true
+			data["pass"] = true
 		}
 	}
-	room.Broadcast("Turn", data)
+	room.Broadcast("turn", data)
 }

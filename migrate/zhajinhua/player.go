@@ -174,12 +174,12 @@ func (ply *ZhajinhuaPlayer) LookCard() {
 		return
 	}
 	data := map[string]any{"uid": ply.Id}
-	room.Broadcast("LookCard", data, ply.Id)
+	room.Broadcast("lookCard", data, ply.Id)
 
 	ply.isLook = true
 	ply.isAbleLook = false
-	data["Cards"] = ply.cards
-	ply.WriteJSON("LookCard", data)
+	data["cards"] = ply.cards
+	ply.WriteJSON("lookCard", data)
 	if ply == room.activePlayer {
 		ply.OnTurn()
 	}
@@ -243,9 +243,9 @@ func (ply *ZhajinhuaPlayer) CompareCard(seatId int) {
 	if activeUsers == 2 {
 		tempData := data
 		tempData.CompareResults = []CardResult{resultA, resultB}
-		room.Broadcast("CompareCard", tempData)
+		room.Broadcast("compareCard", tempData)
 	} else {
-		room.Broadcast("CompareCard", data, ply.Id, other.Id)
+		room.Broadcast("compareCard", data, ply.Id, other.Id)
 
 		// 比牌时只有自己翻看了自己的牌才能看到对方的牌，如果在比牌时没有翻看自己的牌是不能看到对方以及自己的牌
 		tempData := data
@@ -254,10 +254,10 @@ func (ply *ZhajinhuaPlayer) CompareCard(seatId int) {
 			tempData.Other = &resultB
 			tempData.CompareResults = []CardResult{resultA, resultB}
 		}
-		ply.WriteJSON("CompareCard", tempData)
+		ply.WriteJSON("compareCard", tempData)
 
 		tempData = data
-		other.WriteJSON("CompareCard", tempData)
+		other.WriteJSON("compareCard", tempData)
 	}
 	room.OnTakeAction()
 }
@@ -305,7 +305,7 @@ func (ply *ZhajinhuaPlayer) TakeAction(gold int64) {
 	}
 	if !room.IsTypeScore() && gold > ply.BagObj().NumItem(gameutils.ItemIdGold) {
 		e := errcode.MoreItem(gameutils.ItemIdGold)
-		ply.WriteErr("TakeAction", e, "uid", ply.Id)
+		ply.WriteErr("takeAction", e, "uid", ply.Id)
 
 		ply.isPaying = true
 		utils.ResetTimer(ply.operateTimer, maxPayTime)
@@ -376,18 +376,18 @@ func (ply *ZhajinhuaPlayer) TakeAction(gold int64) {
 	data := map[string]any{
 		"code":       "ok",
 		"uid":        ply.Id,
-		"Bet":        ply.bet,
-		"Gold":       gold,
-		"Action":     ply.action,
-		"CallTimes":  ply.callTimes,
-		"RaiseTimes": ply.raiseTimes,
+		"bet":        ply.bet,
+		"gold":       gold,
+		"action":     ply.action,
+		"callTimes":  ply.callTimes,
+		"raiseTimes": ply.raiseTimes,
 	}
 	utils.StopTimer(ply.autoTimer)
 	utils.StopTimer(ply.operateTimer)
-	room.Broadcast("TakeAction", data)
+	room.Broadcast("takeAction", data)
 
 	room.OnTakeAction()
-	t, ok := config.Int("config", "ZhajinhuaAllowContinuousAutoFold", "Value")
+	t, ok := config.Int("config", "zhajinhuaAllowContinuousAutoFold", "value")
 	if ok && ply.continuousAutoFold > int(t) {
 		ply.continuousAutoFold = 0
 		ply.Leave()
@@ -450,9 +450,9 @@ func (ply *ZhajinhuaPlayer) Room() *ZhajinhuaRoom {
 
 func (ply *ZhajinhuaPlayer) Replay(messageId string, i interface{}) {
 	switch messageId {
-	case "SitDown":
+	case "sitDown":
 		return
-	case "StartDealCard":
+	case "startDealCard":
 		room := ply.Room()
 		data := i.(map[string]any)
 		all := make([][]int, room.NumSeat())
@@ -461,8 +461,8 @@ func (ply *ZhajinhuaPlayer) Replay(messageId string, i interface{}) {
 				all[k] = other.cards[:]
 			}
 		}
-		data["All"] = all
-		defer func() { delete(data, "All") }()
+		data["all"] = all
+		defer func() { delete(data, "all") }()
 	}
 	ply.Player.Replay(messageId, i)
 }
@@ -471,7 +471,7 @@ func (ply *ZhajinhuaPlayer) ChangeRoom() {
 	ply.SitUp()
 
 	e := roomutils.GetRoomObj(ply.Player).ChangeRoom()
-	ply.WriteErr("ChangeRoom", e)
+	ply.WriteErr("changeRoom", e)
 	if e != nil {
 		return
 	}
@@ -526,10 +526,10 @@ func (ply *ZhajinhuaPlayer) OnTurn() {
 	current := room.activePlayer
 	data := map[string]any{
 		"uid": current.Id,
-		"Sec": room.Countdown(),
+		"ts":  room.Countdown(),
 	}
 	if current.isPaying {
-		data["IsPaying"] = true
+		data["isPaying"] = true
 	}
 
 	if ply.IsPlaying() {
@@ -540,25 +540,25 @@ func (ply *ZhajinhuaPlayer) OnTurn() {
 			ply.isAbleLook = true
 		}
 		if ply.isAbleLook {
-			data["IsAbleLook"] = true
+			data["isAbleLook"] = true
 		}
 		// 第二轮开始比牌
 		if ply == current && ply.loop >= room.compareLoopLimit {
 			ply.compareGold = raise
 		}
 		if gold := ply.compareGold; gold > 0 {
-			data["IsAbleCompare"] = true
-			data["CompareGold"] = gold
+			data["isAbleCompare"] = true
+			data["compareGold"] = gold
 		}
 
 		if len(chips) == 0 {
 			chips = []int64{call, raise}
 		}
-		data["Call"] = call
-		data["Raise"] = chips
-		data["AllIn"] = maxBet
+		data["call"] = call
+		data["raise"] = chips
+		data["allIn"] = maxBet
 	}
-	ply.WriteJSON("Turn", data)
+	ply.WriteJSON("turn", data)
 }
 
 func (ply *ZhajinhuaPlayer) maxBet() int64 {
@@ -614,7 +614,7 @@ func (ply *ZhajinhuaPlayer) ShowCard() {
 		return
 	}
 	ply.isShow = true
-	room.Broadcast("ShowCard", map[string]any{"uid": ply.Id})
+	room.Broadcast("showCard", map[string]any{"uid": ply.Id})
 }
 
 func (ply *ZhajinhuaPlayer) AutoPlay() {
@@ -637,7 +637,7 @@ func (ply *ZhajinhuaPlayer) OnBet(gold int64) {
 	ply.BagObj().Add(gameutils.ItemIdGold, -gold, "zhajinhua_compare", service.WithNoItemLog())
 
 	room.allBet[ply.GetSeatIndex()] = ply.bet
-	room.Broadcast("BetOk", map[string]any{"uid": ply.Id, "Gold": gold, "Action": ply.action})
+	room.Broadcast("betOk", map[string]any{"uid": ply.Id, "gold": gold, "action": ply.action})
 }
 
 func (ply *ZhajinhuaPlayer) GetSeatIndex() int {

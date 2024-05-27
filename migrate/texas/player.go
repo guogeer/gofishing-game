@@ -195,8 +195,8 @@ func (ply *TexasPlayer) TakeAction(gold int64) {
 	}
 	data := map[string]any{
 		"uid":    ply.Id,
-		"Gold":   gold,
-		"Action": ply.action,
+		"gold":   gold,
+		"action": ply.action,
 	}
 	// 超时弃牌
 	if gold == -2 {
@@ -208,7 +208,7 @@ func (ply *TexasPlayer) TakeAction(gold int64) {
 	ply.SetAutoPlay(0) // 清除托管
 	utils.StopTimer(ply.autoTimer)
 	utils.StopTimer(ply.operateTimer)
-	room.Broadcast("TakeAction", data)
+	room.Broadcast("takeAction", data)
 	room.OnTakeAction()
 
 	// 超时两次自动弃牌
@@ -249,11 +249,11 @@ func (ply *TexasPlayer) SitDown(seatIndex int) {
 	var e errcode.Error
 	defer func() {
 		if e != nil {
-			ply.WriteErr("SitDown", nil, "uid", ply.Id)
+			ply.WriteErr("sitDown", nil, "uid", ply.Id)
 		}
 	}()
 	subId := room.SubId
-	minBankroll, _ := config.Int("texasroom", subId, "MinBankroll")
+	minBankroll, _ := config.Int("texasroom", subId, "minBankroll")
 	if ply.BagObj().NumItem(gameutils.ItemIdGold) < minBankroll {
 		e = errcode.MoreItem(gameutils.ItemIdGold)
 		return
@@ -263,7 +263,7 @@ func (ply *TexasPlayer) SitDown(seatIndex int) {
 	}
 	// OK
 	info := ply.GetUserInfo(false)
-	room.Broadcast("SitDown", gameutils.MergeError(nil, map[string]any{"uid": ply.Id, "info": info}))
+	room.Broadcast("sitDown", gameutils.MergeError(nil, map[string]any{"uid": ply.Id, "info": info}))
 	ply.initBankroll()
 	roomutils.GetRoomObj(ply.Player).Ready()
 }
@@ -274,9 +274,9 @@ func (ply *TexasPlayer) initBankroll() {
 
 	var bankroll int64
 	if room.IsTypeTournament() {
-		bankroll, _ = config.Int("tournament", room.Tournament().Id, "Bankroll")
+		bankroll, _ = config.Int("tournament", room.Tournament().Id, "bankroll")
 	} else {
-		minBankroll, _ := config.Int("texasroom", subId, "MinBankroll")
+		minBankroll, _ := config.Int("texasroom", subId, "minBankroll")
 
 		bankroll = ply.defaultBankroll()
 		if bankroll < minBankroll {
@@ -294,7 +294,7 @@ func (ply *TexasPlayer) AddBankroll(bankroll int64) {
 	room := ply.Room()
 
 	ply.bankroll += bankroll
-	room.Broadcast("AddBankroll", map[string]any{"uid": ply.Id, "Gold": bankroll})
+	room.Broadcast("addBankroll", map[string]any{"uid": ply.Id, "gold": bankroll})
 }
 
 // 站起
@@ -325,8 +325,8 @@ func (ply *TexasPlayer) Room() *TexasRoom {
 func (ply *TexasPlayer) ChooseBankroll(gold int64) {
 	room := ply.Room()
 	subId := room.SubId
-	minBankroll, _ := config.Int("texasroom", subId, "MinBankroll")
-	maxBankroll, _ := config.Int("texasroom", subId, "MaxBankroll")
+	minBankroll, _ := config.Int("texasroom", subId, "minBankroll")
+	maxBankroll, _ := config.Int("texasroom", subId, "maxBankroll")
 	if minBankroll != 0 && minBankroll > gold {
 		return
 	}
@@ -378,12 +378,12 @@ func (ply *TexasPlayer) OnTurn() {
 		if raise > ply.bankroll {
 			raise = ply.bankroll
 		}
-		data["Gold"] = gold
-		data["Raise"] = raise
-		data["AllIn"] = ply.maxAllIn()
+		data["gold"] = gold
+		data["raise"] = raise
+		data["allIn"] = ply.maxAllIn()
 	}
 	if auto := ply.auto; auto|AutoShow == AutoShow {
-		ply.WriteJSON("Turn", data)
+		ply.WriteJSON("turn", data)
 	}
 }
 
@@ -430,7 +430,7 @@ func (ply *TexasPlayer) SetAutoPlay(auto int) {
 	}
 
 	ply.auto = auto
-	ply.WriteJSON("SetAutoPlay", map[string]any{"Auto": auto})
+	ply.WriteJSON("setAutoPlay", map[string]any{"auto": auto})
 
 	ply.AutoPlay()
 }
@@ -444,7 +444,7 @@ func (ply *TexasPlayer) ShowCard(isShow bool) {
 		return
 	}
 	ply.isShow = isShow
-	room.Broadcast("ShowCard", map[string]any{"uid": ply.Id, "IsShow": isShow})
+	room.Broadcast("showCard", map[string]any{"uid": ply.Id, "isShow": isShow})
 }
 
 func (ply *TexasPlayer) Rebuy() {
@@ -467,7 +467,7 @@ func (ply *TexasPlayer) Rebuy() {
 	}
 	ply.rebuyTimes++
 	ply.rebuyBlind += tournament.Bankroll
-	ply.WriteJSON("Rebuy", map[string]any{"uid": ply.Id})
+	ply.WriteJSON("rebuy", map[string]any{"uid": ply.Id})
 }
 
 func (ply *TexasPlayer) Addon() {
@@ -490,7 +490,7 @@ func (ply *TexasPlayer) Addon() {
 	}
 	ply.addonTimes++
 	ply.addonBlind += tournament.Bankroll * 2
-	ply.WriteJSON("Addon", map[string]any{"uid": ply.Id})
+	ply.WriteJSON("addon", map[string]any{"uid": ply.Id})
 }
 
 // 全压上限，不能超过游戏中筹码第二多的玩家

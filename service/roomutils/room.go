@@ -73,7 +73,7 @@ func updateOnline() {
 		}
 		onlines = append(onlines, one)
 	}
-	cmd.Forward("hall", "func_updateOnline", cmd.M{"Games": onlines})
+	cmd.Forward("hall", "func_updateOnline", cmd.M{"games": onlines})
 }
 
 type RoomWorld interface {
@@ -91,7 +91,7 @@ func LoadGames(w RoomWorld) {
 
 		if slices.Index(tags, name) >= 0 {
 			var subId, seatNum int
-			config.Scan("Room", rowId, "id,seatNum", &subId, &seatNum)
+			config.Scan("room", rowId, "id,seatNum", &subId, &seatNum)
 
 			log.Infof("load game:%d name:%s", subId, name)
 			gSubGames[subId] = &subGame{

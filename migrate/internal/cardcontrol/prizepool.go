@@ -60,7 +60,7 @@ func (pp *InvisiblePrizePool) Check() int {
 // n>0：表示玩家赢取
 func (pp *InvisiblePrizePool) IsValid(n int64) bool {
 	subId := pp.subId
-	line, _ := config.Int("lottery", subId, "WarningLine")
+	line, _ := config.Int("lottery", subId, "warningLine")
 
 	cur := pp.Cap
 	if n-cur >= line {

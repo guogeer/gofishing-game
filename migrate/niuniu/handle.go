@@ -104,5 +104,5 @@ func SetAutoPlay(ctx *cmd.Context, iArgs interface{}) {
 		return
 	}
 	ply.autoTimes = args.Times
-	ply.WriteJSON("SetAutoPlay", map[string]any{"Times": ply.autoTimes})
+	ply.WriteJSON("setAutoPlay", map[string]any{"times": ply.autoTimes})
 }

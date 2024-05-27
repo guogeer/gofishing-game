@@ -24,11 +24,11 @@ func init() {
 	cmd.Bind("func_effectTableOk", funcEffectTableOk, nil)
 	cmd.Bind("func_addItems", funcAddItems, (*addItemsArgs)(nil))
 
-	cmd.Bind("Leave", funcLeave, nil)
-	cmd.Bind("Close", funcClose, nil)
+	cmd.Bind("leave", funcLeave, nil)
+	cmd.Bind("close", funcClose, nil)
 
 	cmd.Bind("func_leave", funcSysLeave, (*leaveArgs)(nil)).SetPrivate()
-	cmd.Bind("Enter", funcEnter, (*json.RawMessage)(nil))
+	cmd.Bind("enter", funcEnter, (*json.RawMessage)(nil))
 }
 
 type msgHandler interface {

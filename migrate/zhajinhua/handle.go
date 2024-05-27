@@ -81,5 +81,5 @@ func SetAutoPlay(ctx *cmd.Context, iArgs interface{}) {
 	}
 	ply.auto = args.Auto
 	ply.AutoPlay()
-	ply.WriteJSON("SetAutoPlay", map[string]any{"uid": ply.Id, "Auto": args.Auto})
+	ply.WriteJSON("setAutoPlay", map[string]any{"uid": ply.Id, "auto": args.Auto})
 }

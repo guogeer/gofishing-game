@@ -291,7 +291,7 @@ func (room *NiuNiuRoom) Award() {
 	for _, p := range room.readyPlayers() {
 		details = append(details, UserDetail{Uid: p.Id, Gold: p.lastWinGold})
 	}
-	room.Broadcast("award", map[string]any{"Details": details, "countdown": room.Countdown()})
+	room.Broadcast("award", map[string]any{"details": details, "countdown": room.Countdown()})
 	room.GameOver()
 }
 
@@ -406,7 +406,7 @@ func (room *NiuNiuRoom) StartDealCard() {
 }
 
 func (room *NiuNiuRoom) AutoChooseTriCards() {
-	d, _ := config.Duration("config", "NiuniuLookCards", "Value", maxAutoTime)
+	d, _ := config.Duration("config", "niuniuLookCards", "value", maxAutoTime)
 	room.SetCountdown(func() {
 		for _, p := range room.readyPlayers() {
 			var tri [3]int
@@ -434,7 +434,7 @@ func (room *NiuNiuRoom) AutoChooseTriCards() {
 
 // 选择押注
 func (room *NiuNiuRoom) StartBetting() {
-	d, _ := config.Duration("config", "NiuniuBetTime", "Value", maxAutoTime)
+	d, _ := config.Duration("config", "niuniuBetTime", "value", maxAutoTime)
 	room.SetCountdown(func() {
 		for _, p := range room.readyPlayers() {
 			// 庄家不押注，默认选择1分
@@ -488,10 +488,10 @@ func (room *NiuNiuRoom) StartGame() {
 		}
 		room.ChooseDealer()
 	} else if room.CanPlay(OptMingPaiShangZhuang) {
-		d, _ := config.Duration("config", "NiuniuRobDealerTime", "Value", maxAutoTime)
-		room.Broadcast("StartRobDealer", map[string]any{
-			"countdown": room.Countdown(),
-			"times":     room.maxRobTimes(),
+		d, _ := config.Duration("config", "niuniuRobDealerTime", "value", maxAutoTime)
+		room.Broadcast("startRobDealer", map[string]any{
+			"ts":    room.Countdown(),
+			"times": room.maxRobTimes(),
 		})
 		// 开始选择倍数
 		room.SetCountdown(func() {
@@ -507,7 +507,7 @@ func (room *NiuNiuRoom) StartGame() {
 		room.StartBetting()
 		// 自由抢庄
 	} else if room.CanPlay(OptZiYouShangZhuang) {
-		d, _ := config.Duration("config", "NiuniuChooseDealerTime", "Value", maxAutoTime)
+		d, _ := config.Duration("config", "niuniuChooseDealerTime", "value", maxAutoTime)
 		room.Status = RoomStatusChooseDealer
 		room.Broadcast("startChooseDealer", map[string]any{
 			"countdown": room.Countdown(),
@@ -572,7 +572,7 @@ func (room *NiuNiuRoom) OnDoubleAndRob() {
 	seatId := seats[rand.Intn(len(seats))]
 	room.dealer = room.GetPlayer(seatId)
 	room.dealer.robTimes = times
-	room.Broadcast("NewDealer", map[string]any{"Seats": seats, "uid": room.dealer.Id, "Times": times})
+	room.Broadcast("newDealer", map[string]any{"seats": seats, "uid": room.dealer.Id, "times": times})
 	// room.AutoShow()
 	room.StartBetting()
 }

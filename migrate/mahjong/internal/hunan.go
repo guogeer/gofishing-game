@@ -83,9 +83,9 @@ func (h *HunanMahjong) OnReady() {
 	if room.CanPlay(OptFanGui1) || room.CanPlay(OptFanGui2) {
 		h.ghostCard = room.CardSet().Deal()
 	}
-	room.Broadcast("ChooseGhostCard", map[string]any{
+	room.Broadcast("chooseGhostCard", map[string]any{
 		"card":  h.ghostCard,
-		"Ghost": h.getAnyCards(),
+		"ghost": h.getAnyCards(),
 	})
 
 	//重新洗牌
@@ -105,17 +105,17 @@ func (h *HunanMahjong) OnWin() {
 	for _, p := range room.winPlayers {
 		uid = p.Id
 	}
-	roomName, _ := config.String("Room", room.SubId, "RoomName")
-	if strings.Contains(roomName, "New") {
+	roomName, _ := config.String("room", room.SubId, "roomName")
+	if strings.Contains(roomName, "new") {
 		c := room.lastCard
 		if room.CardSet().Count() > 0 {
 			c = room.CardSet().Deal()
 		}
 		room.buyHorse = c
-		room.Broadcast("BuyHorse", map[string]any{"uid": uid, "NextCard": c})
+		room.Broadcast("buyHorse", map[string]any{"uid": uid, "nextCard": c})
 		room.Award()
 	} else {
-		room.Broadcast("StartBuyHorse", map[string]any{"ts": room.deadline.Unix(), "Num": 4, "uid": uid})
+		room.Broadcast("startBuyHorse", map[string]any{"ts": room.deadline.Unix(), "num": 4, "uid": uid})
 		h.buyHorseTimer = utils.NewTimer(func() {
 			index := rand.Intn(4)
 			h.OnBuyHorse(index)
@@ -136,13 +136,13 @@ func (h *HunanMahjong) OnBuyHorse(index int) {
 		horses[i] = c
 	}
 	room.buyHorse = horses[0]
-	room.Broadcast("BuyHorse", map[string]any{"Horse": room.buyHorse, "Index": index, "Horses": horses})
+	room.Broadcast("buyHorse", map[string]any{"horse": room.buyHorse, "index": index, "horses": horses})
 	room.Award()
 }
 
 func (h *HunanMahjong) Award() {
 	room := h.room
-	unit, _ := config.Int("Room", room.SubId, "Unit")
+	unit, _ := config.Int("room", room.SubId, "unit")
 
 	horseValue := room.buyHorse % 10
 	if room.IsAnyCard(room.buyHorse) {
@@ -156,9 +156,9 @@ func (h *HunanMahjong) Award() {
 		addition2 := map[string]int{}
 		detail := ChipDetail{Seats: 1 << uint(p.GetSeatIndex()), Operate: mjutils.OperateWin}
 		if cards := h.getAnyCards(); len(cards) > 0 && room.CanPlay(OptWuGuiJiaBei) && CountSomeCards(p.handCards, nil, cards...) == 0 {
-			addition2["WGJB"] = 2
+			addition2["无鬼加倍"] = 2
 			winGold *= 2
-			p.totalTimes["WGJB"]++
+			p.totalTimes["无鬼加倍"]++
 		}
 		detail.Chip = -winGold
 		detail.Addition2 = addition2
@@ -187,7 +187,7 @@ func (h *HunanMahjong) GameOver() {
 type HunanMahjongWorld struct{}
 
 func (w *HunanMahjongWorld) NewRoom(subId int) *roomutils.Room {
-	r := NewMahjongRoom(id, subId)
+	r := NewMahjongRoom(subId)
 	r.localMahjong = &HunanMahjong{
 		room:      r,
 		ghostCard: -1,

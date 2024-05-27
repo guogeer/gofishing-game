@@ -129,10 +129,10 @@ func (room *lotteryRoom) OnEnter(player *service.Player) {
 
 	log.Infof("player %d enter room %d", comer.Id, room.Id)
 
-	minDealerGold, _ := config.Int("lottery", room.SubId, "MinDealerGold")
-	forceCancelDealerGold, _ := config.Int("lottery", room.SubId, "ForceCancelDealerGold")
-	percent, _ := config.Float("lottery", room.SubId, "AllUserBetPercent")
-	loopLimit, _ := config.Int("lottery", room.SubId, "DealerLoopLimit")
+	minDealerGold, _ := config.Int("lottery", room.SubId, "minDealerGold")
+	forceCancelDealerGold, _ := config.Int("lottery", room.SubId, "forceCancelDealerGold")
+	percent, _ := config.Float("lottery", room.SubId, "allUserBetPercent")
+	loopLimit, _ := config.Int("lottery", room.SubId, "dealerLoopLimit")
 	// 玩家重连
 	prize := room.GetPrizePool().Add(0)
 	lastPrize := room.GetPrizePool().LastPrize
@@ -163,7 +163,7 @@ func (room *lotteryRoom) OnEnter(player *service.Player) {
 		data["dealer"] = room.dealer.GetUserInfo(comer.Id)
 	}
 	// 当前排队上庄前10位
-	data["DealerQueue"] = comer.dealerQueue()
+	data["dealerQueue"] = comer.dealerQueue()
 
 	// 座位上的玩家
 	var seats []*userInfo
@@ -199,12 +199,12 @@ func (room *lotteryRoom) StartGame() {
 		}
 	}
 
-	config.Scan("lottery", room.SubId, "Chips", &room.chips)
+	config.Scan("lottery", room.SubId, "chips", &room.chips)
 
 	log.Debugf("room %d start game", room.Id)
 
 	// 清理金币不够上庄的玩家
-	minDealerGold, _ := config.Int("lottery", room.SubId, "MinDealerGold")
+	minDealerGold, _ := config.Int("lottery", room.SubId, "minDealerGold")
 	for e := room.dealerQueue.Front(); e != nil; {
 		p := e.Value.(*lotteryPlayer)
 
@@ -270,7 +270,7 @@ func (room *lotteryRoom) Award() {
 
 	// 合并机器人的押注日志
 	var totalRobotBet, warningLine int64
-	config.Scan("lottery", room.SubId, "WarningLine", &warningLine)
+	config.Scan("lottery", room.SubId, "warningLine", &warningLine)
 	for _, player := range room.GetAllPlayers() {
 		p := player.GameAction.(*lotteryPlayer)
 
@@ -346,7 +346,7 @@ func (room *lotteryRoom) Award() {
 		if room.IsSystemDealer() {
 			var times, prizeNum int
 			var levels []float64
-			config.Scan("lottery", room.SubId, "SystemDealerWinPercent,Lv5WinPercent", &percent, &levels)
+			config.Scan("lottery", room.SubId, "systemDealerWinPercent,Lv5WinPercent", &percent, &levels)
 			for _, deal := range room.deals {
 				pct := room.lotteryGame.winPrizePool(deal.Cards)
 				_, t := room.helper.count(deal.Cards)
@@ -398,7 +398,7 @@ func (room *lotteryRoom) Award() {
 		prizeAreas := 0
 		isRetry := false
 		totalPrize := room.GetPrizePool().Add(0)
-		minBet, _ := config.Int("lottery", room.SubId, "MinPrizePoolBet")
+		minBet, _ := config.Int("lottery", room.SubId, "minPrizePoolBet")
 		for i := range room.deals {
 			pct := room.lotteryGame.winPrizePool(room.deals[i].Cards)
 			if pct > 100.0 {
@@ -705,10 +705,10 @@ func (room *lotteryRoom) Award() {
 		for rankid, rankuser := range room.GetPrizePool().Rank {
 			largs := map[string]any{
 				"uid":      rankuser.Id,
-				"Nickname": rankuser.Nickname,
-				"SubId":    room.SubId,
-				"WinPrize": rankuser.Prize,
-				"Rank":     rankid,
+				"nickname": rankuser.Nickname,
+				"subId":    room.SubId,
+				"winPrize": rankuser.Prize,
+				"rank":     rankid,
 			}
 			script.Call("room.lua", "notify_prize_pool", largs)
 		}
@@ -740,13 +740,13 @@ func (room *lotteryRoom) Award() {
 			"top":        ranklist.Top(),
 		}
 		if newPrize != oldPrize {
-			response["PrizePool"] = newPrize
+			response["prizePool"] = newPrize
 		}
 		if lastPrize > 0 {
-			response["LastPrize"] = lastPrize
-			response["Rank"] = room.GetPrizePool().Rank
+			response["lastPrize"] = lastPrize
+			response["rank"] = room.GetPrizePool().Rank
 		}
-		p.WriteJSON("Award", response)
+		p.WriteJSON("award", response)
 	}
 	var robot *lotteryPlayer
 	var totalRobotAward int64
@@ -775,7 +775,7 @@ func (room *lotteryRoom) GameOver() {
 
 		var loop int
 		var limit int64
-		config.Scan("lottery", room.SubId, "DealerLoopLimit,ForceCancelDealerGold", &loop, &limit)
+		config.Scan("lottery", room.SubId, "dealerLoopLimit,forceCancelDealerGold", &loop, &limit)
 		if room.dealer.dealerGold < limit || room.delayCancelDealer || (loop > 0 && room.dealerLoop >= loop) {
 			room.dealer.CancelDealer()
 		}

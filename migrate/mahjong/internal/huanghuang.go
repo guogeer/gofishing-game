@@ -32,10 +32,10 @@ func (mj *HuanghuangMahjong) OnEnter(comer *MahjongPlayer) {
 
 	data := map[string]any{
 		"card":  mj.ghostCard,
-		"Ghost": mj.getAnyCards(),
+		"ghost": mj.getAnyCards(),
 	}
 	if room.Status == roomStatusChoosePiao {
-		data["Piao"] = huanghuangPiaoOptions
+		data["piao"] = huanghuangPiaoOptions
 	}
 	if room.CanPlay(OptZiYouXuanPiao) && room.Status != 0 {
 		all := make([]int, room.NumSeat())
@@ -48,7 +48,7 @@ func (mj *HuanghuangMahjong) OnEnter(comer *MahjongPlayer) {
 				}
 			}
 		}
-		data["PiaoList"] = all
+		data["piaoList"] = all
 	}
 
 	comer.SetClientValue("localMahjong", data)
@@ -69,8 +69,8 @@ func (mj *HuanghuangMahjong) startChoosePiao() {
 	room := mj.room
 	room.Status = roomStatusChoosePiao
 	room.deadline = time.Now().Add(MaxOperateTime)
-	room.Broadcast("StartChoosePiao", map[string]any{
-		"Index": huanghuangPiaoOptions,
+	room.Broadcast("startChoosePiao", map[string]any{
+		"index": huanghuangPiaoOptions,
 		"ts":    room.deadline.Unix(),
 	})
 	for i := 0; i < room.NumSeat(); i++ {
@@ -100,8 +100,8 @@ func (mj *HuanghuangMahjong) OnChoosePiao() {
 		all[i] = obj.piao
 	}
 
-	room.Broadcast("FinishChoosePiao", map[string]any{
-		"PiaoList": all,
+	room.Broadcast("finishChoosePiao", map[string]any{
+		"piaoList": all,
 	})
 	mj.startPlaying()
 }
@@ -112,9 +112,9 @@ func (mj *HuanghuangMahjong) startPlaying() {
 	room.Status = roomutils.RoomStatusPlaying
 	room.StartDealCard()
 	mj.ghostCard = room.CardSet().Deal()
-	room.Broadcast("ChooseGhostCard", map[string]any{
+	room.Broadcast("chooseGhostCard", map[string]any{
 		"card":  mj.ghostCard,
-		"Ghost": mj.getAnyCards(),
+		"ghost": mj.getAnyCards(),
 	})
 
 	room.dealer.OnDraw()
@@ -222,9 +222,9 @@ func (mj *HuanghuangMahjong) Award() {
 		addition2 := map[string]int{}
 		// 自摸
 		if p.drawCard != -1 {
-			addition2["ZM"] = 0
+			addition2["自摸"] = 0
 		} else {
-			addition2["JP"] = 0
+			addition2["接炮"] = 0
 		}
 		detail.Addition2 = addition2
 		if p.drawCard == -1 {
@@ -306,7 +306,7 @@ func (w *HuanghuangWorld) GetName() string {
 }
 
 func (w *HuanghuangWorld) NewRoom(subId int) *roomutils.Room {
-	r := NewMahjongRoom(id, subId)
+	r := NewMahjongRoom(subId)
 	r.SetPlay(OptZiYouXuanPiao)
 	r.SetPlay(OptZiMoJiaFan)
 	r.SetPlay(OptPingHuLaiZi2)
@@ -352,7 +352,7 @@ func (obj *HuanghuangObj) ChoosePiao(piao int) {
 		return
 	}
 	obj.piao = piao
-	room.Broadcast("ChoosePiao", map[string]any{"uid": p.Id, "Index": piao})
+	room.Broadcast("choosePiao", map[string]any{"uid": p.Id, "index": piao})
 
 	mj := room.localMahjong.(*HuanghuangMahjong)
 	mj.OnChoosePiao()

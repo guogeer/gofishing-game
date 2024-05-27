@@ -133,11 +133,11 @@ func (ply *NiuNiuPlayer) ChooseTriCards(tri [3]int) {
 	}
 
 	// 庄家最后显示
-	room.Broadcast("ChooseTriCards", map[string]any{
+	room.Broadcast("chooseTriCards", map[string]any{
 		"uid":    ply.Id,
-		"Weight": ply.weight,
-		"Times":  room.getWeightTimes(ply.weight),
-		"Cards":  ply.doneCards,
+		"weight": ply.weight,
+		"times":  room.getWeightTimes(ply.weight),
+		"cards":  ply.doneCards,
 	})
 	room.OnChooseTriCards()
 }
@@ -177,7 +177,7 @@ func (ply *NiuNiuPlayer) Bet(times int) {
 	// OK
 	// ply.times = times
 	ply.betTimes = times
-	room.Broadcast("Bet", map[string]any{"uid": ply.Id, "Times": times})
+	room.Broadcast("bet", map[string]any{"uid": ply.Id, "times": times})
 	room.OnBet()
 }
 
@@ -196,7 +196,7 @@ func (ply *NiuNiuPlayer) ChooseDealer(b bool) {
 	if b {
 		ply.robOrNot = 1
 	}
-	room.Broadcast("ChooseDealer", map[string]any{"code": "ok", "uid": ply.Id, "ans": b})
+	room.Broadcast("chooseDealer", map[string]any{"code": "ok", "uid": ply.Id, "ans": b})
 	room.OnChooseDealer()
 }
 

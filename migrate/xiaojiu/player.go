@@ -90,7 +90,7 @@ func (ply *XiaojiuPlayer) Bet(area int, gold int64) {
 	ply.AddGold(-gold, "xiaojiu_bet", service.WithNoItemLog())
 
 	room.areas[area] += gold
-	room.Broadcast("Bet", gameutils.MergeError(nil, map[string]any{"uid": ply.Id, "AreaId": area, "Gold": gold}))
+	room.Broadcast("bet", gameutils.MergeError(nil, map[string]any{"uid": ply.Id, "areaId": area, "gold": gold}))
 }
 
 func (ply *XiaojiuPlayer) GetUserInfo(self bool) *XiaojiuUserInfo {

@@ -110,15 +110,15 @@ func (mj *GuaisanjiaoMahjong) Award() {
 		addition2 := map[string]int{}
 		detail := ChipDetail{Seats: 1 << uint(p.GetSeatIndex()), Chip: int64(score), Points: points, Operate: mjutils.OperateWin}
 		if p.IsRobKong() {
-			addition2["QGH"] = points
+			addition2["抢杠胡"] = points
 			points += points
 		}
 		if p.IsDrawAfterKong() {
-			addition2["GSH"] = points
+			addition2["杠上花"] = points
 			points += points
 		}
 		if p.IsWinAfterOtherKong() {
-			addition2["GSP"] = points
+			addition2["杠上炮"] = points
 			points += points
 		}
 
@@ -132,7 +132,7 @@ func (mj *GuaisanjiaoMahjong) Award() {
 					copyCards[c+1]--
 
 					if room.helper.Win(copyCards, p.melds) != nil {
-						addition2["KZ"] = points
+						addition2["坎张"] = points
 						points += points
 					}
 
@@ -145,13 +145,13 @@ func (mj *GuaisanjiaoMahjong) Award() {
 
 		// 自摸
 		if p.drawCard != -1 {
-			addition2["ZM"] = 0
+			addition2["自摸"] = 0
 		} else {
-			addition2["JP"] = 0
+			addition2["接炮"] = 0
 		}
 		// 连庄
 		if t := p.continuousDealerTimes; t > 0 {
-			addition2["LianZhuang"] = t
+			addition2["连庄"] = t
 			points += t
 		}
 		detail.Addition2 = addition2
@@ -192,7 +192,7 @@ func (w *GuaisanjiaoWorld) GetName() string {
 }
 
 func (w *GuaisanjiaoWorld) NewRoom(subId int) *roomutils.Room {
-	r := NewMahjongRoom(id, subId)
+	r := NewMahjongRoom(subId)
 	r.SetPlay(OptBuDaiFeng) // 不带风
 	r.SetPlay(OptBaoTing)   // 报听
 	r.SetPlay(OptKanZhang)  // 坎张

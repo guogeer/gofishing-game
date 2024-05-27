@@ -54,9 +54,9 @@ func (room *SangongRoom) OnEnter(player *service.Player) {
 
 	// 玩家重连
 	data := map[string]any{
-		"Status":    room.Status,
-		"SubId":     room.SubId,
-		"Countdown": room.Countdown(),
+		"status": room.Status,
+		"subId":  room.SubId,
+		"ts":     room.Countdown(),
 	}
 
 	var seats []*SangongPlayerInfo
@@ -66,13 +66,13 @@ func (room *SangongRoom) OnEnter(player *service.Player) {
 			seats = append(seats, info)
 		}
 	}
-	data["SeatPlayers"] = seats
+	data["seatPlayers"] = seats
 	if room.dealer != nil {
-		data["DealerId"] = room.dealer.Id
+		data["dealerId"] = room.dealer.Id
 	}
 
 	// 玩家可能没座位
-	comer.WriteJSON("GetRoomInfo", data)
+	comer.SetClientValue("roomInfo", data)
 }
 
 func (room *SangongRoom) Leave(player *service.Player) errcode.Error {
@@ -94,7 +94,7 @@ func (room *SangongRoom) OnCreate() {
 
 func (room *SangongRoom) Award() {
 	way := service.GetServerName()
-	unit, _ := config.Int("Room", room.SubId, "Unit")
+	unit, _ := config.Int("room", room.SubId, "unit")
 
 	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil {
@@ -198,13 +198,12 @@ func (room *SangongRoom) Award() {
 	}
 
 	room.deadline = time.Now().Add(room.FreeDuration())
-	sec := room.Countdown()
 	// 显示其他三家手牌
 	details := make([]UserDetail, 0, 8)
 	for _, p := range room.readyPlayers() {
 		details = append(details, UserDetail{Uid: p.Id, Gold: p.winGold})
 	}
-	room.Broadcast("Award", map[string]any{"Details": details, "Sec": sec, "Relations": relations})
+	room.Broadcast("award", map[string]any{"details": details, "ts": room.Countdown(), "relations": relations})
 
 	room.GameOver()
 }
@@ -220,7 +219,7 @@ func (room *SangongRoom) GameOver() {
 				details = append(details, UserDetail{Uid: p.Id, Gold: p.NumGold()})
 			}
 		}
-		room.Broadcast("TotalAward", map[string]any{"Details": details})
+		room.Broadcast("totalAward", map[string]any{"details": details})
 	}
 	room.Room.GameOver()
 	utils.StopTimer(room.autoTimer)
@@ -251,9 +250,9 @@ func (room *SangongRoom) ChooseDealer() {
 	if room.dealer != nil {
 		data := map[string]any{"uid": room.dealer.Id}
 		if len(seats) > 0 {
-			data["Seats"] = seats
+			data["seats"] = seats
 		}
-		room.Broadcast("NewDealer", data)
+		room.Broadcast("newDealer", data)
 	}
 	room.StartBetting()
 }
@@ -261,7 +260,6 @@ func (room *SangongRoom) ChooseDealer() {
 func (room *SangongRoom) StartDealCard() {
 	// 发牌
 	room.deadline = time.Now().Add(maxAutoTime)
-	sec := room.Countdown()
 	for _, p := range room.readyPlayers() {
 		for k := 0; k < len(p.cards); k++ {
 			p.cards[k] = room.CardSet().Deal()
@@ -270,25 +268,25 @@ func (room *SangongRoom) StartDealCard() {
 		p.cardType, _ = room.helper.GetType(p.cards)
 	}
 	data := map[string]any{
-		"Sec": sec,
+		"ts": room.Countdown(),
 	}
-	room.Broadcast("StartDealCard", data)
+	room.Broadcast("startDealCard", data)
 }
 
 func (room *SangongRoom) AutoFinish() {
 	room.Status = RoomStatusLook
 	room.deadline = time.Now().Add(maxAutoTime)
-	sec := room.Countdown()
+	ts := room.Countdown()
 
 	for _, player := range room.GetAllPlayers() {
 		p := player.GameAction.(*SangongPlayer)
 		data := map[string]any{
-			"Sec": sec,
+			"ts": ts,
 		}
 		if roomutils.GetRoomObj(p.Player).IsReady() {
-			data["Cards"] = p.cards
+			data["cards"] = p.cards
 		}
-		p.WriteJSON("StartLookCard", data)
+		p.WriteJSON("startLookCard", data)
 	}
 
 	room.Timeout(func() {
@@ -307,10 +305,10 @@ func (room *SangongRoom) StartBetting() {
 	for _, player := range room.GetAllPlayers() {
 		p := player.GameAction.(*SangongPlayer)
 		data := map[string]any{
-			"Sec": room.Countdown(),
+			"ts": room.Countdown(),
 		}
 
-		p.WriteJSON("StartBetting", data)
+		p.WriteJSON("startBetting", data)
 	}
 
 	room.Timeout(func() {
@@ -344,8 +342,8 @@ func (room *SangongRoom) StartGame() {
 	if room.CanPlay(OptZiyouqiangzhuang) {
 		room.Status = RoomStatusChooseDealer
 		room.deadline = time.Now().Add(maxAutoTime)
-		room.Broadcast("StartChooseDealer", map[string]any{
-			"Sec": room.Countdown()})
+		room.Broadcast("startChooseDealer", map[string]any{
+			"ts": room.Countdown()})
 		room.Timeout(func() {
 			for _, p := range room.readyPlayers() {
 				p.ChooseDealer(false)
@@ -394,7 +392,7 @@ func (room *SangongRoom) OnFinish() {
 	}
 
 	// 全部亮牌后，直接结算
-	room.Broadcast("ShowAllCard", struct{}{})
+	room.Broadcast("showAllCard", struct{}{})
 	room.Award()
 }
 

@@ -97,8 +97,8 @@ const enterActionDailySignIn = "dailySignIn"
 
 func init() {
 	service.AddAction(enterActionDailySignIn, newDailySignInObj)
-	cmd.Bind("DrawSignIn", funcDrawSignIn, (*signInArgs)(nil))
-	cmd.Bind("LookSignIn", funcLookSignIn, (*signInArgs)(nil))
+	cmd.Bind("drawSignIn", funcDrawSignIn, (*signInArgs)(nil))
+	cmd.Bind("lookSignIn", funcLookSignIn, (*signInArgs)(nil))
 }
 
 type signInArgs struct{}

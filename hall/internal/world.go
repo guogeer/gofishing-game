@@ -132,18 +132,18 @@ func (w *hallWorld) updateBuildRank() {
 func (w *hallWorld) notifyMaintain() {
 	secs := time.Until(w.maintain.StartTime).Seconds()
 	msg := cmd.M{
-		"Content": "The game will be temporarily closed after {seconds} s.",
-		"StartTs": w.maintain.StartTime.Unix(),
-		"EndTs":   w.maintain.EndTime.Unix(),
+		"content": "The game will be temporarily closed after {seconds} s.",
+		"startTs": w.maintain.StartTime.Unix(),
+		"endTs":   w.maintain.EndTime.Unix(),
 	}
 	if secs > 60 {
-		msg["Content"] = "The game will be temporarily closed after {clock}."
+		msg["content"] = "The game will be temporarily closed after {clock}."
 
 		utils.StopTimer(w.maintain.notifyTimer)
 		w.maintain.notifyTimer = utils.NewTimer(w.notifyMaintain, time.Until(w.maintain.StartTime)-time.Minute)
 	}
-	log.Infof("maintain broadcast msg %s", msg["Content"])
-	service.Broadcast2Gateway("Maintain", msg)
+	log.Infof("maintain broadcast msg %s", msg["content"])
+	service.Broadcast2Gateway("maintain", msg)
 }
 
 func (w *hallWorld) updateMaintain() {

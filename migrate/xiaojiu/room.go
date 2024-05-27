@@ -52,16 +52,16 @@ func (room *XiaojiuRoom) OnEnter(player *service.Player) {
 
 	// 玩家重连
 	data := map[string]any{
-		"Status":    room.Status,
-		"SubId":     room.SubId,
-		"Countdown": room.Countdown(),
-		"Chips":     room.Chips(),
+		"status": room.Status,
+		"subId":  room.SubId,
+		"ts":     room.Countdown(),
+		"chips":  room.Chips(),
 	}
 
 	if room.Status == roomutils.RoomStatusPlaying {
-		data["Areas"] = room.areas
-		data["MyAreas"] = comer.areas
-		data["Cards"] = room.cards
+		data["areas"] = room.areas
+		data["myAreas"] = comer.areas
+		data["cards"] = room.cards
 	}
 
 	var seats []*XiaojiuUserInfo
@@ -71,12 +71,12 @@ func (room *XiaojiuRoom) OnEnter(player *service.Player) {
 			seats = append(seats, info)
 		}
 	}
-	data["SeatPlayers"] = seats
+	data["seatPlayers"] = seats
 	if room.dealer != nil {
-		data["DealerId"] = room.dealer.Id
+		data["dealerId"] = room.dealer.Id
 	}
 
-	comer.WriteJSON("GetRoomInfo", data)
+	comer.SetClientValue("roomInfo", data)
 }
 
 func (room *XiaojiuRoom) Leave(player *service.Player) errcode.Error {
@@ -196,12 +196,12 @@ func (room *XiaojiuRoom) Award() {
 	users = append(users, UserResult{UId: room.dealer.Id, WinGold: room.dealer.winGold})
 
 	data := map[string]any{
-		"Cards":     room.cards,
-		"Users":     users,
-		"ResultSet": resultSet,
-		"Sec":       room.Countdown(),
+		"cards":     room.cards,
+		"users":     users,
+		"resultSet": resultSet,
+		"ts":        room.Countdown(),
 	}
-	room.Broadcast("Award", data)
+	room.Broadcast("award", data)
 	for i := 0; i < room.NumSeat(); i++ {
 		if p := room.GetPlayer(i); p != nil {
 			p.AddGold(p.winGold, way, service.WithNoItemLog())
@@ -224,7 +224,7 @@ func (room *XiaojiuRoom) GameOver() {
 				details = append(details, UserDetail{UId: p.Id, Gold: p.NumGold() - roomutils.GetRoomObj(p.Player).OriginGold})
 			}
 		}
-		room.Broadcast("TotalAward", map[string]any{"Details": details})
+		room.Broadcast("totalAward", map[string]any{"details": details})
 	}
 
 	room.Room.GameOver()
@@ -262,7 +262,7 @@ func (room *XiaojiuRoom) StartGame() {
 
 	utils.StopTimer(room.autoTimer)
 	room.autoTimer = utils.NewTimer(room.Award, t)
-	room.Broadcast("StartBetting", map[string]any{"Sec": room.Countdown(), "Cards": room.cards})
+	room.Broadcast("startBetting", map[string]any{"ts": room.Countdown(), "cards": room.cards})
 }
 
 func (room *XiaojiuRoom) chooseDealer() {
@@ -302,7 +302,7 @@ func (room *XiaojiuRoom) chooseDealer() {
 	if dealerSeatIndex != roomutils.NoSeat {
 		room.continuousDealerTimes = 0
 		room.dealer = room.GetPlayer(dealerSeatIndex)
-		room.Broadcast("NewDealer", map[string]any{"DealerId": room.dealer.Id, "Seats": seats})
+		room.Broadcast("newDealer", map[string]any{"dealerId": room.dealer.Id, "seats": seats})
 	}
 }
 

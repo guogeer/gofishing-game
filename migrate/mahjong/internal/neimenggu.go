@@ -133,7 +133,7 @@ func (mj *NeimengguMahjong) Score(cards []int, melds []mjutils.Meld) (int, int) 
 
 func (mj *NeimengguMahjong) Award() {
 	room := mj.room
-	unit, _ := config.Int("Room", room.SubId, "Unit")
+	unit, _ := config.Int("room", room.SubId, "unit")
 
 	boom := room.boomPlayer()
 	// 有人胡牌
@@ -199,10 +199,10 @@ func (mj *NeimengguMahjong) Award() {
 		for color, n := range colors {
 			if cardutils.IsColorValid(color) {
 				if n > 7 {
-					addition2["GZ"] = 1
+					addition2["够张"] = 1
 				}
 				if n == 0 && counter == 2 {
-					addition2["QM"] = 1
+					addition2["缺门"] = 1
 				}
 			}
 		}
@@ -210,27 +210,27 @@ func (mj *NeimengguMahjong) Award() {
 		score, points := mj.Score(copyCards, p.melds)
 		// 自摸
 		if p.drawCard != -1 {
-			addition2["ZM"] = 1
+			addition2["自摸"] = 1
 		}
 		// 点炮
 		if p.drawCard == -1 {
-			addition2["JP"] = 1
+			addition2["接炮"] = 1
 		}
 		// 海底捞月
 		if p.drawCard != -1 && room.CardSet().Count() == -1 {
-			addition2["HDLY"] = 1
+			addition2["海底捞月"] = 1
 		}
 		// 庄
 		if p == room.dealer {
-			addition2["ZJ"] = 1
+			addition2["庄"] = 1
 		}
 		// 杠上开花
 		if p.drawCard != -1 && room.kongPlayer == p {
-			addition2["GSH"] = 1
+			addition2["杠上花"] = 1
 		}
 		// 花牌
 		if n := len(p.flowers); n > 0 {
-			addition2["HP"] = n
+			addition2["花牌"] = n
 		}
 
 		// 门清
@@ -238,7 +238,7 @@ func (mj *NeimengguMahjong) Award() {
 			switch score {
 			case QiDui, LongQiDui, ShiSanYao:
 			default:
-				addition2["MQ"] = 1
+				addition2["门清"] = 1
 			}
 		}
 
@@ -251,7 +251,7 @@ func (mj *NeimengguMahjong) Award() {
 				copyCards[c+1]--
 
 				if winOpt := room.helper.Win(copyCards, p.melds); winOpt != nil {
-					addition2["KZ"] = 1
+					addition2["坎张"] = 1
 				}
 
 				copyCards[c-1]++
@@ -303,7 +303,7 @@ func (w *NeimengguWorld) GetName() string {
 }
 
 func (w *NeimengguWorld) NewRoom(subId int) *roomutils.Room {
-	r := NewMahjongRoom(id, subId)
+	r := NewMahjongRoom(subId)
 	r.SetNoPlay(OptYiKouXiang)
 	r.SetNoPlay(OptBuDaiZiPai)
 	r.SetNoPlay(OptBoom)

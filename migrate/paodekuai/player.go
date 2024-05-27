@@ -232,11 +232,11 @@ func (ply *PaodekuaiPlayer) Discard(cards []int) {
 	*/
 	// utils.StopTimer(ply.autoTimer)
 	utils.StopTimer(ply.operateTimer)
-	data := map[string]interface{}{"Cards": cards, "uid": ply.Id}
+	data := map[string]interface{}{"cards": cards, "uid": ply.Id}
 	if cardNum := total - len(cards); cardNum < 3 {
-		data["CardNum"] = cardNum
+		data["cardNum"] = cardNum
 	}
-	room.Broadcast("Discard", data)
+	room.Broadcast("discard", data)
 
 	for _, c := range cards {
 		ply.cards[c]--
@@ -268,7 +268,7 @@ func (ply *PaodekuaiPlayer) Pass() {
 	ply.action = nil
 	// utils.StopTimer(ply.autoTimer)
 	utils.StopTimer(ply.operateTimer)
-	room.Broadcast("Pass", map[string]interface{}{"uid": ply.Id})
+	room.Broadcast("pass", map[string]interface{}{"uid": ply.Id})
 	room.Turn()
 }
 
@@ -281,7 +281,7 @@ func (ply *PaodekuaiPlayer) Room() *PaodekuaiRoom {
 
 func (ply *PaodekuaiPlayer) Replay(messageId string, i interface{}) {
 	switch messageId {
-	case "StartDealCard":
+	case "startDealCard":
 		room := ply.Room()
 		data := i.(map[string]interface{})
 		all := make([][]int, room.NumSeat())
@@ -289,8 +289,8 @@ func (ply *PaodekuaiPlayer) Replay(messageId string, i interface{}) {
 			other := room.GetPlayer(k)
 			all[k] = other.GetSortedCards()
 		}
-		data["All"] = all
-		defer func() { delete(data, "All") }()
+		data["all"] = all
+		defer func() { delete(data, "all") }()
 	}
 	ply.Player.Replay(messageId, i)
 

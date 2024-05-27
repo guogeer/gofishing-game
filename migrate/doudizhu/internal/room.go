@@ -135,7 +135,7 @@ func (room *DoudizhuRoom) StartGame() {
 		seatId := rand.Intn(room.NumSeat())
 		room.dealer = room.GetPlayer(seatId)
 	}
-	// room.Broadcast("NewDealer", map[string]any{"uid": room.dealer.Id})
+	// room.Broadcast("newDealer", map[string]any{"uid": room.dealer.Id})
 	room.StartDealCard()
 
 	room.currentTimes = 1
@@ -291,7 +291,7 @@ func (room *DoudizhuRoom) StartPlaying() {
 		room.triCards[i] = c
 		room.boss.cards[c]++
 	}
-	room.Broadcast("StartPlaying", map[string]any{"TriCards": room.triCards, "Dizhu": room.boss.Id})
+	room.Broadcast("startPlaying", map[string]any{"triCards": room.triCards, "dizhu": room.boss.Id})
 	room.clientTriCards = room.triCards
 	room.expectDiscardPlayer = room.boss
 	room.Turn()
@@ -402,7 +402,7 @@ func (room *DoudizhuRoom) Award() {
 		"ts":           room.autoTime.Unix(),
 		"currentTimes": room.currentTimes,
 	}
-	room.Broadcast("Award", response)
+	room.Broadcast("award", response)
 
 	room.GameOver()
 }
@@ -474,13 +474,13 @@ func (room *DoudizhuRoom) StartDealCard() {
 	}
 
 	rows := 0
-	tableName, _ := config.String("Room", room.SubId, "sampleTableName")
+	tableName, _ := config.String("room", room.subId, "sampleTableName")
 	if tableName != "" {
 		rows = config.NumRow(tableName)
 	}
 	if room.cheatSeats != 0 && rows > 0 {
 		rowId := config.RowId(rand.Intn(rows))
-		s, _ := config.String(tableName, rowId, "Cards")
+		s, _ := config.String(tableName, rowId, "cards")
 		for _, v := range strings.Split(s, ",") {
 			n, _ := strconv.ParseInt(v, 0, 64)
 			room.sample = append(room.sample, int(n))
@@ -508,7 +508,7 @@ func (room *DoudizhuRoom) StartDealCard() {
 	}
 	for i := 0; i < room.NumSeat(); i++ {
 		p := room.GetPlayer(i)
-		data["Cards"] = p.GetSortedCards()
+		data["cards"] = p.GetSortedCards()
 		p.WriteJSON("startDealCard", data)
 	}
 }

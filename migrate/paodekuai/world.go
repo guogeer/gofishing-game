@@ -46,7 +46,7 @@ func (w *PaodekuaiWorld) NewRoom(subId int) *roomutils.Room {
 	r.SetPlay(OptShoulunheitaosanxianchu)
 	r.SetNoPlay(OptSidaisan)
 
-	roomName, _ := config.String("Room", subId, "RoomName")
+	roomName, _ := config.String("room", subId, "roomName")
 	if strings.Contains(roomName, "郑州") {
 		r.SetMainPlay(OptSandaidui)
 		r.SetNoPlay(OptMeilunheitaosanbichu)

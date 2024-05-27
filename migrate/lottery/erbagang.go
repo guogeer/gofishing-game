@@ -115,7 +115,7 @@ func (ent *erbagang) StartDealCard() {
 	room := ent.room
 
 	var samples []int
-	config.Scan("lottery", room.SubId, "CardSamples", &samples)
+	config.Scan("lottery", room.SubId, "cardSamples", &samples)
 
 	start := rand.Intn(len(room.deals))
 	for i := range room.deals {
@@ -232,7 +232,7 @@ func (w *ErbagangWorld) NewRoom(subId int) *roomutils.Room {
 		room: room,
 	}
 	room.userAreaNum = 3
-	tags, _ := config.String("room", subId, "Tags")
+	tags, _ := config.String("room", subId, "tags")
 	if a := strings.Split(tags, ","); slices.Contains(a, "area_4") {
 		room.userAreaNum = 4
 	}

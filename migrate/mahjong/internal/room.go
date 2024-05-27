@@ -111,10 +111,10 @@ func (room *MahjongRoom) OnEnter(player *service.Player) {
 
 	// 玩家重连
 	data := map[string]any{
-		"Status":    room.Status,
-		"SubId":     room.SubId,
-		"CardNum":   room.CardSet().Count(),
-		"TotalCard": room.CardSet().Total(),
+		"status":    room.Status,
+		"subId":     room.SubId,
+		"cardNum":   room.CardSet().Count(),
+		"totalCard": room.CardSet().Total(),
 	}
 
 	var seatPlayers []*MahjongPlayerInfo
@@ -124,7 +124,7 @@ func (room *MahjongRoom) OnEnter(player *service.Player) {
 			seatPlayers = append(seatPlayers, info)
 		}
 	}
-	data["SeatPlayers"] = seatPlayers
+	data["seatPlayers"] = seatPlayers
 
 	dealerId := roomutils.NoSeat
 	if room.dealer != nil {
@@ -140,7 +140,7 @@ func (room *MahjongRoom) OnEnter(player *service.Player) {
 			if p := room.GetPlayer(i); p != nil && p.isBustOrNot {
 				comer.SetClientValue("bustOrNot", map[string]any{
 					"uid": p.Id,
-					// "Bust":    p.BaseObj().GetBustInfo(),
+					// "bust":    p.BaseObj().GetBustInfo(),
 					"ts": room.deadline.Unix(),
 				})
 			}
@@ -205,13 +205,13 @@ func (room *MahjongRoom) ChooseDealer() {
 		seatId := rand.Intn(room.NumSeat())
 		room.dealer = room.GetPlayer(seatId)
 	}
-	room.Broadcast("NewDealer", map[string]any{"uid": room.dealer.Id})
+	room.Broadcast("newDealer", map[string]any{"uid": room.dealer.Id})
 }
 
 // 开始发牌
 func (room *MahjongRoom) StartDealCard() {
 	robotSeats := make([]int, 0, 4)
-	percent, _ := config.Float("Room", room.SubId, "SampleControlPercent")
+	percent, _ := config.Float("room", room.SubId, "sampleControlPercent")
 	for i := 0; i < room.NumSeat(); i++ {
 		p := room.GetPlayer(i)
 		if system.GetLoginObj(p.Player).IsRobot() {
@@ -227,13 +227,13 @@ func (room *MahjongRoom) StartDealCard() {
 		room.cheatSeats = 1 << uint(seatId)
 	}
 	rows := 0
-	tableName, _ := config.String("Room", room.SubId, "SampleTableName")
+	tableName, _ := config.String("room", room.SubId, "sampleTableName")
 	if tableName != "" {
 		rows = config.NumRow(tableName)
 	}
 	if room.cheatSeats != 0 && rows > 0 {
 		rowId := config.RowId(rand.Intn(rows))
-		s, _ := config.String(tableName, rowId, "Cards")
+		s, _ := config.String(tableName, rowId, "cards")
 		for _, v := range strings.Split(s, ",") {
 			n, _ := strconv.Atoi(v)
 			room.sample = append(room.sample, n)
@@ -387,7 +387,7 @@ func (room *MahjongRoom) OnChooseColor() {
 		colors[i] = p.discardColor
 	}
 	utils.StopTimer(room.chooseColorTimer)
-	room.Broadcast("FinishChooseColor", map[string]any{"Colors": colors})
+	room.Broadcast("finishChooseColor", map[string]any{"colors": colors})
 	room.Status = roomutils.RoomStatusPlaying
 	room.dealer.OnDraw()
 }
@@ -451,8 +451,8 @@ func (room *MahjongRoom) OnWin() {
 	for _, p := range room.winPlayers {
 		winList = append(winList, p.Id)
 	}
-	room.Broadcast("WinOk", map[string]any{
-		"List": winList,
+	room.Broadcast("winOk", map[string]any{
+		"list": winList,
 	})
 
 	// 抢杠胡
@@ -592,7 +592,7 @@ func (room *MahjongRoom) Award() {
 
 	// 流局
 	if len(room.winPlayers) == 0 {
-		room.Broadcast("WinOk", struct{}{})
+		room.Broadcast("winOk", struct{}{})
 	}
 
 	room.expectDiscardPlayer = nil
@@ -675,16 +675,16 @@ func (room *MahjongRoom) GameOver() {
 			details[k] = p.chipHistory
 
 			if c := p.drawCard; c != -1 {
-				data["DrawCard"] = c
-				data["DrawSeat"] = p.GetSeatIndex()
+				data["drawCard"] = c
+				data["drawSeat"] = p.GetSeatIndex()
 			}
 		}
 	}
-	data["Details"] = details
-	data["HandCards"] = others
-	data["LastCard"] = room.lastCard
+	data["details"] = details
+	data["handCards"] = others
+	data["lastCard"] = room.lastCard
 	if room.CardSet().Count() < room.CardSet().Total() {
-		room.Broadcast("Award", data)
+		room.Broadcast("award", data)
 	}
 
 	// 积分场最后一局
@@ -694,7 +694,7 @@ func (room *MahjongRoom) GameOver() {
 			p := room.GetPlayer(k)
 			total[k] = p.totalTimes
 		}
-		room.Broadcast("TotalAward", map[string]any{"Details": total})
+		room.Broadcast("totalAward", map[string]any{"details": total})
 	}
 
 	room.Room.GameOver()

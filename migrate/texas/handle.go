@@ -134,8 +134,8 @@ func funcRecommendRooms(ctx *cmd.Context, data interface{}) {
 	var roomList []TexasRoomInfo
 	for _, room := range rooms {
 		texasRoom := room.CustomRoom().(*TexasRoom)
-		minBankroll, _ := config.Int("texasroom", room.SubId, "MinBankroll")
-		maxBankroll, _ := config.Int("texasroom", room.SubId, "MaxBankroll")
+		minBankroll, _ := config.Int("texasroom", room.SubId, "minBankroll")
+		maxBankroll, _ := config.Int("texasroom", room.SubId, "maxBankroll")
 		info := TexasRoomInfo{
 			Id:          texasRoom.Id,
 			SubId:       texasRoom.SubId,
@@ -148,5 +148,5 @@ func funcRecommendRooms(ctx *cmd.Context, data interface{}) {
 		}
 		roomList = append(roomList, info)
 	}
-	service.WriteMessage(ss, "RecommendRooms", map[string]any{"Level": args.Level, "Rooms": roomList})
+	service.WriteMessage(ss, "recommendRooms", map[string]any{"level": args.Level, "rooms": roomList})
 }

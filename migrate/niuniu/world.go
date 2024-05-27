@@ -65,7 +65,7 @@ func (w *NiuNiuWorld) NewRoom(subId int) *roomutils.Room {
 	r.SetPlay(roomutils.OptAutoPlay)                    // 自动代打
 	r.SetNoPlay(roomutils.OptForbidEnterAfterGameStart) // 游戏开始后禁止进入游戏
 
-	roomName, _ := config.String("Room", subId, "RoomName")
+	roomName, _ := config.String("room", subId, "roomName")
 	if strings.Contains(roomName, "耒阳") {
 		r.SetNoPlay(OptSiHuaNiu)
 		r.SetMainPlay(OptFanBeiGuiZe3)

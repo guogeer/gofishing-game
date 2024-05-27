@@ -15,7 +15,7 @@ import (
 	"github.com/guogeer/quasar/log"
 )
 
-const actionRoom = "Room"
+const actionRoom = "room"
 
 type roomError struct {
 	*errcode.BaseError
@@ -145,7 +145,7 @@ func (obj *RoomObj) OnLeave() {
 	room := obj.room
 	log.Infof("player %d leave room", obj.player.Id)
 	delete(room.allPlayers, obj.player.Id)
-	room.Broadcast("Leave", nil)
+	room.Broadcast("leave", nil)
 	if obj.seatIndex != NoSeat {
 		obj.SitUp()
 	}

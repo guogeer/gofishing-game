@@ -22,7 +22,7 @@ var table = [...]byte{'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'}
 func init() {
 	for _, rowId := range config.Rows("robot") {
 		var nickname, icon string
-		config.Scan("robot", rowId, "Nickname,Icon", &nickname, &icon)
+		config.Scan("robot", rowId, "nickname,icon", &nickname, &icon)
 		if icon == "" {
 			gRandNames = append(gRandNames, nickname)
 		}
@@ -42,13 +42,13 @@ func RandStringNum(max int) string {
 }
 
 func GetRandName(sex int) string {
-	return strings.Join([]string{"Guest", RandStringNum(6)}, "_")
+	return strings.Join([]string{"guest", RandStringNum(6)}, "_")
 }
 
 func saveFacebookIcon(iconName string, path string) (string, error) {
 	var response struct{ Path string }
 
-	err := requestPlate("/plate/save_icon", cmd.M{"IconName": iconName, "Path": path}, &response)
+	err := requestPlate("/plate/save_icon", cmd.M{"iconName": iconName, "path": path}, &response)
 	if err != nil {
 		return "", err
 	}

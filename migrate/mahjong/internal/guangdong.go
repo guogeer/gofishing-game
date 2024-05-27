@@ -125,9 +125,9 @@ func (gd *GuangdongMahjong) OnReady() {
 	if room.CanPlay(OptFanGui1) || room.CanPlay(OptFanGui2) {
 		gd.ghostCard = room.CardSet().Deal()
 	}
-	room.Broadcast("ChooseGhostCard", map[string]any{
+	room.Broadcast("chooseGhostCard", map[string]any{
 		"card":  gd.ghostCard,
-		"Ghost": gd.getAnyCards(),
+		"ghost": gd.getAnyCards(),
 	})
 	//重新洗牌
 	room.CardSet().Shuffle()
@@ -183,10 +183,10 @@ func (gd *GuangdongMahjong) OnWin() {
 			})
 		}
 
-		room.Broadcast("BuyHorse", map[string]any{
-			"Horses":  gd.horses,
-			"Extra":   extraHorse,
-			"Winners": winners,
+		room.Broadcast("buyHorse", map[string]any{
+			"horses":  gd.horses,
+			"extra":   extraHorse,
+			"winners": winners,
 		})
 	}
 	room.Award()
@@ -291,7 +291,7 @@ func (gd *GuangdongMahjong) Award() {
 		points := 2
 		// 无鬼加倍
 		if cards := gd.getAnyCards(); len(cards) > 0 && room.CanPlay(OptWuGuiJiaBei) && CountSomeCards(p.handCards, nil, cards...) == 0 {
-			addition2["WGJB"] = 0
+			addition2["无鬼加倍"] = 0
 			points *= 2
 		}
 		pairNum := 0
@@ -301,12 +301,12 @@ func (gd *GuangdongMahjong) Award() {
 		}
 		// 七对加番
 		if room.CanPlay(OptQiDuiJiaFan) && pairNum+copyCards[NoneCard] > 6 && len(p.melds) == 0 {
-			addition2["QDJF"] = 0
+			addition2["七对加番"] = 0
 			points *= 2
 		}
 		// 节节高
 		if n := obj.continuousDealerTimes; room.CanPlay(OptJieJieGao) && n > 0 {
-			addition2["JJG"] = 2 * n
+			addition2["节节高"] = 2 * n
 		}
 
 		times := 2
@@ -315,7 +315,7 @@ func (gd *GuangdongMahjong) Award() {
 			times = points
 		}
 		if n := len(winHorses); n > 0 {
-			addition2["MA"] = times * n
+			addition2["马"] = times * n
 		}
 
 		times = 0
@@ -331,7 +331,7 @@ func (gd *GuangdongMahjong) Award() {
 		}
 		// 马跟杠
 		if room.CanPlay(OptMaGenGang) {
-			addition2["MGG"] = times * len(winHorses)
+			addition2["马跟杠"] = times * len(winHorses)
 		}
 
 		times = points * p.multiples
@@ -343,23 +343,23 @@ func (gd *GuangdongMahjong) Award() {
 		if room.kongPlayer != nil && room.kongPlayer != p && room.discardPlayer == nil &&
 			room.CanPlay(OptQiangGangQuanBao) {
 			if extra := room.NumSeat() - 1; extra > 0 {
-				addition2["QGQB"] = 0
+				addition2["抢杠全包"] = 0
 
 				times += points * extra
-				if t, ok := addition2["MA"]; ok {
+				if t, ok := addition2["马"]; ok {
 					times += t * extra
 				}
-				if t, ok := addition2["MGG"]; ok {
+				if t, ok := addition2["马跟杠"]; ok {
 					times += t * extra
 				}
 			}
 		}
 		if p.drawCard != -1 {
 			// 自摸
-			addition2["ZM"] = 0
+			addition2["自摸"] = 0
 			// 杠爆全包
 			if obj.checkAllInclude() != nil {
-				addition2["GBQB"] = 0
+				addition2["杠爆全包"] = 0
 			}
 		}
 
@@ -433,7 +433,7 @@ func NewGuangdongWorld() *GuangdongWorld {
 }
 
 func (w *GuangdongWorld) NewRoom(subId int) *roomutils.Room {
-	r := NewMahjongRoom(id, subId)
+	r := NewMahjongRoom(subId)
 	r.SetNoPlay(OptAbleRobKong)
 	r.SetNoPlay(OptSevenPairs)
 	r.SetNoPlay(OptQiangGangQuanBao)

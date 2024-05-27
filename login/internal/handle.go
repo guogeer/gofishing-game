@@ -241,7 +241,7 @@ func bindAccount(c *api.Context, data any) (any, error) {
 
 	// 切换账号账号登陆，游客绑定到Google/Facebook/Apple
 	if args.AddOpenId == "" || args.ReserveOpenId == "" {
-		log.Debugf("BindAccount => empty AddOpenId:%s or ReserveOpenId:%s", args.AddOpenId, args.ReserveOpenId)
+		log.Debugf("bindAccount => empty AddOpenId:%s or ReserveOpenId:%s", args.AddOpenId, args.ReserveOpenId)
 		return nil, errors.New("empty addOpenId or reserveOpenId")
 	}
 	_, err := rpc.CacheClient().BindAccount(context.Background(), &pb.BindAccountReq{
@@ -272,7 +272,7 @@ func queryAccount(c *api.Context, data any) (any, error) {
 	args := data.(*queryAccountReq)
 
 	if args.GuestOpenId == "" || args.PlateOpenId == "" {
-		log.Debugf("QueryAccount => empty GuestOpenId:%s or PlateOpenId:%s", args.GuestOpenId, args.PlateOpenId)
+		log.Debugf("queryAccount => empty GuestOpenId:%s or PlateOpenId:%s", args.GuestOpenId, args.PlateOpenId)
 		return nil, errors.New("invalid guestOpenId or plateOpenId")
 	}
 	guestUser, _ := rpc.CacheClient().QuerySimpleUserInfo(context.Background(), &pb.QuerySimpleUserInfoReq{OpenId: args.GuestOpenId})

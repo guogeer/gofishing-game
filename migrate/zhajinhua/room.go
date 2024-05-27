@@ -55,15 +55,15 @@ func (room *ZhajinhuaRoom) OnEnter(player *service.Player) {
 
 	// 玩家重连
 	data := map[string]any{
-		"Status":        room.Status,
-		"SubId":         room.SubId,
-		"Countdown":     room.Countdown(),
-		"CurrentLoop":   room.loop + 1,
-		"LookLoopLimit": room.lookLoopLimit,
-		"LoopLimit":     room.loopLimit,
+		"status":        room.Status,
+		"subId":         room.SubId,
+		"countdown":     room.Countdown(),
+		"currentLoop":   room.loop + 1,
+		"lookLoopLimit": room.lookLoopLimit,
+		"loopLimit":     room.loopLimit,
 	}
 	if room.dealerSeatIndex >= 0 {
-		data["Dealer"] = room.dealerSeatIndex
+		data["dealer"] = room.dealerSeatIndex
 	}
 
 	var seats []*ZhajinhuaUserInfo
@@ -73,7 +73,7 @@ func (room *ZhajinhuaRoom) OnEnter(player *service.Player) {
 			seats = append(seats, info)
 		}
 	}
-	data["SeatPlayers"] = seats
+	data["seatPlayers"] = seats
 
 	// 玩家可能没座位
 	comer.SetClientValue("roomInfo", data)
@@ -102,7 +102,7 @@ func (room *ZhajinhuaRoom) OnCreate() {
 	}
 	// 最大轮数
 	{
-		n, ok := config.Int("zhajinhua_room", room.SubId, "LoopLimit")
+		n, ok := config.Int("zhajinhua_room", room.SubId, "loopLimit")
 		if ok {
 			room.loopLimit = int(n)
 		}
@@ -110,7 +110,7 @@ func (room *ZhajinhuaRoom) OnCreate() {
 	// 比牌轮数
 	{
 		room.compareLoopLimit = 1
-		n, ok := config.Int("zhajinhua_room", room.SubId, "CompareLoopLimit")
+		n, ok := config.Int("zhajinhua_room", room.SubId, "compareLoopLimit")
 		if ok {
 			room.compareLoopLimit = int(n)
 		}
@@ -118,14 +118,14 @@ func (room *ZhajinhuaRoom) OnCreate() {
 
 	// 闷牌轮数
 	{
-		n, ok := config.Int("zhajinhua_room", room.SubId, "LookLoopLimit")
+		n, ok := config.Int("zhajinhua_room", room.SubId, "lookLoopLimit")
 		if ok {
 			room.lookLoopLimit = int(n)
 		}
 	}
 	// 最大押注
 	{
-		n, ok := config.Int("zhajinhua_room", room.SubId, "MaxBet")
+		n, ok := config.Int("zhajinhua_room", room.SubId, "maxBet")
 		room.maxBet = 0
 		if ok {
 			room.maxBet = n
@@ -198,7 +198,7 @@ func (room *ZhajinhuaRoom) Award() {
 		winner.winGold += gold
 	}
 
-	if tax, ok := config.Float("Room", room.SubId, "TaxPercent"); ok {
+	if tax, ok := config.Float("room", room.SubId, "taxPercent"); ok {
 		winner.winGold = int64(float64(winner.winGold) * (100.0 - tax) / 100.0)
 	}
 
@@ -216,12 +216,12 @@ func (room *ZhajinhuaRoom) Award() {
 			users = append(users, detail)
 		}
 	}
-	room.Broadcast("Award", map[string]any{
-		"Countdown":      room.Countdown(),
-		"Winner":         winner.Id,
-		"WinGold":        winner.winGold,
-		"Users":          users,
-		"CompareDetails": details,
+	room.Broadcast("award", map[string]any{
+		"countdown":      room.Countdown(),
+		"winner":         winner.Id,
+		"winGold":        winner.winGold,
+		"users":          users,
+		"compareDetails": details,
 	})
 
 	winner.BagObj().Add(gameutils.ItemIdGold, winner.winGold, "zhajinhua_win", service.WithNoItemLog())
@@ -234,7 +234,7 @@ func (room *ZhajinhuaRoom) Award() {
 func (room *ZhajinhuaRoom) GameOver() {
 	// 积分场最后一局
 	if room.IsTypeScore() && room.ExistTimes+1 == room.LimitTimes {
-		room.Broadcast("TotalAward", struct{}{})
+		room.Broadcast("totalAward", struct{}{})
 	}
 	room.Room.GameOver()
 
@@ -267,7 +267,7 @@ func (room *ZhajinhuaRoom) StartGame() {
 	}
 	// 初始化筹码
 	room.chips = []int64{1, 2, 3, 4, 5}
-	config.Scan("zhajinhua_room", room.SubId, "Chips", config.JSON(&room.chips))
+	config.Scan("zhajinhua_room", room.SubId, "chips", config.JSON(&room.chips))
 
 	dealerSeatId := room.dealerSeatIndex
 	room.dealerSeatIndex = room.NextSeat(dealerSeatId)
@@ -277,7 +277,7 @@ func (room *ZhajinhuaRoom) StartGame() {
 	}
 	dealer := room.GetPlayer(room.dealerSeatIndex)
 	if dealerSeatId != room.dealerSeatIndex {
-		room.Broadcast("NewDealer", map[string]any{"uid": dealer.Id})
+		room.Broadcast("newDealer", map[string]any{"uid": dealer.Id})
 	}
 
 	room.currentChip = room.Unit()
@@ -290,9 +290,9 @@ func (room *ZhajinhuaRoom) StartGame() {
 		}
 	}
 	var samples []int64
-	percent, _ := config.Float("zhajinhua_room", room.SubId, "CardControlPercent")
+	percent, _ := config.Float("zhajinhua_room", room.SubId, "cardControlPercent")
 	if randutils.IsPercentNice(percent) {
-		config.Scan("zhajinhua_room", room.SubId, "CardSamples", config.JSON(&samples))
+		config.Scan("zhajinhua_room", room.SubId, "cardSamples", config.JSON(&samples))
 	}
 
 	// start deal card
@@ -330,11 +330,11 @@ func (room *ZhajinhuaRoom) StartGame() {
 		}
 	}
 	for _, p := range room.GetAllPlayers() {
-		data := map[string]any{"AllBet": room.allBet[:room.NumSeat()]}
+		data := map[string]any{"allBet": room.allBet[:room.NumSeat()]}
 		if p.IsRobot {
-			data["Users"] = users
+			data["users"] = users
 		}
-		p.WriteJSON("StartDealCard", data)
+		p.WriteJSON("startDealCard", data)
 	}
 
 	log.Debug("start game", room.dealerSeatIndex)
@@ -394,14 +394,14 @@ func (room *ZhajinhuaRoom) NewRound() {
 	room.loop++
 
 	data := map[string]any{
-		"Loop": room.loop,
+		"loop": room.loop,
 	}
-	room.Broadcast("NewRound", data)
+	room.Broadcast("newRound", data)
 }
 
 func (room *ZhajinhuaRoom) maxAutoTime() time.Duration {
 	d := maxAutoTime
-	t, ok := config.Duration("zhajinhua_room", room.SubId, "AutoDuration")
+	t, ok := config.Duration("zhajinhua_room", room.SubId, "autoDuration")
 	if ok {
 		d = t
 	}

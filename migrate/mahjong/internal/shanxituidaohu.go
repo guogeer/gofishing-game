@@ -125,15 +125,15 @@ func (mj *ShanxituidaohuMahjong) Award() {
 
 		// 自摸
 		if p.drawCard != -1 {
-			addition2["ZM"] = 0
+			addition2["自摸"] = 0
 		} else {
-			addition2["JP"] = 0
+			addition2["接炮"] = 0
 		}
 		if p.IsRobKong() {
-			addition2["QGH"] = 0
+			addition2["抢杠胡"] = 0
 		}
 		if p.IsDrawAfterKong() {
-			addition2["GSH"] = 0
+			addition2["杠上花"] = 0
 		}
 		detail.Addition2 = addition2
 		if p.drawCard == -1 {
@@ -176,7 +176,7 @@ func (w *ShanxituidaohuWorld) GetName() string {
 }
 
 func (w *ShanxituidaohuWorld) NewRoom(subId int) *roomutils.Room {
-	r := NewMahjongRoom(id, subId)
+	r := NewMahjongRoom(subId)
 	r.SetPlay(OptBuDaiFeng) // 不带风
 	r.SetPlay(OptBaoTing)   // 报听
 

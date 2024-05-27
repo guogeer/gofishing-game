@@ -64,7 +64,7 @@ type KongDetail struct {
 
 type MahjongPlayerInfo struct {
 	service.UserInfo
-	SeatId         int            `json:"seatId"`
+	SeatIndex      int            `json:"seatIndex"`
 	Cards          []int          `json:"cards"`
 	WinHistory     []int          `json:"winHistory"`
 	DiscardHistory []int          `json:"discardHistory"`
@@ -253,7 +253,7 @@ func (ply *MahjongPlayer) Fail() {
 	ply.leaveGame = true
 	ply.isBustOrNot = false
 	utils.StopTimer(ply.operateTimer)
-	room.Broadcast("Fail", map[string]any{"uid": ply.Id})
+	room.Broadcast("fail", map[string]any{"uid": ply.Id})
 	room.OnBust()
 }
 
@@ -450,7 +450,7 @@ func (ply *MahjongPlayer) Draw() {
 	cards := ply.handCards
 	drawCard := InvalidCard
 	for {
-		percent, _ := config.Float("Room", room.SubId, "WinPercent")
+		percent, _ := config.Float("room", room.SubId, "winPercent")
 		if randutils.IsPercentNice(percent) && room.cheatSeats == 0 {
 			color := ply.discardColor
 			for _, c := range cardutils.GetAllCards() {
@@ -467,7 +467,7 @@ func (ply *MahjongPlayer) Draw() {
 			break
 		}
 		ply.flowers = append(ply.flowers, drawCard)
-		room.Broadcast("Flower", map[string]any{"Flower": drawCard, "uid": ply.Id})
+		room.Broadcast("flower", map[string]any{"flower": drawCard, "uid": ply.Id})
 	}
 
 	ply.drawCard = drawCard
@@ -746,9 +746,9 @@ func (ply *MahjongPlayer) KongOk() {
 
 	type_ := ply.lastKong.Type
 	if type_ == mjutils.MeldInvisibleKong {
-		ply.totalTimes["AG"]++
+		ply.totalTimes["暗杠"]++
 	} else {
-		ply.totalTimes["MG"]++
+		ply.totalTimes["明杠"]++
 	}
 
 	// ply.GameData.Kong++
@@ -994,7 +994,7 @@ func (ply *MahjongPlayer) Pong() {
 	}
 
 	cards[dc] -= 2
-	room.Broadcast("Pong", map[string]any{"code": errcode.CodeOk, "card": dc, "uid": ply.Id})
+	room.Broadcast("pong", map[string]any{"code": errcode.CodeOk, "card": dc, "uid": ply.Id})
 	ply.localObj.OnPong()
 
 	room.expectChowPlayer = nil
@@ -1065,7 +1065,7 @@ func (ply *MahjongPlayer) Win() {
 
 	ply.operateTips = nil
 	ply.readyHandTips = nil
-	ply.WriteErr("Win", nil)
+	ply.WriteErr("win", nil)
 
 	// OK
 	utils.StopTimer(ply.operateTimer)
@@ -1159,9 +1159,9 @@ func (ply *MahjongPlayer) Discard(c int) {
 	// OK
 	data := map[string]any{"code": errcode.CodeOk, "uid": ply.Id, "card": c}
 	if ply.expectReadyHand {
-		data["IsReadyHand"] = true
+		data["isReadyHand"] = true
 	}
-	room.Broadcast("Discard", data)
+	room.Broadcast("discard", data)
 	if ply.expectReadyHand {
 		ply.ReadyHandOk()
 	}
@@ -1443,7 +1443,7 @@ func (ply *MahjongPlayer) ChangeRoom() {
 
 	code := roomutils.GetRoomObj(ply.Player).ChangeRoom()
 	// TODO 待实现
-	// clone.WriteErr("ChangeRoom", code, "isMatch", clone.Room() && clone.Room().IsMatchOk)
+	// clone.WriteErr("changeRoom", code, "isMatch", clone.Room() && clone.Room().IsMatchOk)
 	if code != nil {
 		return
 	}
@@ -1470,8 +1470,8 @@ func (ply *MahjongPlayer) AutoPlay(t int) {
 	}
 
 	isAutoPlay := ply.isAutoPlay
-	response := map[string]any{"code": errcode.CodeOk, "Type": t, "uid": ply.Id}
-	room.Broadcast("AutoPlay", response)
+	response := map[string]any{"code": errcode.CodeOk, "type": t, "uid": ply.Id}
+	room.Broadcast("autoPlay", response)
 	// 玩家选择托管，立即操作
 	d := time.Duration(0)
 	if isAutoPlay {
@@ -1777,7 +1777,7 @@ func (ply *MahjongPlayer) copyCardsWithNoneCard(hasNoneCard bool) []int {
 /*
 func (ply *MahjongPlayer) Replay(messageId string, i any) {
 	switch messageId {
-	case "Draw":
+	case "draw":
 		data := i.(map[string]any)
 		c := data["card"].(int)
 		uid := data["uid"].(int)
@@ -1785,7 +1785,7 @@ func (ply *MahjongPlayer) Replay(messageId string, i any) {
 			data["card"] = other.drawCard
 		}
 		defer func() { data["card"] = c }()
-	case "DealCard":
+	case "dealCard":
 		room := ply.Room()
 		data := i.(map[string]any)
 		all := make([][]int, room.NumSeat())
@@ -1793,9 +1793,9 @@ func (ply *MahjongPlayer) Replay(messageId string, i any) {
 			other := room.GetPlayer(k)
 			all[k] = SortCards(other.handCards)
 		}
-		data["All"] = all
-		defer func() { delete(data, "All") }()
-	case "FinishExchangeTriCards":
+		data["dll"] = all
+		defer func() { delete(data, "all") }()
+	case "finishExchangeTriCards":
 		room := ply.Room()
 		data := i.(map[string]any)
 		all := make([][]int, room.NumSeat())
@@ -1803,8 +1803,8 @@ func (ply *MahjongPlayer) Replay(messageId string, i any) {
 			other := room.GetPlayer(k)
 			all[k] = other.triCards[:]
 		}
-		data["All"] = all
-		defer func() { delete(data, "All") }()
+		data["all"] = all
+		defer func() { delete(data, "all") }()
 	}
 	ply.Player.Replay(messageId, i)
 }
@@ -1870,9 +1870,9 @@ func (ply *MahjongPlayer) Double() {
 	ply.forceReadyHand = false
 	response := map[string]any{
 		"uid":      ply.Id,
-		"Multiple": ply.multiples,
+		"multiple": ply.multiples,
 	}
-	room.Broadcast("Double", response)
+	room.Broadcast("double", response)
 	if ply.expectReadyHand {
 		ply.ReadyHandOk()
 	}

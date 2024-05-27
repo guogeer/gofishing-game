@@ -598,7 +598,7 @@ type DoudizhuAI struct {
 }
 
 func (ai *DoudizhuAI) String() string {
-	s := fmt.Sprintf("MySeat: %d, Dizhu: %d", ai.MySeat, ai.Dizhu)
+	s := fmt.Sprintf("mySeat: %d, dizhu: %d", ai.MySeat, ai.Dizhu)
 	s += fmt.Sprintf(",UsedCards: %s", cardutils.Format(ai.UsedCards))
 
 	users := ""
