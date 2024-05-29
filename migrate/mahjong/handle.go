@@ -1,4 +1,4 @@
-package internal
+package mahjong
 
 import (
 	"gofishing-game/service"

@@ -1,7 +1,7 @@
-package internal
+package mahjong
 
 import (
-	mjutils "gofishing-game/migrate/mahjong/utils"
+	"gofishing-game/migrate/internal/cardrule"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"math/rand"
@@ -154,7 +154,7 @@ func (h *HunanMahjong) Award() {
 		bills := make([]Bill, room.NumSeat())
 
 		addition2 := map[string]int{}
-		detail := ChipDetail{Seats: 1 << uint(p.GetSeatIndex()), Operate: mjutils.OperateWin}
+		detail := ChipDetail{Seats: 1 << uint(p.GetSeatIndex()), Operate: cardrule.OperateWin}
 		if cards := h.getAnyCards(); len(cards) > 0 && room.CanPlay(OptWuGuiJiaBei) && CountSomeCards(p.handCards, nil, cards...) == 0 {
 			addition2["无鬼加倍"] = 2
 			winGold *= 2

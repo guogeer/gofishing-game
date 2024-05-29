@@ -1,9 +1,9 @@
-package internal
+package mahjong
 
 import (
 	"gofishing-game/internal/cardutils"
 	"gofishing-game/internal/errcode"
-	mjutils "gofishing-game/migrate/mahjong/utils"
+	"gofishing-game/migrate/internal/cardrule"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"gofishing-game/service/system"
@@ -89,7 +89,7 @@ type MahjongRoom struct {
 	localMahjong LocalMahjong
 	// 房间录像
 	// replay *MahjongReplay
-	helper        *mjutils.MahjongHelper
+	helper        *cardrule.MahjongHelper
 	isAbleBoom    bool             // 可点炮
 	delayDuration time.Duration    // 操作延迟
 	cheatSeats    int              // 作弊座位ID(可多个)
@@ -169,7 +169,7 @@ func (room *MahjongRoom) StartGame() {
 func (room *MahjongRoom) OnCreate() {
 	room.isAbleBoom = room.CanPlay(OptBoom) // 可点炮
 
-	helper := &mjutils.MahjongHelper{}
+	helper := &cardrule.MahjongHelper{}
 	helper.Qidui = room.CanPlay(OptSevenPairs)
 	helper.Qiduilaizizuodui = room.CanPlay(OptQiDuiLaiZiZuoDui)
 	helper.Jiangyise = room.CanPlay(OptJiangYiSe)
@@ -458,10 +458,10 @@ func (room *MahjongRoom) OnWin() {
 	// 抢杠胡
 	if p := room.kongPlayer; p != nil {
 		last := p.lastKong
-		if p.robKong && last.Type == mjutils.MeldBentKong {
+		if p.robKong && last.Type == cardrule.MeldBentKong {
 			for k, m := range p.melds {
 				if m.Card == last.Card {
-					m.Type = mjutils.MeldTriplet
+					m.Type = cardrule.MeldTriplet
 					p.melds[k] = m
 				}
 			}

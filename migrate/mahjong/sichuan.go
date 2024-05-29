@@ -1,8 +1,8 @@
-package internal
+package mahjong
 
 import (
 	"gofishing-game/internal/cardutils"
-	mjutils "gofishing-game/migrate/mahjong/utils"
+	"gofishing-game/migrate/internal/cardrule"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"slices"
@@ -238,7 +238,7 @@ func (sc *SichuanMahjong) OnWin() {
 		// 门清
 		menQing := (p.drawCard != -1)
 		for _, m := range p.melds {
-			if m.Type != mjutils.MeldInvisibleKong {
+			if m.Type != cardrule.MeldInvisibleKong {
 				menQing = false
 			}
 		}
@@ -260,8 +260,8 @@ func (sc *SichuanMahjong) OnWin() {
 			addition2["妙手回春"] = t
 		}
 
-		// detail := ChipChip{SeatIndex: p.GetSeatIndex(), Operate: mjutils.OperateWin, Score: score}
-		detail := ChipDetail{Seats: 1 << uint(p.GetSeatIndex()), Operate: mjutils.OperateWin, Chip: int64(score)}
+		// detail := ChipChip{SeatIndex: p.GetSeatIndex(), Operate: cardrule.OperateWin, Score: score}
+		detail := ChipDetail{Seats: 1 << uint(p.GetSeatIndex()), Operate: cardrule.OperateWin, Chip: int64(score)}
 		// 接跑
 		if p.drawCard == -1 {
 			// 胡牌
@@ -281,7 +281,7 @@ func (sc *SichuanMahjong) OnWin() {
 				// 额外赔偿杠所得
 				effectSeatId = p.GetSeatIndex()
 				bill := &moveKong[failSeatId]
-				bill.Details = append(bill.Details, ChipDetail{Seats: 1 << uint(p.GetSeatIndex()), Chip: -kongPlayer.lastKong.Chip, Operate: mjutils.OperateMoveKong, Times: 1})
+				bill.Details = append(bill.Details, ChipDetail{Seats: 1 << uint(p.GetSeatIndex()), Chip: -kongPlayer.lastKong.Chip, Operate: cardrule.OperateMoveKong, Times: 1})
 			}
 			detail.Addition2 = addition2
 			bill := &bills[failSeatId]
@@ -380,7 +380,7 @@ func (sc *SichuanMahjong) OnWin() {
 	for _, p := range room.winPlayers {
 		wins = append(wins, p.Id)
 	}
-	room.Broadcast("compute", map[string]any{"operate": mjutils.OperateWin, "addition": additionId, "winPlayers": wins, "winCard": room.lastCard, "result": result})
+	room.Broadcast("compute", map[string]any{"operate": cardrule.OperateWin, "addition": additionId, "winPlayers": wins, "winCard": room.lastCard, "result": result})
 
 	if effectSeatId != -1 {
 		result = nil
@@ -391,7 +391,7 @@ func (sc *SichuanMahjong) OnWin() {
 				result = append(result, ChipResult{SeatIndex: seatId, Chip: bill.Sum()})
 			}
 		}
-		room.Broadcast("compute", map[string]any{"operate": mjutils.OperateMoveKong, "result": result})
+		room.Broadcast("compute", map[string]any{"operate": cardrule.OperateMoveKong, "result": result})
 	}
 
 	// 破产玩家可提前离开游戏
@@ -441,7 +441,7 @@ func (h *SichuanMahjong) Award() {
 			if other.leaveGame || b[other.GetSeatIndex()] || p == other {
 				continue
 			}
-			detail := ChipDetail{Seats: 1 << uint(other.GetSeatIndex()), Chip: -gold, Operate: mjutils.OperateHuaZhu, Times: times}
+			detail := ChipDetail{Seats: 1 << uint(other.GetSeatIndex()), Chip: -gold, Operate: cardrule.OperateHuaZhu, Times: times}
 			bill.Details = append(bill.Details, detail)
 		}
 	}
@@ -482,7 +482,7 @@ func (h *SichuanMahjong) Award() {
 					times = h.LimitPoints
 				}
 				gold = unit * int64(times)
-				detail := ChipDetail{Seats: 1 << uint(other.GetSeatIndex()), Chip: -gold, Operate: mjutils.OperateDaJiao, Times: times}
+				detail := ChipDetail{Seats: 1 << uint(other.GetSeatIndex()), Chip: -gold, Operate: cardrule.OperateDaJiao, Times: times}
 				bill.Details = append(bill.Details, detail)
 			}
 		}
@@ -505,7 +505,7 @@ func (h *SichuanMahjong) Award() {
 				if g >= 0 || other.leaveGame {
 					continue
 				}
-				detail := ChipDetail{Operate: mjutils.OperateBackKong, Times: 1, Seats: 1 << uint(k), Chip: g}
+				detail := ChipDetail{Operate: cardrule.OperateBackKong, Times: 1, Seats: 1 << uint(k), Chip: g}
 				// bill.Chip -= g
 				bill.Details = append(bill.Details, detail)
 			}
@@ -522,7 +522,7 @@ func (h *SichuanMahjong) Award() {
 func (h *SichuanMahjong) GameOver() {
 }
 
-func (sc *SichuanMahjong) CountGen(score int, cards []int, melds []mjutils.Meld) int {
+func (sc *SichuanMahjong) CountGen(score int, cards []int, melds []cardrule.Meld) int {
 	AllCards := cardutils.GetAllCards()
 	var all [MaxCard]int
 	for _, c := range AllCards {
@@ -530,9 +530,9 @@ func (sc *SichuanMahjong) CountGen(score int, cards []int, melds []mjutils.Meld)
 	}
 	for _, m := range melds {
 		switch m.Type {
-		case mjutils.MeldTriplet:
+		case cardrule.MeldTriplet:
 			all[m.Card] += 3
-		case mjutils.MeldStraightKong, mjutils.MeldBentKong, mjutils.MeldInvisibleKong:
+		case cardrule.MeldStraightKong, cardrule.MeldBentKong, cardrule.MeldInvisibleKong:
 			all[m.Card] += 4
 		}
 	}
@@ -554,7 +554,7 @@ func (sc *SichuanMahjong) CountGen(score int, cards []int, melds []mjutils.Meld)
 	return gen
 }
 
-func (sc *SichuanMahjong) Score(cards []int, melds []mjutils.Meld) (int, int) {
+func (sc *SichuanMahjong) Score(cards []int, melds []cardrule.Meld) (int, int) {
 	var pairNum, pair2Num, kongNum, color int
 	for _, c := range cardutils.GetAllCards() {
 		pairNum += cards[c] / 2
@@ -577,7 +577,7 @@ func (sc *SichuanMahjong) Score(cards []int, melds []mjutils.Meld) (int, int) {
 		kongNum += cards[c] / 4
 	}
 	for _, meld := range melds {
-		if meld.Type == mjutils.MeldStraightKong || meld.Type == mjutils.MeldBentKong || meld.Type == mjutils.MeldInvisibleKong {
+		if meld.Type == cardrule.MeldStraightKong || meld.Type == cardrule.MeldBentKong || meld.Type == cardrule.MeldInvisibleKong {
 			kongNum++
 		}
 	}
@@ -628,8 +628,8 @@ func (sc *SichuanMahjong) Score(cards []int, melds []mjutils.Meld) (int, int) {
 		cards[pair] -= 2
 		for _, opt := range room.helper.Split(cards) {
 			// 顺子
-			seq := CountMeldsByType(melds, mjutils.MeldSequence)
-			seq += CountMeldsByType(opt.Melds, mjutils.MeldSequence)
+			seq := CountMeldsByType(melds, cardrule.MeldSequence)
+			seq += CountMeldsByType(opt.Melds, cardrule.MeldSequence)
 			if seq > 0 {
 				scores[PingHu] = true
 			} else {

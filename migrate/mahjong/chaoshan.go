@@ -1,10 +1,10 @@
-package internal
+package mahjong
 
 // 2018-3-14 Guogeer
 // 潮汕麻将
 import (
 	"gofishing-game/internal/cardutils"
-	mjutils "gofishing-game/migrate/mahjong/utils"
+	"gofishing-game/migrate/internal/cardrule"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 )
@@ -77,7 +77,7 @@ func (mj *chaoshanMahjong) OnReady() {
 	room.dealer.OnDraw()
 }
 
-func (mj *chaoshanMahjong) Score(cards []int, melds []mjutils.Meld) (int, int) {
+func (mj *chaoshanMahjong) Score(cards []int, melds []cardrule.Meld) (int, int) {
 	room := mj.room
 	scores := make(map[int]bool)
 	winOpt := room.helper.Win(cards, melds)
@@ -313,10 +313,10 @@ func (mj *chaoshanMahjong) Award() {
 				bills := make([]Bill, room.NumSeat())
 				maBills := make([]Bill, room.NumSeat())
 				switch kong.Type {
-				case mjutils.MeldInvisibleKong, mjutils.MeldBentKong:
+				case cardrule.MeldInvisibleKong, cardrule.MeldBentKong:
 					times := 1
 					// 暗杠
-					if kong.Type == mjutils.MeldInvisibleKong {
+					if kong.Type == cardrule.MeldInvisibleKong {
 						times = 2
 					}
 					for k := 0; k < room.NumSeat(); k++ {
@@ -333,7 +333,7 @@ func (mj *chaoshanMahjong) Award() {
 							maBill.Details = append(maBill.Details, maDetail)
 						}
 					}
-				case mjutils.MeldStraightKong:
+				case cardrule.MeldStraightKong:
 					// 直杠
 					times := 3
 					bill := &bills[kong.other.GetSeatIndex()]
@@ -370,7 +370,7 @@ func (mj *chaoshanMahjong) Award() {
 	for _, p := range room.winPlayers {
 		bills := make([]Bill, room.NumSeat())
 
-		detail := ChipDetail{Seats: 1 << uint(p.GetSeatIndex()), Operate: mjutils.OperateWin}
+		detail := ChipDetail{Seats: 1 << uint(p.GetSeatIndex()), Operate: cardrule.OperateWin}
 		addition2 := make(map[string]int)
 
 		copyCards := p.copyCards()

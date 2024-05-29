@@ -1,4 +1,4 @@
-package internal
+package mahjong
 
 // 2017-03-01 与达总沟通后，牌局过程中无金币时，弹出充值和破产补助提示
 // 牌局结束后，玩家选择继续或换桌时触发提示，时间为30s
@@ -8,7 +8,7 @@ import (
 	"gofishing-game/internal/cardutils"
 	"gofishing-game/internal/errcode"
 	"gofishing-game/internal/gameutils"
-	mjutils "gofishing-game/migrate/mahjong/utils"
+	"gofishing-game/migrate/internal/cardrule"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"gofishing-game/service/system"
@@ -64,21 +64,21 @@ type KongDetail struct {
 
 type MahjongPlayerInfo struct {
 	service.UserInfo
-	SeatIndex      int            `json:"seatIndex"`
-	Cards          []int          `json:"cards"`
-	WinHistory     []int          `json:"winHistory"`
-	DiscardHistory []int          `json:"discardHistory"`
-	Flowers        []int          `json:"flowers,omitempty"`
-	DiscardColor   int            `json:"discardColor"`
-	DiscardCard    int            `json:"discardCard"` // 打出去的牌
-	DrawCard       int            `json:"drawCard"`
-	Disband        int            `json:"disband"`
-	Melds          []mjutils.Meld `json:"melds"`
-	IsWin          bool           `json:"isWin"`
-	IsReady        bool           `json:"isReady"`
-	IsAutoPlay     bool           `json:"isAutoPlay"`
-	IsBust         bool           `json:"isBust"`
-	IsClose        bool           `json:"isClose"`
+	SeatIndex      int             `json:"seatIndex"`
+	Cards          []int           `json:"cards"`
+	WinHistory     []int           `json:"winHistory"`
+	DiscardHistory []int           `json:"discardHistory"`
+	Flowers        []int           `json:"flowers,omitempty"`
+	DiscardColor   int             `json:"discardColor"`
+	DiscardCard    int             `json:"discardCard"` // 打出去的牌
+	DrawCard       int             `json:"drawCard"`
+	Disband        int             `json:"disband"`
+	Melds          []cardrule.Meld `json:"melds"`
+	IsWin          bool            `json:"isWin"`
+	IsReady        bool            `json:"isReady"`
+	IsAutoPlay     bool            `json:"isAutoPlay"`
+	IsBust         bool            `json:"isBust"`
+	IsClose        bool            `json:"isClose"`
 
 	// 红中赖子杠玩法的痞子、癞子杠
 	Pilaigang []int `json:"pilaigang,omitempty"`
@@ -114,7 +114,7 @@ type MahjongPlayer struct {
 	*service.Player
 
 	handCards   []int // 手牌
-	melds       []mjutils.Meld
+	melds       []cardrule.Meld
 	chipHistory []ChipDetail
 	kongChip    []int64
 	discardNum  int   // 出牌数
@@ -398,7 +398,7 @@ func (ply *MahjongPlayer) Prompt() {
 	if room.CanPlay(OptAbleDouble) {
 		if _, ok := room.expectWinPlayers[ply.Id]; ok {
 			points := 0
-			tip := OperateTip{Type: mjutils.OperateDouble}
+			tip := OperateTip{Type: cardrule.OperateDouble}
 			for _, opt := range ply.CheckWin() {
 				if opt.WinCard == room.lastCard {
 					points = opt.Points
@@ -527,7 +527,7 @@ func (ply *MahjongPlayer) OnDraw() {
 
 	for _, c1 := range cardutils.GetAllCards() {
 		if ply.localObj.GetKongType(c1) != -1 {
-			tips = append(tips, OperateTip{Type: mjutils.OperateKong, Card: c1})
+			tips = append(tips, OperateTip{Type: cardrule.OperateKong, Card: c1})
 			room.expectKongPlayer = ply
 			kc := c1
 			ply.Timeout(func() { ply.Kong(kc) })
@@ -536,7 +536,7 @@ func (ply *MahjongPlayer) OnDraw() {
 
 	// 胡牌
 	if ply.localObj.IsAbleWin() {
-		tips = append(tips, OperateTip{Type: mjutils.OperateWin, Card: c})
+		tips = append(tips, OperateTip{Type: cardrule.OperateWin, Card: c})
 		room.expectWinPlayers[ply.Id] = ply
 		ply.Timeout(func() { ply.Win() })
 	}
@@ -544,7 +544,7 @@ func (ply *MahjongPlayer) OnDraw() {
 		opts := ply.ReadyHand()
 		if len(opts) > 0 {
 			ply.expectReadyHand = true
-			tips = append(tips, OperateTip{Type: mjutils.OperateReadyHand})
+			tips = append(tips, OperateTip{Type: cardrule.OperateReadyHand})
 		}
 	}
 
@@ -588,16 +588,16 @@ func (ply *MahjongPlayer) GetKongType(c int) int {
 
 	cards := ply.handCards
 	if ply.drawCard == -1 && cards[c] == 3 && room.lastCard == c {
-		type_ = mjutils.MeldStraightKong // 直杠
+		type_ = cardrule.MeldStraightKong // 直杠
 	}
 	// 摸牌或吃碰可杠
 	if ply.drawCard != -1 || room.CanPlay(OptAbleKongAfterChowOrPong) {
 		if cards[c] == 4 {
-			type_ = mjutils.MeldInvisibleKong // 暗杠
+			type_ = cardrule.MeldInvisibleKong // 暗杠
 		}
 		for _, m := range ply.melds {
-			if m.Type == mjutils.MeldTriplet && m.Card == c && cards[c] > 0 {
-				type_ = mjutils.MeldBentKong
+			if m.Type == cardrule.MeldTriplet && m.Card == c && cards[c] > 0 {
+				type_ = cardrule.MeldBentKong
 				break
 			}
 		}
@@ -688,15 +688,15 @@ func (ply *MahjongPlayer) Kong(c int) {
 	// 导致了玩家被抢杠胡后，玩家在本轮接炮胡时，导致手牌异常被减去一张
 	ply.drawCard = -1
 	ply.handCards[c] = 0
-	if type_ == mjutils.MeldBentKong {
+	if type_ == cardrule.MeldBentKong {
 		for k, m := range ply.melds {
 			if m.Card == c {
-				m.Type = mjutils.MeldBentKong
+				m.Type = cardrule.MeldBentKong
 				ply.melds[k] = m
 			}
 		}
 	} else {
-		m := mjutils.Meld{Card: c, Type: type_}
+		m := cardrule.Meld{Card: c, Type: type_}
 		if other := room.discardPlayer; other != nil {
 			m.SeatIndex = other.GetSeatIndex()
 		}
@@ -716,15 +716,15 @@ func (ply *MahjongPlayer) Kong(c int) {
 	// 判断是否有抢杠胡
 	// 增加明杠可抢
 	// 2017-5-16 Guogeer
-	if (type_ == mjutils.MeldBentKong ||
-		(type_ == mjutils.MeldStraightKong && room.CanPlay(OptMingGangKeQiang))) &&
+	if (type_ == cardrule.MeldBentKong ||
+		(type_ == cardrule.MeldStraightKong && room.CanPlay(OptMingGangKeQiang))) &&
 		room.CanPlay(OptAbleRobKong) {
 		for i := 0; i < room.NumSeat(); i++ {
 			if other := room.GetPlayer(i); ply != other && other.localObj.IsAbleWin() {
 				room.expectWinPlayers[other.Id] = other
 				other.Timeout(func() { other.Win() })
 				other.readyHandTips = nil
-				other.operateTips = []OperateTip{{Type: mjutils.OperateWin, Card: c}}
+				other.operateTips = []OperateTip{{Type: cardrule.OperateWin, Card: c}}
 				other.Prompt()
 			}
 		}
@@ -745,7 +745,7 @@ func (ply *MahjongPlayer) KongOk() {
 	ply.localObj.OnKong()
 
 	type_ := ply.lastKong.Type
-	if type_ == mjutils.MeldInvisibleKong {
+	if type_ == cardrule.MeldInvisibleKong {
 		ply.totalTimes["暗杠"]++
 	} else {
 		ply.totalTimes["明杠"]++
@@ -762,11 +762,11 @@ func (ply *MahjongPlayer) KongOk() {
 		unit := room.Unit()
 		bills := make([]Bill, room.NumSeat())
 		// 暗杠2倍
-		if type_ == mjutils.MeldInvisibleKong {
+		if type_ == cardrule.MeldInvisibleKong {
 			times = 2
 		}
 		// 直杠默认3倍
-		if type_ == mjutils.MeldStraightKong {
+		if type_ == cardrule.MeldStraightKong {
 			times = 3
 			if room.CanPlay(OptStraightKong2) {
 				times = 2
@@ -776,7 +776,7 @@ func (ply *MahjongPlayer) KongOk() {
 
 		// detail := ChipChip{Operate: type_, Times: times, SeatIndex: ply.GetSeatIndex()}
 		detail := ChipDetail{Operate: type_, Times: times, Seats: 1 << uint(ply.GetSeatIndex())}
-		if type_ == mjutils.MeldStraightKong {
+		if type_ == cardrule.MeldStraightKong {
 			effectPlayers = append(effectPlayers, ply.lastKong.other)
 		} else {
 			for i := 0; i < room.NumSeat(); i++ {
@@ -878,7 +878,7 @@ func (ply *MahjongPlayer) Chow(c int) {
 	}
 
 	// OK
-	m := mjutils.Meld{Card: c, Type: mjutils.MeldSequence}
+	m := cardrule.Meld{Card: c, Type: cardrule.MeldSequence}
 	if other := room.discardPlayer; other != nil {
 		m.SeatIndex = other.GetSeatIndex()
 	}
@@ -926,7 +926,7 @@ func (ply *MahjongPlayer) Chow(c int) {
 	var tips []OperateTip
 	for _, c1 := range cardutils.GetAllCards() {
 		if ply.localObj.GetKongType(c1) != -1 {
-			tips = append(tips, OperateTip{Type: mjutils.OperateKong, Card: c1})
+			tips = append(tips, OperateTip{Type: cardrule.OperateKong, Card: c1})
 			room.expectKongPlayer = ply
 			kc := c1
 			ply.Timeout(func() { ply.Kong(kc) })
@@ -936,7 +936,7 @@ func (ply *MahjongPlayer) Chow(c int) {
 		opts := ply.ReadyHand()
 		if len(opts) > 0 {
 			ply.expectReadyHand = true
-			tips = append(tips, OperateTip{Type: mjutils.OperateReadyHand})
+			tips = append(tips, OperateTip{Type: cardrule.OperateReadyHand})
 		}
 	}
 
@@ -982,7 +982,7 @@ func (ply *MahjongPlayer) Pong() {
 	}
 
 	ply.delayPong = false
-	m := mjutils.Meld{Card: dc, Type: mjutils.MeldTriplet}
+	m := cardrule.Meld{Card: dc, Type: cardrule.MeldTriplet}
 	if other := room.discardPlayer; other != nil {
 		m.SeatIndex = other.GetSeatIndex()
 	}
@@ -1014,7 +1014,7 @@ func (ply *MahjongPlayer) Pong() {
 	var tips []OperateTip
 	for _, c1 := range cardutils.GetAllCards() {
 		if ply.localObj.GetKongType(c1) != -1 {
-			tips = append(tips, OperateTip{Type: mjutils.OperateKong, Card: c1})
+			tips = append(tips, OperateTip{Type: cardrule.OperateKong, Card: c1})
 			room.expectKongPlayer = ply
 			kc := c1
 			ply.Timeout(func() { ply.Kong(kc) })
@@ -1024,7 +1024,7 @@ func (ply *MahjongPlayer) Pong() {
 		opts := ply.ReadyHand()
 		if len(opts) > 0 {
 			ply.expectReadyHand = true
-			tips = append(tips, OperateTip{Type: mjutils.OperateReadyHand})
+			tips = append(tips, OperateTip{Type: cardrule.OperateReadyHand})
 		}
 	}
 
@@ -1144,7 +1144,7 @@ func (ply *MahjongPlayer) Discard(c int) {
 		ply.forceReadyHand = false
 		ply.expectReadyHand = false
 	}
-	var winOpts []mjutils.WinOption
+	var winOpts []cardrule.WinOption
 	if ply.expectReadyHand {
 		lastCard := room.lastCard
 		room.lastCard = c
@@ -1215,19 +1215,19 @@ func (ply *MahjongPlayer) Discard(c int) {
 		for start := c - 2; start <= c; start++ {
 			if other.localObj.IsAbleChow(start) {
 				room.expectChowPlayer = other
-				tips = append(tips, OperateTip{Type: mjutils.OperateChow, Card: start, Chow: c})
+				tips = append(tips, OperateTip{Type: cardrule.OperateChow, Card: start, Chow: c})
 			}
 		}
 		// 碰
 		if other.localObj.IsAblePong() {
 			room.expectPongPlayer = other
-			tips = append(tips, OperateTip{Type: mjutils.OperatePong, Card: c})
+			tips = append(tips, OperateTip{Type: cardrule.OperatePong, Card: c})
 			other.Timeout(func() { other.Pass() })
 		}
 		// 杠
 		if t := other.localObj.GetKongType(c); t != -1 {
 			room.expectKongPlayer = other
-			operateTip := OperateTip{Type: mjutils.OperateKong, Card: c}
+			operateTip := OperateTip{Type: cardrule.OperateKong, Card: c}
 			if room.CanPlay(OptYiKouXiang) && !other.isReadyHand { // 一口香
 				n := other.handCards[c]
 				other.handCards[c] = 0
@@ -1244,7 +1244,7 @@ func (ply *MahjongPlayer) Discard(c int) {
 		// 胡
 		if room.isAbleBoom && other.localObj.IsAbleWin() {
 			room.expectWinPlayers[other.Id] = other
-			tips = append(tips, OperateTip{Type: mjutils.OperateWin, Card: c})
+			tips = append(tips, OperateTip{Type: cardrule.OperateWin, Card: c})
 			other.Timeout(func() { other.Win() })
 		}
 
@@ -1542,7 +1542,7 @@ func (ply *MahjongPlayer) CheckReadyHand() []ReadyHandOption {
 	cards := ply.copyCardsWithoutNoneCard()
 
 	type MahjongScorer interface {
-		Score(cards []int, melds []mjutils.Meld) (int, int)
+		Score(cards []int, melds []cardrule.Meld) (int, int)
 	}
 
 	opts := make([]ReadyHandOption, 0, 16)
@@ -1724,7 +1724,7 @@ func (ply *MahjongPlayer) IsAblePong() bool {
 	return true
 }
 
-func (ply *MahjongPlayer) lastMeld() mjutils.Meld {
+func (ply *MahjongPlayer) lastMeld() cardrule.Meld {
 	n := len(ply.melds)
 	return ply.melds[n-1]
 }
@@ -1898,7 +1898,7 @@ func (ply *MahjongPlayer) Double() {
 		var tips []OperateTip
 		for _, c1 := range cardutils.GetAllCards() {
 			if ply.localObj.GetKongType(c1) != -1 {
-				tips = append(tips, OperateTip{Type: mjutils.OperateKong, Card: c1})
+				tips = append(tips, OperateTip{Type: cardrule.OperateKong, Card: c1})
 				room.expectKongPlayer = ply
 				kc := c1
 				ply.Timeout(func() { ply.Kong(kc) })
@@ -1909,7 +1909,7 @@ func (ply *MahjongPlayer) Double() {
 			opts := ply.ReadyHand()
 			if len(opts) > 0 {
 				ply.expectReadyHand = true
-				tips = append(tips, OperateTip{Type: mjutils.OperateReadyHand})
+				tips = append(tips, OperateTip{Type: cardrule.OperateReadyHand})
 			}
 		}
 

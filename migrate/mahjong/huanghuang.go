@@ -1,10 +1,10 @@
-package internal
+package mahjong
 
 // 2017-11-03 Guogeer
 // 湖北晃晃麻将
 import (
 	"gofishing-game/internal/cardutils"
-	mjutils "gofishing-game/migrate/mahjong/utils"
+	"gofishing-game/migrate/internal/cardrule"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"strconv"
@@ -125,7 +125,7 @@ func (mj *HuanghuangMahjong) OnWin() {
 	room.Award()
 }
 
-func (mj *HuanghuangMahjong) Score(cards []int, melds []mjutils.Meld) (int, int) {
+func (mj *HuanghuangMahjong) Score(cards []int, melds []cardrule.Meld) (int, int) {
 	room := mj.room
 
 	var pairNum, pair2Num, color int
@@ -181,9 +181,9 @@ func (mj *HuanghuangMahjong) Award() {
 				detail.Operate = meld.Type
 				bills := make([]Bill, room.NumSeat())
 				switch meld.Type {
-				case mjutils.MeldInvisibleKong, mjutils.MeldBentKong:
+				case cardrule.MeldInvisibleKong, cardrule.MeldBentKong:
 					detail.Times = 1
-					if meld.Type == mjutils.MeldInvisibleKong {
+					if meld.Type == cardrule.MeldInvisibleKong {
 						detail.Times = 2
 					}
 					for k := 0; k < room.NumSeat(); k++ {
@@ -193,7 +193,7 @@ func (mj *HuanghuangMahjong) Award() {
 							bill.Details = append(bill.Details, detail)
 						}
 					}
-				case mjutils.MeldStraightKong:
+				case cardrule.MeldStraightKong:
 					bill := &bills[meld.SeatIndex]
 					detail.Times = 2
 					detail.Chip = -int64(detail.Times) * unit
@@ -217,7 +217,7 @@ func (mj *HuanghuangMahjong) Award() {
 			points *= 2
 		}
 		mj.ghostCard = c
-		detail := ChipDetail{Seats: 1 << uint(p.GetSeatIndex()), Chip: int64(score), Operate: mjutils.OperateWin}
+		detail := ChipDetail{Seats: 1 << uint(p.GetSeatIndex()), Chip: int64(score), Operate: cardrule.OperateWin}
 
 		addition2 := map[string]int{}
 		// 自摸

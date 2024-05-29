@@ -1,9 +1,9 @@
-package internal
+package mahjong
 
 // 2017-5-11 Guogeer
 // 二人、三人、四人推倒胡，鸡胡
 import (
-	mjutils "gofishing-game/migrate/mahjong/utils"
+	"gofishing-game/migrate/internal/cardrule"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"slices"
@@ -253,10 +253,10 @@ func (gd *GuangdongMahjong) Award() {
 
 			bills := make([]Bill, room.NumSeat())
 			switch kong.Type {
-			case mjutils.MeldInvisibleKong, mjutils.MeldBentKong:
+			case cardrule.MeldInvisibleKong, cardrule.MeldBentKong:
 				times := 1
 				// 暗杠
-				if kong.Type == mjutils.MeldInvisibleKong {
+				if kong.Type == cardrule.MeldInvisibleKong {
 					times = 2
 				}
 				for k := 0; k < room.NumSeat(); k++ {
@@ -267,7 +267,7 @@ func (gd *GuangdongMahjong) Award() {
 						bill.Details = append(bill.Details, detail)
 					}
 				}
-			case mjutils.MeldStraightKong:
+			case cardrule.MeldStraightKong:
 				// 直杠
 				bill := &bills[kong.other.GetSeatIndex()]
 				detail.Times = 1
@@ -283,7 +283,7 @@ func (gd *GuangdongMahjong) Award() {
 		bills := make([]Bill, room.NumSeat())
 
 		obj := p.localObj.(*GuangdongObj)
-		detail := ChipDetail{Seats: 1 << uint(p.GetSeatIndex()), Operate: mjutils.OperateWin}
+		detail := ChipDetail{Seats: 1 << uint(p.GetSeatIndex()), Operate: cardrule.OperateWin}
 		// 玩家中马
 		winHorses := obj.winHorse()
 		addition2 := map[string]int{}
@@ -321,11 +321,11 @@ func (gd *GuangdongMahjong) Award() {
 		times = 0
 		for _, kong := range p.kongHistory {
 			switch kong.Type {
-			case mjutils.MeldInvisibleKong:
+			case cardrule.MeldInvisibleKong:
 				times += 2
-			case mjutils.MeldStraightKong:
+			case cardrule.MeldStraightKong:
 				times += 1
-			case mjutils.MeldBentKong:
+			case cardrule.MeldBentKong:
 				times += 1
 			}
 		}
@@ -567,7 +567,7 @@ func (obj *GuangdongObj) checkAllInclude() *MahjongPlayer {
 	if len(p.continuousKong) == 0 {
 		return nil
 	}
-	if kong := p.continuousKong[0]; kong.Type == mjutils.MeldStraightKong {
+	if kong := p.continuousKong[0]; kong.Type == cardrule.MeldStraightKong {
 		return kong.other
 	}
 	return nil

@@ -1,14 +1,14 @@
-package internal
+package mahjong
 
 import (
 	"gofishing-game/internal/cardutils"
-	mjutils "gofishing-game/migrate/mahjong/utils"
+	"gofishing-game/migrate/internal/cardrule"
 
 	"github.com/guogeer/quasar/log"
 )
 
-type Meld = mjutils.Meld
-type WinOption = mjutils.WinOption
+type Meld = cardrule.Meld
+type WinOption = cardrule.WinOption
 
 const (
 	InvalidCard = -1
@@ -24,7 +24,7 @@ const (
 )
 
 const (
-	NoneCard = mjutils.MahjongGhostCard // 赖子牌
+	NoneCard = cardrule.MahjongGhostCard // 赖子牌
 	MaxCard  = NoneCard + 10
 )
 
@@ -261,7 +261,7 @@ func IsSameValue(c int, some ...int) bool {
 }
 
 // 统计坎
-func CountMeldsByType(melds []mjutils.Meld, type_ int) int {
+func CountMeldsByType(melds []cardrule.Meld, type_ int) int {
 	num := 0
 	for _, m := range melds {
 		if m.Type == type_ {
@@ -271,7 +271,7 @@ func CountMeldsByType(melds []mjutils.Meld, type_ int) int {
 	return num
 }
 
-func CountMeldsByValue(melds []mjutils.Meld, some ...int) int {
+func CountMeldsByValue(melds []cardrule.Meld, some ...int) int {
 	var whiteList [MaxCard]int
 	for _, v := range some {
 		whiteList[v]++
@@ -280,7 +280,7 @@ func CountMeldsByValue(melds []mjutils.Meld, some ...int) int {
 	num := 0
 	for _, m := range melds {
 		t, v := m.Type, m.Card%10
-		if t == mjutils.MeldSequence { // 顺子
+		if t == cardrule.MeldSequence { // 顺子
 			if whiteList[v] > 0 || whiteList[v+1] > 0 || whiteList[v+2] > 0 {
 				num++
 			}
@@ -293,7 +293,7 @@ func CountMeldsByValue(melds []mjutils.Meld, some ...int) int {
 	return num
 }
 
-func CountAllCards(cards []int, melds []mjutils.Meld) []int {
+func CountAllCards(cards []int, melds []cardrule.Meld) []int {
 	var counter [MaxCard]int
 	for _, c := range cardutils.GetAllCards() {
 		counter[c] += cards[c]
@@ -301,20 +301,20 @@ func CountAllCards(cards []int, melds []mjutils.Meld) []int {
 	for _, m := range melds {
 		t, c := m.Type, m.Card
 		switch t {
-		case mjutils.MeldSequence:
+		case cardrule.MeldSequence:
 			counter[c]++
 			counter[c+1]++
 			counter[c+2]++
-		case mjutils.MeldTriplet, mjutils.MeldVisibleTriplet, mjutils.MeldInvisibleTriplet:
+		case cardrule.MeldTriplet, cardrule.MeldVisibleTriplet, cardrule.MeldInvisibleTriplet:
 			counter[c] += 3
-		case mjutils.MeldBentKong, mjutils.MeldStraightKong, mjutils.MeldInvisibleKong:
+		case cardrule.MeldBentKong, cardrule.MeldStraightKong, cardrule.MeldInvisibleKong:
 			counter[c] += 4
 		}
 	}
 	return counter[:]
 }
 
-func CountCardsByValue(cards []int, melds []mjutils.Meld, some ...int) int {
+func CountCardsByValue(cards []int, melds []cardrule.Meld, some ...int) int {
 	var whiteList [MaxCard]int
 	for _, v := range some {
 		whiteList[v]++
@@ -330,7 +330,7 @@ func CountCardsByValue(cards []int, melds []mjutils.Meld, some ...int) int {
 	return num
 }
 
-func CountSomeCards(cards []int, melds []mjutils.Meld, some ...int) int {
+func CountSomeCards(cards []int, melds []cardrule.Meld, some ...int) int {
 	var whiteList [MaxCard]int
 	for _, c := range some {
 		whiteList[c]++

@@ -1,19 +1,19 @@
-package internal
+package mahjong
 
-// 2018-04-08 Guogeer
-// 拐三角
+// 2018-04-09 Guogeer
+// 山西推倒胡
 import (
-	mjutils "gofishing-game/migrate/mahjong/utils"
+	"gofishing-game/migrate/internal/cardrule"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 )
 
 // 拐三角麻将
-type GuaisanjiaoMahjong struct {
+type ShanxituidaohuMahjong struct {
 	room *MahjongRoom
 }
 
-func (mj *GuaisanjiaoMahjong) OnCreateRoom() {
+func (mj *ShanxituidaohuMahjong) OnCreateRoom() {
 	room := mj.room
 	// 不带风
 	if room.CanPlay(OptBuDaiFeng) {
@@ -21,10 +21,10 @@ func (mj *GuaisanjiaoMahjong) OnCreateRoom() {
 	}
 }
 
-func (mj *GuaisanjiaoMahjong) OnEnter(comer *MahjongPlayer) {
+func (mj *ShanxituidaohuMahjong) OnEnter(comer *MahjongPlayer) {
 }
 
-func (mj *GuaisanjiaoMahjong) OnReady() {
+func (mj *ShanxituidaohuMahjong) OnReady() {
 	room := mj.room
 
 	room.Status = roomutils.RoomStatusPlaying
@@ -32,25 +32,21 @@ func (mj *GuaisanjiaoMahjong) OnReady() {
 	room.dealer.OnDraw()
 }
 
-func (mj *GuaisanjiaoMahjong) OnWin() {
+func (mj *ShanxituidaohuMahjong) OnWin() {
 	room := mj.room
 	room.Award()
 }
 
-func (mj *GuaisanjiaoMahjong) Score(cards []int, melds []mjutils.Meld) (int, int) {
-	// 清一色一条龙
+func (mj *ShanxituidaohuMahjong) Score(cards []int, melds []cardrule.Meld) (int, int) {
 	room := mj.room
 	winOpt := room.helper.Win(cards, melds)
-	if winOpt != nil && winOpt.Qingyise && winOpt.Yitiaolong {
-		return QingYiSeYiTiaoLong, 18
-	}
 	// 龙七对
 	if winOpt != nil && winOpt.Qidui && winOpt.Pair2 > 0 {
 		return LongQiDui, 18
 	}
 	// 十三幺
 	if winOpt != nil && winOpt.Shisanyao {
-		return ShiSanYao, 18
+		return ShiSanYao, 9
 	}
 	if winOpt != nil && winOpt.Yitiaolong {
 		return YiTiaoLong, 9
@@ -64,7 +60,7 @@ func (mj *GuaisanjiaoMahjong) Score(cards []int, melds []mjutils.Meld) (int, int
 	return PingHu, 3
 }
 
-func (mj *GuaisanjiaoMahjong) Award() {
+func (mj *ShanxituidaohuMahjong) Award() {
 	room := mj.room
 	unit := room.Unit()
 
@@ -77,10 +73,10 @@ func (mj *GuaisanjiaoMahjong) Award() {
 				detail.Operate = meld.Type
 				bills := make([]Bill, room.NumSeat())
 				switch meld.Type {
-				case mjutils.MeldInvisibleKong, mjutils.MeldBentKong:
-					detail.Times = 2
-					if meld.Type == mjutils.MeldInvisibleKong {
-						detail.Times = 3
+				case cardrule.MeldInvisibleKong, cardrule.MeldBentKong:
+					detail.Times = 1
+					if meld.Type == cardrule.MeldInvisibleKong {
+						detail.Times = 2
 					}
 					for k := 0; k < room.NumSeat(); k++ {
 						bill := &bills[k]
@@ -89,9 +85,9 @@ func (mj *GuaisanjiaoMahjong) Award() {
 							bill.Details = append(bill.Details, detail)
 						}
 					}
-				case mjutils.MeldStraightKong:
+				case cardrule.MeldStraightKong:
 					bill := &bills[meld.SeatIndex]
-					detail.Times = 3 // 直杠3分
+					detail.Times = 3
 					detail.Chip = -int64(detail.Times) * unit
 					bill.Details = append(bill.Details, detail)
 				}
@@ -106,42 +102,26 @@ func (mj *GuaisanjiaoMahjong) Award() {
 
 		copyCards := p.copyCards()
 		score, points := mj.Score(copyCards, p.melds)
+		if p.drawCard != -1 && score == PingHu {
+			points = 2
+		}
 
-		addition2 := map[string]int{}
-		detail := ChipDetail{Seats: 1 << uint(p.GetSeatIndex()), Chip: int64(score), Points: points, Operate: mjutils.OperateWin}
+		tempScore, tempPoints := PingHu, 2
 		if p.IsRobKong() {
-			addition2["抢杠胡"] = points
-			points += points
+			tempScore, tempPoints = PaiXingQiangGangHu, 6
 		}
 		if p.IsDrawAfterKong() {
-			addition2["杠上花"] = points
-			points += points
+			tempScore, tempPoints = PaiXingGangShangHua, 4
 		}
 		if p.IsWinAfterOtherKong() {
-			addition2["杠上炮"] = points
-			points += points
+			tempScore, tempPoints = PaiXingGangShangPao, 6
+		}
+		if points < tempPoints {
+			score, points = tempScore, tempPoints
 		}
 
-		if room.CanPlay(OptKanZhang) {
-			// 坎张，只胡一张，凑成顺子
-			if opts := p.CheckWin(); len(opts) == 1 {
-				c := room.lastCard
-				if copyCards[c-1] > 0 && copyCards[c] > 0 && copyCards[c+1] > 0 {
-					copyCards[c-1]--
-					copyCards[c]--
-					copyCards[c+1]--
-
-					if room.helper.Win(copyCards, p.melds) != nil {
-						addition2["坎张"] = points
-						points += points
-					}
-
-					copyCards[c-1]++
-					copyCards[c]++
-					copyCards[c+1]++
-				}
-			}
-		}
+		addition2 := map[string]int{}
+		detail := ChipDetail{Seats: 1 << uint(p.GetSeatIndex()), Chip: int64(score), Points: points, Operate: cardrule.OperateWin}
 
 		// 自摸
 		if p.drawCard != -1 {
@@ -149,10 +129,11 @@ func (mj *GuaisanjiaoMahjong) Award() {
 		} else {
 			addition2["接炮"] = 0
 		}
-		// 连庄
-		if t := p.continuousDealerTimes; t > 0 {
-			addition2["连庄"] = t
-			points += t
+		if p.IsRobKong() {
+			addition2["抢杠胡"] = 0
+		}
+		if p.IsDrawAfterKong() {
+			addition2["杠上花"] = 0
 		}
 		detail.Addition2 = addition2
 		if p.drawCard == -1 {
@@ -164,6 +145,9 @@ func (mj *GuaisanjiaoMahjong) Award() {
 			detail.Chip = -int64(detail.Times) * unit
 			bill.Details = append(bill.Details, detail)
 		} else {
+			if room.CanPlay(OptZiMoJiaFan) {
+				points *= 2
+			}
 			// 自摸
 			for i := 0; i < room.NumSeat(); i++ {
 				if other := room.GetPlayer(i); other != p {
@@ -178,44 +162,43 @@ func (mj *GuaisanjiaoMahjong) Award() {
 	}
 }
 
-func (mj *GuaisanjiaoMahjong) GameOver() {
+func (mj *ShanxituidaohuMahjong) GameOver() {
 }
 
-type GuaisanjiaoWorld struct{}
+type ShanxituidaohuWorld struct{}
 
-func NewGuaisanjiaoWorld() *GuaisanjiaoWorld {
-	return &GuaisanjiaoWorld{}
+func NewShanxituidaohuWorld() *ShanxituidaohuWorld {
+	return &ShanxituidaohuWorld{}
 }
 
-func (w *GuaisanjiaoWorld) GetName() string {
-	return "guaisanjiaomj"
+func (w *ShanxituidaohuWorld) GetName() string {
+	return "shanxituidaohumj"
 }
 
-func (w *GuaisanjiaoWorld) NewRoom(subId int) *roomutils.Room {
+func (w *ShanxituidaohuWorld) NewRoom(subId int) *roomutils.Room {
 	r := NewMahjongRoom(subId)
 	r.SetPlay(OptBuDaiFeng) // 不带风
 	r.SetPlay(OptBaoTing)   // 报听
-	r.SetPlay(OptKanZhang)  // 坎张
 
 	r.SetPlay(OptBoom)
 	r.SetPlay(OptAbleRobKong)
 	r.SetPlay(OptSevenPairs)
-	r.localMahjong = &GuaisanjiaoMahjong{room: r}
+	r.localMahjong = &ShanxituidaohuMahjong{room: r}
 	return r.Room
 }
 
-func (w *GuaisanjiaoWorld) NewPlayer() *service.Player {
+func (w *ShanxituidaohuWorld) NewPlayer() *service.Player {
 	p := NewMahjongPlayer()
 	p.Player = service.NewPlayer(p)
-	p.localObj = &GuaisanjiaoObj{MahjongPlayer: p}
+	p.localObj = &ShanxituidaohuObj{MahjongPlayer: p}
 	return p.Player
 }
 
-type GuaisanjiaoObj struct {
+type ShanxituidaohuObj struct {
 	*MahjongPlayer
 }
 
-func (obj *GuaisanjiaoObj) IsAbleWin() bool {
+func (obj *ShanxituidaohuObj) IsAbleWin() bool {
 	room := obj.Room()
 	if room.CanPlay(OptBaoTing) && !obj.isReadyHand {
 		return false

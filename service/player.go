@@ -20,7 +20,6 @@ import (
 )
 
 var errKickOut = errcode.New("kick_out", "kick out")
-var errDelayLeave = errcode.New("delay_leave", "delay leave")
 
 // 必须可直接复制
 type UserInfo struct {
@@ -231,10 +230,6 @@ func (player *Player) Leave2(leaveCtx *cmd.Context, cause errcode.Error) {
 	}
 
 	player.isBusy = true
-	if e == errDelayLeave {
-		return
-	}
-
 	player.LeaveErr = cause
 	player.leaveCtx = leaveCtx
 	player.leaveOk()

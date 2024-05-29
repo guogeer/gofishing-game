@@ -1,9 +1,9 @@
-package internal
+package mahjong
 
 // 2017-8-28 Guogeer
 // 郑州麻将
 import (
-	mjutils "gofishing-game/migrate/mahjong/utils"
+	"gofishing-game/migrate/internal/cardrule"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"time"
@@ -148,7 +148,7 @@ func (mj *ZhengzhouMahjong) Award() {
 				detail.Operate = meld.Type
 				bills := make([]Bill, room.NumSeat())
 				switch meld.Type {
-				case mjutils.MeldInvisibleKong:
+				case cardrule.MeldInvisibleKong:
 					for k := 0; k < room.NumSeat(); k++ {
 						bill := &bills[k]
 						if other := room.GetPlayer(k); other != nil && p != other {
@@ -166,7 +166,7 @@ func (mj *ZhengzhouMahjong) Award() {
 							bill.Details = append(bill.Details, detail)
 						}
 					}
-				case mjutils.MeldBentKong, mjutils.MeldStraightKong:
+				case cardrule.MeldBentKong, cardrule.MeldStraightKong:
 					other := room.GetPlayer(meld.SeatIndex)
 					bill := &bills[meld.SeatIndex]
 					detail.Times = 1
@@ -194,7 +194,7 @@ func (mj *ZhengzhouMahjong) Award() {
 	for _, p := range room.winPlayers {
 		bills := make([]Bill, room.NumSeat())
 		obj := p.localObj.(*ZhengzhouObj)
-		detail := ChipDetail{Seats: 1 << uint(p.GetSeatIndex()), Operate: mjutils.OperateWin}
+		detail := ChipDetail{Seats: 1 << uint(p.GetSeatIndex()), Operate: cardrule.OperateWin}
 
 		addition2 := map[string]int{}
 		// 自摸

@@ -1,10 +1,10 @@
-package internal
+package mahjong
 
 // 2017-6-6 Guogeer
 // 内蒙古麻将
 import (
 	"gofishing-game/internal/cardutils"
-	mjutils "gofishing-game/migrate/mahjong/utils"
+	"gofishing-game/migrate/internal/cardrule"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 
@@ -94,7 +94,7 @@ func (hz *NeimengguMahjong) OnWin() {
 	room.Award()
 }
 
-func (mj *NeimengguMahjong) Score(cards []int, melds []mjutils.Meld) (int, int) {
+func (mj *NeimengguMahjong) Score(cards []int, melds []cardrule.Meld) (int, int) {
 	var pairNum, pair2Num, color int
 	for _, c := range cardutils.GetAllCards() {
 		pairNum += cards[c] / 2
@@ -152,7 +152,7 @@ func (mj *NeimengguMahjong) Award() {
 			bills := make([]Bill, room.NumSeat())
 			for k := 0; k < room.NumSeat(); k++ {
 				times := 1
-				if kong.Type == mjutils.MeldInvisibleKong {
+				if kong.Type == cardrule.MeldInvisibleKong {
 					times = 2
 				}
 
@@ -178,7 +178,7 @@ func (mj *NeimengguMahjong) Award() {
 	for _, p := range room.winPlayers {
 		bills := make([]Bill, room.NumSeat())
 
-		detail := ChipDetail{Seats: 1 << uint(p.GetSeatIndex()), Operate: mjutils.OperateWin}
+		detail := ChipDetail{Seats: 1 << uint(p.GetSeatIndex()), Operate: cardrule.OperateWin}
 		addition2 := map[string]int{}
 
 		copyCards := p.copyCards()
@@ -234,7 +234,7 @@ func (mj *NeimengguMahjong) Award() {
 		}
 
 		// 门清
-		if CountMeldsByType(p.melds, mjutils.MeldInvisibleKong) == len(p.melds) {
+		if CountMeldsByType(p.melds, cardrule.MeldInvisibleKong) == len(p.melds) {
 			switch score {
 			case QiDui, LongQiDui, ShiSanYao:
 			default:
@@ -362,8 +362,8 @@ func (obj *NeimengguObj) GetKongType(c int) int {
 
 	typ := p.GetKongType(c)
 	/*if typ == -1 ||
-		typ == mjutils.MeldBentKong ||
-		(typ == mjutils.MeldInvisibleKong && !obj.kaikou()) ||
+		typ == cardrule.MeldBentKong ||
+		(typ == cardrule.MeldInvisibleKong && !obj.kaikou()) ||
 		!room.CanPlay(OptYiKouXiang) {
 		return typ
 	}
@@ -394,7 +394,7 @@ func (obj *NeimengguObj) OnPong() {
 func (obj *NeimengguObj) OnKong() {
 	room := obj.Room()
 	meld := obj.lastMeld()
-	if room.CanPlay(OptYiKouXiang) && meld.Type != mjutils.MeldInvisibleKong && !obj.isReadyHand {
+	if room.CanPlay(OptYiKouXiang) && meld.Type != cardrule.MeldInvisibleKong && !obj.isReadyHand {
 		obj.forceReadyHand = true
 	}
 }
