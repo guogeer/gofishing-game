@@ -114,7 +114,7 @@ func funcDrawSignIn(ctx *cmd.Context, data any) {
 	}
 
 	e := getSignInObj(ply).Draw()
-	ply.WriteErr("drawSignIn", e, nil)
+	ply.WriteErr("drawSignIn", e)
 }
 
 func funcLookSignIn(ctx *cmd.Context, data any) {

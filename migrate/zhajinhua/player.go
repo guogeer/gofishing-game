@@ -471,7 +471,7 @@ func (ply *ZhajinhuaPlayer) ChangeRoom() {
 	ply.SitUp()
 
 	e := roomutils.GetRoomObj(ply.Player).ChangeRoom()
-	ply.WriteErr("changeRoom", e, nil)
+	ply.WriteErr("changeRoom", e)
 	if e != nil {
 		return
 	}

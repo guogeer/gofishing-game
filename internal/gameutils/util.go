@@ -43,10 +43,11 @@ func marshalJSONObjects(objs ...any) ([]byte, error) {
 	return json.Marshal(result)
 }
 
-func MergeError(e errcode.Error, obj any) []byte {
+func MergeError(e errcode.Error, objs ...any) []byte {
 	if e == nil {
 		e = errcode.New(errcode.CodeOk, "")
 	}
-	buf, _ := marshalJSONObjects(e, obj)
+	mergeData := append([]any{e}, objs...)
+	buf, _ := marshalJSONObjects(mergeData...)
 	return buf
 }

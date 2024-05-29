@@ -161,7 +161,7 @@ func (player *Player) OnEnter() {
 	}
 
 	player.IsSessionClose = false
-	player.WriteErr("enter", nil, nil)
+	player.WriteErr("enter", nil)
 	items := player.bagObj.GetItems()
 	//log.Debugf("player %v OnEnter items %v", player.Id, items)
 	player.SetClientValue("items", items)
@@ -347,11 +347,11 @@ func (player *Player) WriteJSON(name string, data any) {
 	}
 }
 
-func (player *Player) WriteErr(name string, e errcode.Error, data any) {
+func (player *Player) WriteErr(name string, e errcode.Error, data ...any) {
 	if e == nil {
 		e = ok
 	}
-	errData := gameutils.MergeError(e, data)
+	errData := gameutils.MergeError(e, data...)
 	if !player.IsSessionClose {
 		WriteMessage(player.session, name, errData)
 	}
