@@ -756,12 +756,12 @@ func (room *lotteryRoom) Award() {
 			robot = p
 			totalRobotAward += p.winGold
 		}
-		p.BagObj().Add(gameutils.ItemIdGold, p.winGold, service.GetServerName()+"_award")
+		p.BagObj().Add(gameutils.ItemIdGold, p.winGold, roomutils.GetServerName(room.SubId)+"_award")
 	}
 	service.SetRobotNoLog(false)
 	if robot != nil {
-		service.AddSomeItemLog(robot.Id, []gameutils.Item{&gameutils.NumericItem{Id: gameutils.ItemIdGold, Num: -totalRobotBet}}, "robot_"+service.GetServerName()+"_bet")
-		service.AddSomeItemLog(robot.Id, []gameutils.Item{&gameutils.NumericItem{Id: gameutils.ItemIdGold, Num: -totalRobotAward}}, "robot"+service.GetServerName()+"_award")
+		service.AddSomeItemLog(robot.Id, []gameutils.Item{&gameutils.NumericItem{Id: gameutils.ItemIdGold, Num: -totalRobotBet}}, "robot_"+roomutils.GetServerName(room.SubId)+"_bet")
+		service.AddSomeItemLog(robot.Id, []gameutils.Item{&gameutils.NumericItem{Id: gameutils.ItemIdGold, Num: -totalRobotAward}}, "robot"+roomutils.GetServerName(room.SubId)+"_award")
 	}
 
 	room.GameOver()

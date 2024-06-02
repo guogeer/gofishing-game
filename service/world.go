@@ -120,22 +120,18 @@ func GetGatewayPlayer(ssid string) *Player {
 	return p
 }
 
-func GetServerName() string {
-	return GetWorld().GetName()
-}
-
 func GetServerId() string {
-	if *serverId == "" {
-		return GetServerName()
-	}
 	return *serverId
 }
 
-func WriteMessage(ss *cmd.Session, id string, i any) {
+func getAllServers() []string {
+	return []string{}
+}
+
+func WriteMessage(serverName string, ss *cmd.Session, id string, i any) {
 	if ss == nil {
 		return
 	}
-	serverName := GetServerName()
 	if serverName != "" {
 		id = fmt.Sprintf("%s.%s", serverName, id)
 	}

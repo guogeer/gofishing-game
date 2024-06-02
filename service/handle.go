@@ -44,7 +44,7 @@ func hook(ctx *cmd.Context, data any) {
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
 		ss := &cmd.Session{Id: ctx.Ssid, Out: ctx.Out}
-		WriteMessage(ss, "serverClose", cmd.M{"serverName": ctx.ServerName, "cause": "not found player"})
+		WriteMessage(ctx.ServerName, ss, "serverClose", cmd.M{"serverName": ctx.ServerName, "cause": "not found player"})
 
 		ctx.Fail()
 	} else {
@@ -99,7 +99,7 @@ func funcEnter(ctx *cmd.Context, data any) {
 
 	ss, e := GetEnterQueue().PushBack(ctx, args.Token, args.LeaveServer, rawData)
 	if e != nil && ss != nil {
-		WriteMessage(ss, "enter", e)
+		WriteMessage(ctx.ServerName, ss, "enter", e)
 	}
 }
 

@@ -236,7 +236,7 @@ func (eq *enterQueue) pop(req *enterRequest) {
 		log.Debugf("player %d enter all cost %v", p.Id, time.Since(req.startTime))
 	} else if req.isOnline {
 		// 重连进入失败
-		WriteMessage(ss, "enter", e)
+		WriteMessage(req.ServerName, ss, "enter", e)
 	} else {
 		// 首次进入失败
 		delete(gAllPlayers, uid)
@@ -245,7 +245,7 @@ func (eq *enterQueue) pop(req *enterRequest) {
 			if e != errEnterOtherGame {
 				rpc.CacheClient().Visit(context.Background(), &pb.VisitReq{Uid: int32(uid)})
 			}
-			WriteMessage(ss, "enter", e)
+			WriteMessage(req.ServerName, ss, "enter", e)
 		}()
 	}
 }

@@ -32,12 +32,6 @@ func scriptCreateUUID(L *lua.LState) int {
 	return 1
 }
 
-func scriptGetServerName(L *lua.LState) int {
-	name := GetServerName()
-	L.Push(lua.LString(name))
-	return 1
-}
-
 func scriptGetTableCell(L *lua.LState) int {
 	table := L.ToString(1)
 	col := L.ToString(3)
@@ -174,15 +168,14 @@ func externScript(L *lua.LState) int {
 	luajson.Preload(L)
 
 	exports := map[string]lua.LGFunction{
-		"create_uuid":     scriptCreateUUID,
-		"get_server_name": scriptGetServerName,
-		"get_table_cell":  scriptGetTableCell,
-		"log":             scriptLog,
-		"get_table_rows":  scriptGetTableRows,
-		"get_player":      scriptGetPlayer,
-		"parse_items":     scriptParseItems,
-		"call":            scriptCall,
-		"bind":            scriptBind,
+		"create_uuid":    scriptCreateUUID,
+		"get_table_cell": scriptGetTableCell,
+		"log":            scriptLog,
+		"get_table_rows": scriptGetTableRows,
+		"get_player":     scriptGetPlayer,
+		"parse_items":    scriptParseItems,
+		"call":           scriptCall,
+		"bind":           scriptBind,
 	}
 	mod := L.SetFuncs(L.NewTable(), exports)
 	L.Push(mod)

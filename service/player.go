@@ -57,9 +57,7 @@ type GameAction interface {
 type Player struct {
 	UserInfo        // 基本信息
 	Phone    string // 手机号
-	// enterReq *enterRequest
 
-	// IsClose、IsClone容易混淆
 	IsSessionClose bool // 断开连接
 	session        *cmd.Session
 	isBusy         bool // 玩家进入游戏，离开游戏时
@@ -81,6 +79,7 @@ type Player struct {
 	tempValues   map[string]any // 临时上下文数据
 	allNotify    map[string]any // 通知数据
 	enterActions map[string]EnterAction
+	serverName   string
 }
 
 func NewPlayer(action GameAction) *Player {
@@ -112,11 +111,11 @@ func (player *Player) BagObj() *bagObj {
 }
 
 func (player *Player) Enter() errcode.Error {
-	data := GetEnterQueue().GetRequest(player.Id).EnterGameResp
-	gameutils.InitNilFields(data)
+	enterReq := GetEnterQueue().GetRequest(player.Id)
+	gameutils.InitNilFields(enterReq.EnterGameResp)
 
-	utils.DeepCopy(&player.UserInfo, data.UserInfo)
-	player.CreateTime = data.UserInfo.CreateTime
+	utils.DeepCopy(&player.UserInfo, enterReq.EnterGameResp.UserInfo)
+	player.CreateTime = enterReq.EnterGameResp.UserInfo.CreateTime
 
 	player.isBusy = true
 	player.IsRobot = (player.ChanId == "robot")
@@ -124,6 +123,7 @@ func (player *Player) Enter() errcode.Error {
 	player.IsSessionClose = false
 	player.tempValues = map[string]any{}
 	player.allNotify = map[string]any{}
+	player.serverName = enterReq.ServerName
 
 	if e := player.dataObj.TryEnter(); e != nil {
 		return e
@@ -338,7 +338,7 @@ var ok = errcode.New("ok", "success")
 
 func (player *Player) WriteJSON(name string, data any) {
 	if !player.IsSessionClose {
-		WriteMessage(player.session, name, data)
+		WriteMessage(player.serverName, player.session, name, data)
 	}
 }
 
@@ -348,7 +348,7 @@ func (player *Player) WriteErr(name string, e errcode.Error, data ...any) {
 	}
 	errData := gameutils.MergeError(e, data...)
 	if !player.IsSessionClose {
-		WriteMessage(player.session, name, errData)
+		WriteMessage(player.serverName, player.session, name, errData)
 	}
 }
 

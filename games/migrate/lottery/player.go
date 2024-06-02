@@ -122,34 +122,34 @@ func (ply *lotteryPlayer) Bet(area int, gold int64) {
 	if room.Status != roomutils.RoomStatusPlaying {
 		return
 	}
-	var err errcode.Error
+	var e errcode.Error
 	// 无效的数据
 	if area < 0 || area >= len(ply.betAreas) || gold <= 0 {
-		err = errcode.Retry
+		e = errcode.Retry
 	}
 	// 庄家不可投注
 	if room.dealer == ply {
-		err = errcode.Retry
+		e = errcode.Retry
 	}
 	if !ply.BagObj().IsEnough(gameutils.ItemIdGold, gold) {
-		err = errcode.MoreItem(gameutils.ItemIdGold)
+		e = errcode.MoreItem(gameutils.ItemIdGold)
 	}
 	{
 		total := ply.totalBet()
 		percent, ok := config.Float("lottery", room.SubId, "maxBetPercent")
 		if ok && total+gold > int64(percent*float64(total+ply.BagObj().NumItem(gameutils.ItemIdGold))/100) {
-			err = errTooMuchBet
+			e = errTooMuchBet
 		}
 		maxBet, _ := config.Int("lottery", room.SubId, "maxBetLimit")
 		if maxBet > 0 && total+gold > maxBet {
-			err = errTooMuchBet
+			e = errTooMuchBet
 		}
 	}
 	{
 		sum := room.totalBet()
 		percent, ok := config.Float("lottery", room.SubId, "allUserBetPercent")
 		if ok && room.dealer != nil && float64(sum+gold) > float64(room.dealer.dealerGold)*percent/100 {
-			err = errDealerNeedMoreGold
+			e = errDealerNeedMoreGold
 		}
 	}
 	{
@@ -160,7 +160,7 @@ func (ply *lotteryPlayer) Bet(area int, gold int64) {
 			if scale < 1 {
 				scale = 1
 			}
-			err = errcode.MoreItem(gameutils.ItemIdGold)
+			e = errcode.MoreItem(gameutils.ItemIdGold)
 		}
 	}
 
@@ -170,44 +170,25 @@ func (ply *lotteryPlayer) Bet(area int, gold int64) {
 		"gold": gold,
 	}
 
-	betArgs := &struct {
-		SubId  int    `json:"subId,omitempty"`
-		Name   string `json:"name,omitempty"`
-		Uid    int    `json:"uid,omitempty"`
-		Gold   int64  `json:"gold,omitempty"`
-		Area   int    `json:"area,omitempty"`
-		Bet    int64  `json:"bet,omitempty"`
-		BigBet int64  `json:"bigBet,omitempty"`
-		Code   int    `json:"code,omitempty"`
-		Msg    string `json:"msg,omitempty"`
-	}{
-		Name:  service.GetServerName(),
-		Uid:   ply.Id,
-		Gold:  ply.BagObj().NumItem(gameutils.ItemIdGold),
-		Bet:   gold,
-		Area:  area,
-		SubId: ply.Room().SubId,
-	}
-
-	ply.WriteJSON("bet", data)
+	ply.WriteErr("bet", e, data)
 
 	if !ply.IsRobot {
 		log.Infof("player %d bet area %d gold %d", ply.Id, area, gold)
 	}
-	if err != nil {
+	if e != nil {
 		return
 	}
 
 	// OK
 	ply.betAreas[area] += gold
-	ply.BagObj().Add(gameutils.ItemIdGold, -gold, service.GetServerName())
+	ply.AddGold(-gold, roomutils.GetServerName(room.SubId))
 	room.OnBet(area, gold)
 	if !ply.IsRobot {
 		room.userBetAreas[area] += gold
 	}
 
 	// 玩家有座位
-	if ply.GetSeatIndex() != roomutils.NoSeat || betArgs.BigBet > 0 {
+	if ply.GetSeatIndex() != roomutils.NoSeat {
 		room.Broadcast("bet", data, ply.Id)
 	}
 	// 移除房间通知

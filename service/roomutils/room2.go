@@ -210,7 +210,7 @@ func (obj *RoomObj) Choose(subId int) (*Room, errcode.Error) {
 		return nil, errcode.New("game_not_existed", "game not existed")
 	}
 	if maxRoomNum > 0 && len(sub.rooms) >= maxRoomNum {
-		log.Errorf("server %s sub_id %d room num %d limit %d error: %v", service.GetServerName(), subId, len(sub.rooms), maxRoomNum, errTooMuchRoom)
+		log.Errorf("server %s sub_id %d room num %d limit %d error: %v", sub.serverName, subId, len(sub.rooms), maxRoomNum, errTooMuchRoom)
 		return nil, errTooMuchRoom
 	}
 	bagObj := obj.player.BagObj()

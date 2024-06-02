@@ -69,7 +69,7 @@ func updateOnline() {
 		sub.updateOnline()
 		one := service.ServerOnline{
 			Online: sub.Online,
-			Id:     service.GetServerName() + ":" + service.GetServerId() + ":" + strconv.Itoa(sub.Id),
+			Id:     service.GetServerId() + ":" + sub.serverName + ":" + strconv.Itoa(sub.Id),
 		}
 		onlines = append(onlines, one)
 	}
@@ -82,24 +82,26 @@ type RoomWorld interface {
 }
 
 func LoadGames(w RoomWorld) {
-	gSubGames = map[int]*subGame{}
-
+	name := w.GetName()
+	games := map[int]*subGame{}
 	for _, rowId := range config.Rows("room") {
 		tagStr, _ := config.String("room", rowId, "tags")
 		tags := strings.Split(tagStr, ",")
-		name := service.GetServerName()
 
 		if slices.Index(tags, name) >= 0 {
 			var subId, seatNum int
 			config.Scan("room", rowId, "id,seatNum", &subId, &seatNum)
 
 			log.Infof("load game:%d name:%s", subId, name)
-			gSubGames[subId] = &subGame{
+			games[subId] = &subGame{
 				Id:         subId,
 				MaxSeatNum: seatNum,
 				serverName: name,
 			}
 		}
+	}
+	for subId, game := range games {
+		gSubGames[subId] = game
 	}
 }
 

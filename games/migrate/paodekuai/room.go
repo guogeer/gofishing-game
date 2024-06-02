@@ -151,7 +151,7 @@ func (room *PaodekuaiRoom) Award() {
 		room.nextDealer = room.winPlayer
 	}
 
-	way := service.GetServerName()
+	way := roomutils.GetServerName(room.SubId)
 	unit, _ := config.Int("room", room.SubId, "unit")
 
 	winPlayer := room.winPlayer

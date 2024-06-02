@@ -93,7 +93,7 @@ func (room *SangongRoom) OnCreate() {
 }
 
 func (room *SangongRoom) Award() {
-	way := service.GetServerName()
+	way := roomutils.GetServerName(room.SubId)
 	unit, _ := config.Int("room", room.SubId, "unit")
 
 	for i := 0; i < room.NumSeat(); i++ {

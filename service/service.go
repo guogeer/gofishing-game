@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/guogeer/quasar/utils"
@@ -21,7 +22,7 @@ import (
 )
 
 var port = flag.Int("port", 9510, "server port")
-var serverId = flag.String("server_id", "", "server id")
+var serverId = flag.String("server_id", "game_1", "server id")
 
 // 异常退出时保存玩家的数据
 func saveAllPlayers() {
@@ -66,13 +67,14 @@ func Start() {
 	srv := &cmd.Server{Addr: addr}
 	go func() { srv.Serve(l) }()
 
+	allServers := strings.Join(getAllServers(), ",")
 	cmd.RegisterService(&cmd.ServiceConfig{
 		Id:   GetServerId(),
-		Name: GetServerName(),
+		Name: allServers,
 		Addr: addr,
 	})
 	globalData.load()
-	log.Infof("server id %s name %s start ok.", GetServerId(), GetServerName())
+	log.Infof("server id %s name %s start ok.", GetServerId(), allServers)
 
 	for {
 		select {
