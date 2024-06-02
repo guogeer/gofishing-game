@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	_ "gofishing-game/demo/fingerguessing/internal"
+	_ "gofishing-game/games/demo/fingerguessing/internal"
 	"gofishing-game/service"
 )
 
