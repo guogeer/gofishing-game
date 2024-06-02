@@ -10,7 +10,7 @@ import (
 type DoudizhuWorld struct{}
 
 func init() {
-	service.CreateWorld(&DoudizhuWorld{})
+	service.AddWorld(&DoudizhuWorld{})
 
 	var cards = []int{0xf0, 0xf1}
 	for color := 0; color < 4; color++ {

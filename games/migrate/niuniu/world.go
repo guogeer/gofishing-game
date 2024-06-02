@@ -14,7 +14,7 @@ import (
 type NiuNiuWorld struct{}
 
 func init() {
-	service.CreateWorld(&NiuNiuWorld{})
+	service.AddWorld(&NiuNiuWorld{})
 
 	var cards []int
 	for color := 0; color < 4; color++ {

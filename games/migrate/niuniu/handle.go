@@ -14,13 +14,13 @@ type niuniuArgs struct {
 }
 
 func init() {
-	cmd.BindFunc(ChooseTriCards, (*niuniuArgs)(nil))
-	cmd.BindFunc(Bet, (*niuniuArgs)(nil))
-	cmd.BindFunc(ChooseDealer, (*niuniuArgs)(nil))
-	cmd.BindFunc(DoubleAndRob, (*niuniuArgs)(nil))
-	cmd.BindFunc(SitDown, (*niuniuArgs)(nil))
-	cmd.BindFunc(EndGame, (*niuniuArgs)(nil))
-	cmd.BindFunc(SetAutoPlay, (*niuniuArgs)(nil))
+	cmd.BindFunc(ChooseTriCards, (*niuniuArgs)(nil), cmd.WithServer((*NiuNiuWorld)(nil).GetName()))
+	cmd.BindFunc(Bet, (*niuniuArgs)(nil), cmd.WithServer((*NiuNiuWorld)(nil).GetName()))
+	cmd.BindFunc(ChooseDealer, (*niuniuArgs)(nil), cmd.WithServer((*NiuNiuWorld)(nil).GetName()))
+	cmd.BindFunc(DoubleAndRob, (*niuniuArgs)(nil), cmd.WithServer((*NiuNiuWorld)(nil).GetName()))
+	cmd.BindFunc(SitDown, (*niuniuArgs)(nil), cmd.WithServer((*NiuNiuWorld)(nil).GetName()))
+	cmd.BindFunc(EndGame, (*niuniuArgs)(nil), cmd.WithServer((*NiuNiuWorld)(nil).GetName()))
+	cmd.BindFunc(SetAutoPlay, (*niuniuArgs)(nil), cmd.WithServer((*NiuNiuWorld)(nil).GetName()))
 }
 
 func GetPlayerByContext(ctx *cmd.Context) *NiuNiuPlayer {

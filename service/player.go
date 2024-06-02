@@ -268,9 +268,6 @@ func (player *Player) onLeave() {
 
 	// 离开后
 	player.dataObj.OnLeave()
-	if len(playerObjectPool) < cap(playerObjectPool) {
-		playerObjectPool = append(playerObjectPool, player)
-	}
 
 	// 连接关闭等，会增加定时器
 	player.TimerGroup.StopAllTimer()

@@ -4,9 +4,19 @@ package mahjong
 // 拐三角
 import (
 	"gofishing-game/games/migrate/internal/cardrule"
+	"gofishing-game/internal/cardutils"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 )
+
+func init() {
+	var cards []int
+	for _, c := range []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 21, 22, 23, 24, 25, 26, 27, 28, 29, 41, 42, 43, 44, 45, 46, 47, 48, 49, 60, 70, 80, 90} {
+		cards = append(cards, c, c, c, c)
+	}
+	cardutils.GetCardSystem().Init(cards)
+	cardutils.GetCardSystem().ReserveAndHide(16)
+}
 
 // 拐三角麻将
 type GuaisanjiaoMahjong struct {

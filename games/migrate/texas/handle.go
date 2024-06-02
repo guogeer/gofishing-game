@@ -16,17 +16,17 @@ type texasArgs struct {
 }
 
 func init() {
-	cmd.BindFunc(TakeAction, (*texasArgs)(nil))
-	cmd.BindFunc(SitDown, (*texasArgs)(nil))
-	cmd.BindFunc(ChooseBankroll, (*texasArgs)(nil))
-	cmd.BindFunc(SitUp, (*texasArgs)(nil))       // 站起
-	cmd.BindFunc(SetAutoPlay, (*texasArgs)(nil)) // 托管
-	cmd.BindFunc(ShowCard, (*texasArgs)(nil))    // 亮牌
-	cmd.BindFunc(Rebuy, (*texasArgs)(nil))       // 重购
-	cmd.BindFunc(Addon, (*texasArgs)(nil))       // 增购
+	cmd.BindFunc(TakeAction, (*texasArgs)(nil), cmd.WithServer((*TexasWorld)(nil).GetName()))
+	cmd.BindFunc(SitDown, (*texasArgs)(nil), cmd.WithServer((*TexasWorld)(nil).GetName()))
+	cmd.BindFunc(ChooseBankroll, (*texasArgs)(nil), cmd.WithServer((*TexasWorld)(nil).GetName()))
+	cmd.BindFunc(SitUp, (*texasArgs)(nil), cmd.WithServer((*TexasWorld)(nil).GetName()))       // 站起
+	cmd.BindFunc(SetAutoPlay, (*texasArgs)(nil), cmd.WithServer((*TexasWorld)(nil).GetName())) // 托管
+	cmd.BindFunc(ShowCard, (*texasArgs)(nil), cmd.WithServer((*TexasWorld)(nil).GetName()))    // 亮牌
+	cmd.BindFunc(Rebuy, (*texasArgs)(nil), cmd.WithServer((*TexasWorld)(nil).GetName()))       // 重购
+	cmd.BindFunc(Addon, (*texasArgs)(nil), cmd.WithServer((*TexasWorld)(nil).GetName()))       // 增购
 
-	cmd.BindFunc(SetWallet, (*texasArgs)(nil))
-	cmd.BindFunc(funcRecommendRooms, (*texasArgs)(nil))
+	cmd.BindFunc(SetWallet, (*texasArgs)(nil), cmd.WithServer((*TexasWorld)(nil).GetName()))
+	cmd.BindFunc(funcRecommendRooms, (*texasArgs)(nil), cmd.WithServer((*TexasWorld)(nil).GetName()))
 }
 
 func GetPlayerByContext(ctx *cmd.Context) *TexasPlayer {
@@ -148,5 +148,5 @@ func funcRecommendRooms(ctx *cmd.Context, data interface{}) {
 		}
 		roomList = append(roomList, info)
 	}
-	service.WriteMessage(ss, "recommendRooms", map[string]any{"level": args.Level, "rooms": roomList})
+	service.WriteMessage((*TexasWorld)(nil).GetName(), ss, "recommendRooms", map[string]any{"level": args.Level, "rooms": roomList})
 }

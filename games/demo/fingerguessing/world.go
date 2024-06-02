@@ -1,4 +1,4 @@
-package internal
+package fingerguessing
 
 import (
 	"gofishing-game/service"
@@ -9,12 +9,12 @@ type fingerGuessingWorld struct {
 }
 
 func GetWorld() *fingerGuessingWorld {
-	return service.GetWorld().(*fingerGuessingWorld)
+	return service.GetWorld((*fingerGuessingWorld)(nil).GetName()).(*fingerGuessingWorld)
 }
 
 func init() {
 	w := &fingerGuessingWorld{}
-	service.CreateWorld(w)
+	service.AddWorld(w)
 	roomutils.LoadGames(w)
 }
 

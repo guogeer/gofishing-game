@@ -245,7 +245,7 @@ func (obj *RoomObj) Choose(subId int) (*Room, errcode.Error) {
 	}
 
 	if freeRoom == nil {
-		freeRoom = service.GetWorld().(RoomWorld).NewRoom(subId)
+		freeRoom = service.GetWorld(GetServerName(subId)).(RoomWorld).NewRoom(subId)
 		sub.rooms = append(sub.rooms, freeRoom)
 		freeRoom.CustomRoom().StartGame()
 	}

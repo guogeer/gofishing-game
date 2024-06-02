@@ -108,7 +108,7 @@ func (room *XiaojiuRoom) Award() {
 		}
 	}
 
-	way := "sum." + service.GetServerName()
+	way := "sum." + roomutils.GetServerName(room.SubId)
 	room.deadline = time.Now().Add(room.FreeDuration())
 	for i := range room.cards {
 		for k := range room.cards[i] {

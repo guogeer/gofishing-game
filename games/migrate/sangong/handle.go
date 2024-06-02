@@ -7,9 +7,9 @@ import (
 )
 
 func init() {
-	cmd.BindFunc(Finish, (*sangongArgs)(nil))
-	cmd.BindFunc(Bet, (*sangongArgs)(nil))
-	cmd.BindFunc(ChooseDealer, (*sangongArgs)(nil))
+	cmd.BindFunc(Finish, (*sangongArgs)(nil), cmd.WithServer((*SangongWorld)(nil).GetName()))
+	cmd.BindFunc(Bet, (*sangongArgs)(nil), cmd.WithServer((*SangongWorld)(nil).GetName()))
+	cmd.BindFunc(ChooseDealer, (*sangongArgs)(nil), cmd.WithServer((*SangongWorld)(nil).GetName()))
 }
 
 type sangongArgs struct {

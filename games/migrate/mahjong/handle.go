@@ -37,7 +37,6 @@ func GetPlayerByContext(ctx *cmd.Context) *MahjongPlayer {
 }
 
 func init() {
-
 	// cmd.BindFunc(Leave, (*Args)(nil))
 	// cmd.BindFunc(Ready, (*Args)(nil))
 	cmd.BindFunc(ExchangeTriCards, (*Args)(nil))

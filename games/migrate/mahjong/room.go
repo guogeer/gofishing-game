@@ -563,7 +563,7 @@ func (room *MahjongRoom) Billing(bills []Bill) {
 	for i := 0; i < room.NumSeat(); i++ {
 		bill := &bills[i]
 		p := room.GetPlayer(i)
-		p.AddChipOrBust(bill.Sum(), service.GetWorld().GetName()+"_award")
+		p.AddChipOrBust(bill.Sum(), roomutils.GetServerName(room.SubId)+"_award")
 		p.AddChipHistory(bill.Details...)
 	}
 }

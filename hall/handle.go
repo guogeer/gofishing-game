@@ -33,13 +33,13 @@ type updateOnlineArgs struct {
 
 func init() {
 	// internal call
-	cmd.BindFunc(FUNC_UpdateOnline, (*updateOnlineArgs)(nil)).SetPrivate()
-	cmd.BindFunc(FUNC_SyncOnline, (*hallArgs)(nil)).SetPrivate()
-	cmd.BindFunc(S2C_GetBestGateway, (*hallArgs)(nil)).SetPrivate()
+	cmd.BindFunc(FUNC_UpdateOnline, (*updateOnlineArgs)(nil), cmd.WithPrivate())
+	cmd.BindFunc(FUNC_SyncOnline, (*hallArgs)(nil), cmd.WithPrivate())
+	cmd.BindFunc(S2C_GetBestGateway, (*hallArgs)(nil), cmd.WithPrivate())
 
-	cmd.BindFunc(FUNC_DeleteAccount, (*hallArgs)(nil)).SetPrivate().SetNoQueue()
-	cmd.BindFunc(FUNC_UpdateMaintain, (*hallArgs)(nil)).SetPrivate()
-	cmd.BindFunc(FUNC_UpdateFakeOnline, (*hallArgs)(nil)).SetPrivate()
+	cmd.BindFunc(FUNC_DeleteAccount, (*hallArgs)(nil), cmd.WithPrivate(), cmd.WithoutQueue())
+	cmd.BindFunc(FUNC_UpdateMaintain, (*hallArgs)(nil), cmd.WithPrivate())
+	cmd.BindFunc(FUNC_UpdateFakeOnline, (*hallArgs)(nil), cmd.WithPrivate())
 }
 
 // 更新在线人数

@@ -158,7 +158,7 @@ func (cp *TournamentCopy) StartGame() {
 	fakeRoom := cp.rooms[0].Front().Value.(*roomutils.Room)
 	subId := fakeRoom.SubId
 	for len(fakeRoom.GetAllPlayers()) > 0 {
-		room := service.GetWorld().(roomutils.RoomWorld).NewRoom(subId)
+		room := service.GetWorld(roomutils.GetServerName(subId)).(roomutils.RoomWorld).NewRoom(subId)
 		texasRoom := room.CustomRoom().(*TexasRoom)
 		texasRoom.tournament = cp
 		cp.rooms[0].PushBack(room)

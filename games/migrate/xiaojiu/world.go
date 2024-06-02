@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	service.CreateWorld(&XiaojiuWorld{})
+	service.AddWorld(&XiaojiuWorld{})
 
 	var cards []int
 	for color := 0; color < 4; color++ {

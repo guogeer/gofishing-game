@@ -94,6 +94,18 @@ func (sys *CardSystem) IsCardValid(c int) bool {
 	}
 	return false
 }
+
+// 保留N张牌
+func (sys *CardSystem) Reserve(n int) {
+	sys.reserve = n
+}
+
+// 保留N张牌并隐藏
+func (sys *CardSystem) ReserveAndHide(n int) {
+	sys.Reserve(n)
+	sys.isHide = true
+}
+
 func GetCardSystem() *CardSystem {
 	return defaultCardSystem
 }

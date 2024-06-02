@@ -27,7 +27,7 @@ func init() {
 	cmd.Bind("leave", funcLeave, nil)
 	cmd.Bind("close", funcClose, nil)
 
-	cmd.Bind("func_leave", funcSysLeave, (*leaveArgs)(nil)).SetPrivate()
+	cmd.Bind("func_leave", funcSysLeave, (*leaveArgs)(nil), cmd.WithPrivate())
 	cmd.Bind("enter", funcEnter, (*json.RawMessage)(nil))
 }
 

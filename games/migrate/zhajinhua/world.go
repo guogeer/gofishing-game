@@ -11,7 +11,7 @@ import (
 type ZhajinhuaWorld struct{}
 
 func init() {
-	service.CreateWorld(&ZhajinhuaWorld{})
+	service.AddWorld(&ZhajinhuaWorld{})
 
 	var cards []int
 	for color := 0; color < 4; color++ {

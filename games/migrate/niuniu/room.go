@@ -179,7 +179,7 @@ func (room *NiuNiuRoom) maxRobTimes() int {
 }
 
 func (room *NiuNiuRoom) Award() {
-	way := "user." + service.GetServerName()
+	way := "user." + roomutils.GetServerName(room.SubId)
 	unit := room.Unit()
 
 	readyPlayers := room.readyPlayers()

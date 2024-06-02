@@ -42,7 +42,7 @@ func init() {
 	// 如果DB存在相同的配置表，将覆盖替换本地的拷贝
 	loadRemoteTables()
 
-	cmd.Bind("func_effectConfigTable", funcEffectConfigTable, (*tableArgs)(nil)).SetNoQueue()
+	cmd.Bind("func_effectConfigTable", funcEffectConfigTable, (*tableArgs)(nil), cmd.WithoutQueue())
 }
 
 func CacheClient() pb.CacheClient {

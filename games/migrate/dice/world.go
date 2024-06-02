@@ -9,7 +9,7 @@ import (
 )
 
 func init() {
-	service.CreateWorld(&DiceWorld{})
+	service.AddWorld(&DiceWorld{})
 }
 
 type DiceWorld struct{}

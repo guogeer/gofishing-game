@@ -1,4 +1,4 @@
-package internal
+package fingerguessing
 
 import (
 	"gofishing-game/internal/gameutils"

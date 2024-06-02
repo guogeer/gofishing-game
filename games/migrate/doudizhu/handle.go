@@ -7,18 +7,18 @@ import (
 )
 
 type Args struct {
-	Cards  []int
-	Choice int
-	Type   int
+	Cards  []int `json:"cards,omitempty"`
+	Choice int   `json:"choice,omitempty"`
+	Type   int   `json:"type,omitempty"`
 }
 
 func init() {
-	cmd.BindFunc(Discard, (*Args)(nil))
-	cmd.BindFunc(Pass, (*Args)(nil))
-	cmd.BindFunc(Jiaodizhu, (*Args)(nil))
-	cmd.BindFunc(Jiaofen, (*Args)(nil))
-	cmd.BindFunc(Qiangdizhu, (*Args)(nil))
-	cmd.BindFunc(AutoPlay, (*Args)(nil))
+	cmd.BindFunc(Discard, (*Args)(nil), cmd.WithServer((*DoudizhuWorld)(nil).GetName()))
+	cmd.BindFunc(Pass, (*Args)(nil), cmd.WithServer((*DoudizhuWorld)(nil).GetName()))
+	cmd.BindFunc(Jiaodizhu, (*Args)(nil), cmd.WithServer((*DoudizhuWorld)(nil).GetName()))
+	cmd.BindFunc(Jiaofen, (*Args)(nil), cmd.WithServer((*DoudizhuWorld)(nil).GetName()))
+	cmd.BindFunc(Qiangdizhu, (*Args)(nil), cmd.WithServer((*DoudizhuWorld)(nil).GetName()))
+	cmd.BindFunc(AutoPlay, (*Args)(nil), cmd.WithServer((*DoudizhuWorld)(nil).GetName()))
 }
 
 func GetPlayerByContext(ctx *cmd.Context) *DoudizhuPlayer {

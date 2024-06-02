@@ -10,28 +10,30 @@ import (
 )
 
 type lotteryArgs struct {
-	Uid     int    `json:"uid,omitempty"`
-	Type    int    `json:"type,omitempty"`
-	Message string `json:"message,omitempty"`
-	Token   string `json:"token,omitempty"`
-	Area    int    `json:"area,omitempty"`
-	Gold    int64  `json:"gold,omitempty"`
-	PageNum int    `json:"pageNum,omitempty"`
-	SeatId  int    `json:"seatIndex,omitempty"`
+	Uid       int    `json:"uid,omitempty"`
+	Type      int    `json:"type,omitempty"`
+	Message   string `json:"message,omitempty"`
+	Token     string `json:"token,omitempty"`
+	Area      int    `json:"area,omitempty"`
+	Gold      int64  `json:"gold,omitempty"`
+	PageNum   int    `json:"pageNum,omitempty"`
+	SeatIndex int    `json:"seatIndex,omitempty"`
 }
 
 type Config struct {
 }
 
 func init() {
-	cmd.BindFunc(Bet, (*lotteryArgs)(nil))
-	cmd.BindFunc(GetLastHistory, (*lotteryArgs)(nil))
-	cmd.BindFunc(ApplyDealer, (*lotteryArgs)(nil))
-	cmd.BindFunc(CancelDealer, (*lotteryArgs)(nil))
-	cmd.BindFunc(GetDealerQueue, (*lotteryArgs)(nil))
-	cmd.BindFunc(ChangeDealerGold, (*lotteryArgs)(nil))
+	for _, name := range []string{(*bairenniuniuWorld)(nil).GetName(), (*ErbagangWorld)(nil).GetName(), (*BairenzhajinhuaWorld)(nil).GetName()} {
+		cmd.BindFunc(Bet, (*lotteryArgs)(nil), cmd.WithServer(name))
+		cmd.BindFunc(GetLastHistory, (*lotteryArgs)(nil), cmd.WithServer(name))
+		cmd.BindFunc(ApplyDealer, (*lotteryArgs)(nil), cmd.WithServer(name))
+		cmd.BindFunc(CancelDealer, (*lotteryArgs)(nil), cmd.WithServer(name))
+		cmd.BindFunc(GetDealerQueue, (*lotteryArgs)(nil), cmd.WithServer(name))
+		cmd.BindFunc(ChangeDealerGold, (*lotteryArgs)(nil), cmd.WithServer(name))
 
-	cmd.BindFunc(Console_WhosYourDaddy, (*lotteryArgs)(nil))
+		cmd.BindFunc(Console_WhosYourDaddy, (*lotteryArgs)(nil), cmd.WithServer(name))
+	}
 }
 
 func GetPlayerByContext(ctx *cmd.Context) *lotteryPlayer {

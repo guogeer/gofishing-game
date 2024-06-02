@@ -7,8 +7,8 @@ import (
 )
 
 func init() {
-	cmd.BindFunc(Bet, (*diceArgs)(nil))
-	cmd.BindFunc(GetLastHistory, (*diceArgs)(nil))
+	cmd.BindFunc(Bet, (*diceArgs)(nil), cmd.WithServer((*DiceWorld)(nil).GetName()))
+	cmd.BindFunc(GetLastHistory, (*diceArgs)(nil), cmd.WithServer((*DiceWorld)(nil).GetName()))
 }
 
 type diceArgs struct {

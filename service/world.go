@@ -18,11 +18,10 @@ import (
 )
 
 var (
-	playerObjectPool []*Player          // 玩家对象缓存
-	gGatewayPlayers  map[string]*Player // 关联网络连接
-	gAllPlayers      map[int]*Player    // 所有玩家
+	gGatewayPlayers map[string]*Player // 关联网络连接
+	gAllPlayers     map[int]*Player    // 所有玩家
+	gAllWorlds      map[string]World   // 游戏玩法
 
-	defaultWorld World
 	isRobotNoLog bool
 )
 
@@ -32,31 +31,23 @@ type ServerOnline struct {
 	Online int    `json:"online,omitempty"`
 }
 
-func createPlayer(uid int) *Player {
-	for len(playerObjectPool) < 1 {
-		p := GetWorld().NewPlayer()
-		playerObjectPool = append(playerObjectPool, p)
+// 移除对象缓存，开发中容易出现未初始化，数据继承问题
+func createPlayer(serverName string, uid int) *Player {
+	p := GetWorld(serverName).NewPlayer()
 
-		for _, key := range actionKeys {
-			h := actionConstructors[key]
-			p.enterActions[key] = h(p)
-		}
+	for _, key := range actionKeys {
+		h := actionConstructors[key]
+		p.enterActions[key] = h(p)
 	}
 
-	n := len(playerObjectPool)
-	comer := playerObjectPool[n-1]
-	playerObjectPool = playerObjectPool[:n-1]
-	comer.Id = uid
-	return comer
+	p.Id = uid
+	return p
 }
 
+// 游戏玩法
 type World interface {
 	NewPlayer() *Player
 	GetName() string
-}
-
-func GetWorld() World {
-	return defaultWorld
 }
 
 func init() {
@@ -68,8 +59,12 @@ func init() {
 	utils.NewPeriodTimer(tick1d, startTime, 24*time.Hour)
 }
 
-func CreateWorld(w World) {
-	defaultWorld = w
+func AddWorld(w World) {
+	gAllWorlds[w.GetName()] = w
+}
+
+func GetWorld(serverName string) World {
+	return gAllWorlds[serverName]
 }
 
 func tick10s() {
@@ -125,7 +120,11 @@ func GetServerId() string {
 }
 
 func getAllServers() []string {
-	return []string{}
+	var servers []string
+	for name := range gAllWorlds {
+		servers = append(servers, name)
+	}
+	return servers
 }
 
 func WriteMessage(serverName string, ss *cmd.Session, id string, i any) {

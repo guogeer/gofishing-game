@@ -7,12 +7,12 @@ import (
 )
 
 func init() {
-	cmd.BindFunc(TakeAction, (*zhajinhuaArgs)(nil))
-	cmd.BindFunc(SitUp, (*zhajinhuaArgs)(nil))       // 站起
-	cmd.BindFunc(LookCard, (*zhajinhuaArgs)(nil))    // 亮牌
-	cmd.BindFunc(ShowCard, (*zhajinhuaArgs)(nil))    // 亮牌
-	cmd.BindFunc(CompareCard, (*zhajinhuaArgs)(nil)) // 比牌
-	cmd.BindFunc(SetAutoPlay, (*zhajinhuaArgs)(nil)) // 托管
+	cmd.BindFunc(TakeAction, (*zhajinhuaArgs)(nil), cmd.WithServer((*ZhajinhuaWorld)(nil).GetName()))
+	cmd.BindFunc(SitUp, (*zhajinhuaArgs)(nil), cmd.WithServer((*ZhajinhuaWorld)(nil).GetName()))       // 站起
+	cmd.BindFunc(LookCard, (*zhajinhuaArgs)(nil), cmd.WithServer((*ZhajinhuaWorld)(nil).GetName()))    // 亮牌
+	cmd.BindFunc(ShowCard, (*zhajinhuaArgs)(nil), cmd.WithServer((*ZhajinhuaWorld)(nil).GetName()))    // 亮牌
+	cmd.BindFunc(CompareCard, (*zhajinhuaArgs)(nil), cmd.WithServer((*ZhajinhuaWorld)(nil).GetName())) // 比牌
+	cmd.BindFunc(SetAutoPlay, (*zhajinhuaArgs)(nil), cmd.WithServer((*ZhajinhuaWorld)(nil).GetName())) // 托管
 }
 
 type zhajinhuaArgs struct {

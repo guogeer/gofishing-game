@@ -11,8 +11,8 @@ type paodekuaiArgs struct {
 }
 
 func init() {
-	cmd.BindFunc(Discard, (*paodekuaiArgs)(nil))
-	cmd.BindFunc(Pass, (*paodekuaiArgs)(nil))
+	cmd.BindFunc(Discard, (*paodekuaiArgs)(nil), cmd.WithServer((*PaodekuaiWorld)(nil).GetName()))
+	cmd.BindFunc(Pass, (*paodekuaiArgs)(nil), cmd.WithServer((*PaodekuaiWorld)(nil).GetName()))
 }
 
 func GetPlayerByContext(ctx *cmd.Context) *PaodekuaiPlayer {

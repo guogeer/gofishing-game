@@ -50,7 +50,7 @@ type hallWorld struct {
 }
 
 func GetWorld() *hallWorld {
-	return service.GetWorld().(*hallWorld)
+	return service.GetWorld((*hallWorld)(nil).GetName()).(*hallWorld)
 }
 
 func init() {
@@ -58,7 +58,7 @@ func init() {
 		onlines: make(map[string]service.ServerOnline),
 	}
 
-	service.CreateWorld(w)
+	service.AddWorld(w)
 
 	startTime, _ := config.ParseTime("2010-01-01")
 	utils.NewPeriodTimer(w.UpdateOnline, startTime, 5*time.Minute)

@@ -1,4 +1,4 @@
-package internal
+package fingerguessing
 
 import (
 	"gofishing-game/internal/errcode"
@@ -8,11 +8,10 @@ import (
 	"gofishing-game/service/roomutils"
 	"slices"
 
-	"github.com/guogeer/quasar/cmd"
 	"github.com/guogeer/quasar/config"
 )
 
-var errInvalidGesture = errcode.New("invalid_shape", "错误的手势")
+var errInvalidGesture = errcode.New("invalid_gesture", "错误的手势")
 
 type fingerGuessingPlayer struct {
 	*service.Player
@@ -137,36 +136,4 @@ func (ply *fingerGuessingPlayer) GameOver(guesture string) (int64, int) {
 
 	return gameutils.CountItems(awardItems, gameutils.ItemIdGold) * int64(cmp), cmp
 
-}
-
-func init() {
-	cmd.Bind("chooseGesture", funcChooseGesture, (*fingerGuessingArgs)(nil))
-}
-
-var fingerGuessingGuestures = []string{"rock", "scissor", "paple"}
-
-type fingerGuessingArgs struct {
-	Gesture string `json:"gesture"`
-}
-
-func getFingerGuessingPlayer(player *service.Player) *fingerGuessingPlayer {
-	return player.GameAction.(*fingerGuessingPlayer)
-}
-
-func funcChooseGesture(ctx *cmd.Context, data any) {
-	args := data.(*fingerGuessingArgs)
-	ply := service.GetPlayerByContext(ctx)
-	if ply == nil {
-		return
-	}
-
-	e := getFingerGuessingPlayer(ply).ChooseGesture(args.Gesture)
-	ply.WriteErr("chooseGesture", e, map[string]any{"gesture": args.Gesture, "uid": ply.Id})
-	roomObj := roomutils.GetRoomObj(ply)
-	if roomObj.GetSeatIndex() != roomutils.NoSeat {
-		roomObj.Room().Broadcast("chooseGesture", map[string]any{
-			"code": "ok", "uid": ply.Id, "gesture": args.Gesture, "seatIndex": roomObj.GetSeatIndex(),
-		}, ply.Id)
-
-	}
 }

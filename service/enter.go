@@ -272,7 +272,7 @@ func (eq *enterQueue) TryEnter(args *enterRequest) errcode.Error {
 		return errEnterOtherGame
 	}
 
-	comer := createPlayer(args.Uid)
+	comer := createPlayer(args.ServerName, args.Uid)
 	gAllPlayers[args.Uid] = comer
 	return comer.Enter()
 }

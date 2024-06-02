@@ -11,7 +11,7 @@ import (
 type TexasWorld struct{}
 
 func init() {
-	service.CreateWorld(&TexasWorld{})
+	service.AddWorld(&TexasWorld{})
 
 	var cards []int
 	for color := 0; color < 4; color++ {

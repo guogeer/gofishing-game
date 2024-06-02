@@ -7,13 +7,13 @@ import (
 )
 
 func init() {
-	cmd.BindFunc(Bet, (*Args)(nil))
+	cmd.BindFunc(Bet, (*xiaojiuArgs)(nil), cmd.WithServer((*XiaojiuWorld)(nil).GetName()))
 }
 
-type Args struct {
-	AreaId    int
-	SeatIndex int
-	Gold      int64
+type xiaojiuArgs struct {
+	AreaId    int   `json:"areaId,omitempty"`
+	SeatIndex int   `json:"seatIndex,omitempty"`
+	Gold      int64 `json:"gold,omitempty"`
 }
 
 func GetPlayerByContext(ctx *cmd.Context) *XiaojiuPlayer {
@@ -24,7 +24,7 @@ func GetPlayerByContext(ctx *cmd.Context) *XiaojiuPlayer {
 }
 
 func Bet(ctx *cmd.Context, iArgs interface{}) {
-	args := iArgs.(*Args)
+	args := iArgs.(*xiaojiuArgs)
 	ply := GetPlayerByContext(ctx)
 	if ply == nil {
 
