@@ -1,5 +1,5 @@
 // 测试工具
-package internal
+package main
 
 import (
 	"gofishing-game/service"

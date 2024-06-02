@@ -4,8 +4,6 @@ import (
 	"flag"
 	"fmt"
 
-	_ "gofishing-game/login/internal"
-
 	"github.com/guogeer/quasar/api"
 	"github.com/guogeer/quasar/cmd"
 	"github.com/guogeer/quasar/log"

@@ -1,4 +1,4 @@
-package internal
+package main
 
 import (
 	"gofishing-game/internal/errcode"
