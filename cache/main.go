@@ -30,7 +30,7 @@ func main() {
 		db.SetMaxOpenConns(n)
 	}
 
-	go func() { cache.Tick() }()
+	go func() { Tick() }()
 
 	addr := fmt.Sprintf(":%v", *port)
 	lis, err := net.Listen("tcp", addr)
@@ -45,6 +45,6 @@ func main() {
 	//}
 	opts := []grpc.ServerOption{}
 	grpcServer := grpc.NewServer(opts...)
-	pb.RegisterCacheServer(grpcServer, &cache.Cache{})
+	pb.RegisterCacheServer(grpcServer, &Cache{})
 	grpcServer.Serve(lis)
 }
