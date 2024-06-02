@@ -104,10 +104,7 @@ func GetAllPlayers() []*Player {
 }
 
 func GetPlayer(id int) *Player {
-	if p, ok := gAllPlayers[id]; ok {
-		return p
-	}
-	return nil
+	return gAllPlayers[id]
 }
 
 func GetGatewayPlayer(ssid string) *Player {

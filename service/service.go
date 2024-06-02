@@ -20,7 +20,7 @@ import (
 	"github.com/guogeer/quasar/log"
 )
 
-var port = flag.Int("port", 0, "server port")
+var port = flag.Int("port", 9510, "server port")
 var serverId = flag.String("server_id", "", "server id")
 
 // 异常退出时保存玩家的数据
