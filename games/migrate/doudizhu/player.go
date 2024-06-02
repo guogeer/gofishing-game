@@ -1,10 +1,9 @@
 package internal
 
 import (
+	"gofishing-game/games/migrate/internal/cardrule"
 	"gofishing-game/internal/cardutils"
 	"gofishing-game/internal/errcode"
-	. "gofishing-game/internal/errcode"
-	ddzutils "gofishing-game/migrate/doudizhu/utils"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"time"
@@ -202,7 +201,7 @@ func (ply *DoudizhuPlayer) Discard(cards []int) {
 		}
 	}
 	typ, _, _ := room.helper.GetType(cards)
-	if typ == ddzutils.DoudizhuNone {
+	if typ == cardrule.DoudizhuNone {
 		return
 	}
 
@@ -219,7 +218,7 @@ func (ply *DoudizhuPlayer) Discard(cards []int) {
 
 	ply.discardTimes++
 	data := map[string]any{"cards": cards, "uid": ply.Id}
-	if typ == ddzutils.DoudizhuZhadan || typ == ddzutils.DoudizhuWangzha {
+	if typ == cardrule.DoudizhuZhadan || typ == cardrule.DoudizhuWangzha {
 		ply.boomTimes++
 		ply.totalBoomTimes++
 		room.boomTimes++

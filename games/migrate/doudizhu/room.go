@@ -3,8 +3,8 @@
 package internal
 
 import (
+	"gofishing-game/games/migrate/internal/cardrule"
 	"gofishing-game/internal/cardutils"
-	ddzutils "gofishing-game/migrate/doudizhu/utils"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"gofishing-game/service/system"
@@ -48,7 +48,7 @@ type Bill struct {
 type DoudizhuRoom struct {
 	*roomutils.Room
 
-	helper *ddzutils.DoudizhuHelper
+	helper *cardrule.DoudizhuHelper
 
 	boss                *DoudizhuPlayer // 地主
 	dealer, nextDealer  *DoudizhuPlayer // 这里庄家的作用就是先叫底注
@@ -474,7 +474,7 @@ func (room *DoudizhuRoom) StartDealCard() {
 	}
 
 	rows := 0
-	tableName, _ := config.String("room", room.subId, "sampleTableName")
+	tableName, _ := config.String("room", room.SubId, "sampleTableName")
 	if tableName != "" {
 		rows = config.NumRow(tableName)
 	}

@@ -2,7 +2,7 @@
 // 重构了斗地主匹配牌型算法
 // 增加斗地主AI
 
-package utils
+package cardrule
 
 import (
 	"fmt"

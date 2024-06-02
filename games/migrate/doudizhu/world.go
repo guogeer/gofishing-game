@@ -1,8 +1,8 @@
 package internal
 
 import (
+	"gofishing-game/games/migrate/internal/cardrule"
 	"gofishing-game/internal/cardutils"
-	ddzutils "gofishing-game/migrate/doudizhu/utils"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 )
@@ -25,7 +25,7 @@ func init() {
 
 func (w *DoudizhuWorld) NewRoom(subId int) *roomutils.Room {
 	r := &DoudizhuRoom{
-		helper:       ddzutils.NewDoudizhuHelper(),
+		helper:       cardrule.NewDoudizhuHelper(),
 		currentTimes: 1,
 	}
 	r.Room = roomutils.NewRoom(subId, r)
