@@ -198,6 +198,10 @@ func funcEffectLocalScript(ctx *cmd.Context, in any) {
 
 func loadAllScripts() {
 	path := env.Config().ScriptPath
+	if path == "" {
+		return
+	}
+
 	if err := script.LoadScripts(path); err != nil {
 		log.Warnf("load scripts %s error: %v", path, err)
 	}

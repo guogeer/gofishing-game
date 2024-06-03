@@ -51,8 +51,9 @@ type World interface {
 }
 
 func init() {
-	gAllPlayers = make(map[int]*Player)
-	gGatewayPlayers = make(map[string]*Player)
+	gAllPlayers = map[int]*Player{}
+	gGatewayPlayers = map[string]*Player{}
+	gAllWorlds = map[string]World{}
 
 	startTime, _ := config.ParseTime("2018-01-31 00:00:00")
 	utils.NewPeriodTimer(tick10s, startTime, 10*time.Second)
