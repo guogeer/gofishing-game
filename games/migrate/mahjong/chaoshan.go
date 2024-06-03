@@ -9,6 +9,18 @@ import (
 	"gofishing-game/service/roomutils"
 )
 
+func init() {
+	w := NewChaoshanMahjongWorld()
+	service.AddWorld(w)
+	AddHandlers(w.GetName())
+
+	var cards []int
+	for _, c := range []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 21, 22, 23, 24, 25, 26, 27, 28, 29, 41, 42, 43, 44, 45, 46, 47, 48, 49, 60, 70, 80, 90, 100, 110, 120} {
+		cards = append(cards, c, c, c, c)
+	}
+	cardutils.GetCardSystem().Init(cards)
+}
+
 var chaoshanScoreList = map[int]int{
 	PingHu:            2,
 	DuiDuiHu:          4,

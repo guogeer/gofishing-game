@@ -36,26 +36,26 @@ func GetPlayerByContext(ctx *cmd.Context) *MahjongPlayer {
 	return nil
 }
 
-func init() {
+func AddHandlers(serverName string) {
 	// cmd.BindFunc(Leave, (*Args)(nil))
 	// cmd.BindFunc(Ready, (*Args)(nil))
-	cmd.BindFunc(ExchangeTriCards, (*Args)(nil))
-	cmd.BindFunc(ChooseColor, (*Args)(nil))
-	cmd.BindFunc(Chow, (*Args)(nil))
-	cmd.BindFunc(Pong, (*Args)(nil))
-	cmd.BindFunc(Kong, (*Args)(nil))
-	cmd.BindFunc(Pass, (*Args)(nil))
-	cmd.BindFunc(Discard, (*Args)(nil))
-	cmd.BindFunc(Win, (*Args)(nil))
+	cmd.BindFunc(ExchangeTriCards, (*Args)(nil), cmd.WithServer(serverName))
+	cmd.BindFunc(ChooseColor, (*Args)(nil), cmd.WithServer(serverName))
+	cmd.BindFunc(Chow, (*Args)(nil), cmd.WithServer(serverName))
+	cmd.BindFunc(Pong, (*Args)(nil), cmd.WithServer(serverName))
+	cmd.BindFunc(Kong, (*Args)(nil), cmd.WithServer(serverName))
+	cmd.BindFunc(Pass, (*Args)(nil), cmd.WithServer(serverName))
+	cmd.BindFunc(Discard, (*Args)(nil), cmd.WithServer(serverName))
+	cmd.BindFunc(Win, (*Args)(nil), cmd.WithServer(serverName))
 	// cmd.BindFunc(ChangeRoom, (*Args)(nil))
-	cmd.BindFunc(AutoPlay, (*Args)(nil))
-	cmd.BindFunc(GetChipHistory, (*Args)(nil))
-	cmd.BindFunc(GetWinOptions, (*Args)(nil))
-	cmd.BindFunc(BuyHorse, (*Args)(nil)) // 湖南麻将买马
-	cmd.BindFunc(Fail, (*Args)(nil))
-	cmd.BindFunc(ChoosePao, (*Args)(nil))  // 郑州麻将带跑
-	cmd.BindFunc(ChoosePiao, (*Args)(nil)) // 湖北麻将选漂
-	cmd.BindFunc(Double, (*Args)(nil))     // 加倍
+	cmd.BindFunc(AutoPlay, (*Args)(nil), cmd.WithServer(serverName))
+	cmd.BindFunc(GetChipHistory, (*Args)(nil), cmd.WithServer(serverName))
+	cmd.BindFunc(GetWinOptions, (*Args)(nil), cmd.WithServer(serverName))
+	cmd.BindFunc(BuyHorse, (*Args)(nil), cmd.WithServer(serverName)) // 湖南麻将买马
+	cmd.BindFunc(Fail, (*Args)(nil), cmd.WithServer(serverName))
+	cmd.BindFunc(ChoosePao, (*Args)(nil), cmd.WithServer(serverName))  // 郑州麻将带跑
+	cmd.BindFunc(ChoosePiao, (*Args)(nil), cmd.WithServer(serverName)) // 湖北麻将选漂
+	cmd.BindFunc(Double, (*Args)(nil), cmd.WithServer(serverName))     // 加倍
 }
 
 /*func ChangeRoom(ctx *cmd.Context, iArgs any) {

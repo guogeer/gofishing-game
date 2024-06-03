@@ -17,6 +17,18 @@ var (
 	huanghuangPiaoOptions = []int{0, 1, 3, 5}
 )
 
+func init() {
+	w := NewHuanghuangWorld()
+	service.AddWorld(w)
+	AddHandlers(w.GetName())
+
+	var cards []int
+	for _, c := range []int{21, 22, 23, 24, 25, 26, 27, 28, 29, 41, 42, 43, 44, 45, 46, 47, 48, 49, 100, 110, 120} {
+		cards = append(cards, c, c, c, c)
+	}
+	cardutils.GetCardSystem().Init(cards)
+}
+
 // 晃晃麻将
 type HuanghuangMahjong struct {
 	room *MahjongRoom
