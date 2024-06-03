@@ -20,7 +20,7 @@ func TestMahjong(t *testing.T) {
 	// samples = []int{4, 5, 6, 7, 7, 7, 25, 26, 28, 45, 46, 47, 100, 100}
 	// samples = []int{2, 3, 4, 22, 22, 26, 27, 28, 41, 42, 43, 100}
 	// samples = []int{1, 4, 5, 7, 8, 8, 9, 41, 43, 43, 47}
-	cardutils.GetCardSystem().Init(cards)
+	cardutils.AddCardSystem("mahjong", cards)
 
 	/*cs := NewCardSet()
 	cs.Shuffle()
@@ -40,12 +40,12 @@ func TestMahjong(t *testing.T) {
 	for _, c := range samples {
 		cards[c]++
 	}
-	helper := &MahjongHelper{Qingyise: true}
+	helper := &MahjongHelper{Qingyise: true, name: "mahjong"}
 	// opts := helper.SplitN(cards, 30)
 	// t.Log(opts)
 
 	remainingCards := make([]int, 255)
-	for _, c := range cardutils.GetAllCards() {
+	for _, c := range cardutils.GetCardSystem("mahjong").GetAllCards() {
 		remainingCards[c] = 4
 	}
 	ctx := &Context{
@@ -62,7 +62,7 @@ func TestMahjong(t *testing.T) {
 	*/
 	samples = []int{3, 3, 3, 4, 7}
 	cards = make([]int, MaxMahjongCard)
-	for _, c := range cardutils.GetAllCards() {
+	for _, c := range cardutils.GetCardSystem("mahjong").GetAllCards() {
 		remainingCards[c] = 4
 	}
 	for _, c := range samples {

@@ -93,7 +93,7 @@ func (room *PaodekuaiRoom) OnLeave(player *service.Player) {
 }
 
 func (room *PaodekuaiRoom) OnCreate() {
-	room.CardSet().Recover(cardutils.GetAllCards()...)
+	room.CardSet().Recover(cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).GetAllCards()...)
 	if room.CanPlay(OptCard15) {
 		room.CardSet().Remove(0xf0, 0xf1, 0x02, 0x12, 0x22, 0x0e, 0x1e, 0x2e, 0x0d)
 	} else {

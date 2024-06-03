@@ -90,11 +90,11 @@ type MahjongRoom struct {
 	// 房间录像
 	// replay *MahjongReplay
 	helper        *cardrule.MahjongHelper
-	isAbleBoom    bool             // 可点炮
-	delayDuration time.Duration    // 操作延迟
-	cheatSeats    int              // 作弊座位ID(可多个)
-	sample        cardutils.Sample // 作弊的样例
-	isBatch       bool             // 批量通知金币变化
+	isAbleBoom    bool               // 可点炮
+	delayDuration time.Duration      // 操作延迟
+	cheatSeats    int                // 作弊座位ID(可多个)
+	sample        cardutils.TestCase // 作弊的样例
+	isBatch       bool               // 批量通知金币变化
 }
 
 func NewMahjongRoom(subId int) *MahjongRoom {
@@ -176,7 +176,7 @@ func (room *MahjongRoom) OnCreate() {
 	helper.Shisanyao = room.CanPlay(OptShiSanYao)
 	room.helper = helper
 
-	room.CardSet().Recover(cardutils.GetAllCards()...)
+	room.CardSet().Recover(cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).GetAllCards()...)
 	room.localMahjong.OnCreateRoom()
 }
 
@@ -221,7 +221,7 @@ func (room *MahjongRoom) StartDealCard() {
 	room.sample = nil
 	room.cheatSeats = 0
 	// 无测试牌型
-	test := cardutils.GetSample()
+	test := cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).TestCase
 	if len(test) == 0 && len(robotSeats) > 0 && randutils.IsPercentNice(percent) {
 		seatId := robotSeats[rand.Intn(len(robotSeats))]
 		room.cheatSeats = 1 << uint(seatId)
@@ -252,7 +252,7 @@ func (room *MahjongRoom) StartDealCard() {
 	}
 	for i := 0; i < room.NumSeat(); i++ {
 		p := room.GetPlayer(i)
-		p.WriteJSON("dealCard", map[string]any{"cards": SortCards(p.handCards)})
+		p.WriteJSON("dealCard", map[string]any{"cards": SortCards(roomutils.GetServerName(room.SubId), p.handCards)})
 	}
 	room.helper.AnyCards = room.GetAnyCards()
 
@@ -273,7 +273,7 @@ func (room *MahjongRoom) StartExchangeTriCards() {
 		p := room.GetPlayer(i)
 
 		var colors [8]int
-		for _, c := range cardutils.GetAllCards() {
+		for _, c := range cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).GetAllCards() {
 			colors[c/10] += p.handCards[c]
 		}
 		color, num := 0, 64
@@ -284,7 +284,7 @@ func (room *MahjongRoom) StartExchangeTriCards() {
 			}
 		}
 		num = 0
-		for _, c := range cardutils.GetAllCards() {
+		for _, c := range cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).GetAllCards() {
 			for i := 0; c/10 == color && num < 3 && i < p.handCards[c]; i++ {
 				p.defaultTriCards[num] = c
 				num++
@@ -341,7 +341,7 @@ func (room *MahjongRoom) StartChooseColor() {
 	for i := 0; i < room.NumSeat(); i++ {
 		p := room.GetPlayer(i)
 		var colors [8]int
-		for _, c := range cardutils.GetAllCards() {
+		for _, c := range cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).GetAllCards() {
 			colors[c/10] += p.handCards[c]
 		}
 		color, num := 0, 64
@@ -671,7 +671,7 @@ func (room *MahjongRoom) GameOver() {
 	details := make([][]ChipDetail, room.NumSeat())
 	for k := 0; k < room.NumSeat(); k++ {
 		if p := room.GetPlayer(k); p != nil {
-			others[k] = SortCards(p.handCards)
+			others[k] = SortCards(roomutils.GetServerName(room.SubId), p.handCards)
 			details[k] = p.chipHistory
 
 			if c := p.drawCard; c != -1 {

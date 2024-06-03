@@ -3,6 +3,7 @@ package lottery
 import (
 	"container/list"
 	"gofishing-game/games/migrate/internal/cardrule"
+	"gofishing-game/internal/cardutils"
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 	"math/rand"
@@ -11,7 +12,7 @@ import (
 	"github.com/guogeer/quasar/utils"
 )
 
-var gNiuNiuHelper = cardrule.NewNiuNiuHelper()
+var gNiuNiuHelper = cardrule.NewNiuNiuHelper((*bairenniuniuWorld)(nil).GetName())
 var gNiuNiuMultiples = []int{1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 3,
 	0, // 五小牛
 	5, // 炸弹牛
@@ -24,6 +25,19 @@ func init() {
 	helper.SetOption(cardrule.NNZhaDanNiu)
 	helper.SetOption(cardrule.NNWuHuaNiu)
 	helper.SetOption(cardrule.NNSiHuaNiu)
+
+	var cards []int
+	for color := 0; color < 4; color++ {
+		for value := 2; value <= 14; value++ {
+			c := (color << 4) | value
+			cards = append(cards, c)
+		}
+	}
+
+	w := &bairenniuniuWorld{}
+	cardutils.AddCardSystem(w.GetName(), cards)
+	service.AddWorld(w)
+	AddHandlers(w.GetName())
 }
 
 type bairenniuniuHelper struct{}
@@ -83,9 +97,7 @@ func (ent *bairenniuniu) Cheat(multiples int) []int {
 	return nil
 }
 
-type bairenniuniuWorld struct {
-	helper *cardrule.NiuNiuHelper
-}
+type bairenniuniuWorld struct{}
 
 func (w *bairenniuniuWorld) NewRoom(subId int) *roomutils.Room {
 	room := &lotteryRoom{

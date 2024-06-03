@@ -14,7 +14,8 @@ import (
 type PaodekuaiWorld struct{}
 
 func init() {
-	service.AddWorld(&PaodekuaiWorld{})
+	w := &PaodekuaiWorld{}
+	service.AddWorld(w)
 
 	var cards = []int{0xf0, 0xf1}
 	for color := 0; color < 4; color++ {
@@ -24,7 +25,7 @@ func init() {
 		}
 	}
 
-	cardutils.GetCardSystem().Init(cards)
+	cardutils.AddCardSystem(w.GetName(), cards)
 }
 
 func (w *PaodekuaiWorld) NewRoom(subId int) *roomutils.Room {

@@ -22,7 +22,7 @@ func init() {
 		cards = append(cards, c, c, c, c)
 	}
 	cards = append(cards, 130, 140, 150, 160, 170, 180, 190, 200)
-	cardutils.GetCardSystem().Init(cards)
+	cardutils.AddCardSystem(w.GetName(), cards)
 }
 
 type NeimengguMahjong struct {
@@ -63,7 +63,7 @@ func (mj *NeimengguMahjong) OnReady() {
 
 			cards = cards[:0]
 			flowers = flowers[:0]
-			for _, c := range cardutils.GetAllCards() {
+			for _, c := range cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).GetAllCards() {
 				for k := 0; IsFlower(c) && k < p.handCards[c]; k++ {
 					flowers = append(flowers, c)
 				}
@@ -109,7 +109,7 @@ func (hz *NeimengguMahjong) OnWin() {
 
 func (mj *NeimengguMahjong) Score(cards []int, melds []cardrule.Meld) (int, int) {
 	var pairNum, pair2Num, color int
-	for _, c := range cardutils.GetAllCards() {
+	for _, c := range cardutils.GetCardSystem(roomutils.GetServerName(mj.room.SubId)).GetAllCards() {
 		pairNum += cards[c] / 2
 		pair2Num += cards[c] / 4
 		if cards[c] > 0 {
@@ -197,20 +197,20 @@ func (mj *NeimengguMahjong) Award() {
 		copyCards := p.copyCards()
 		// 够张
 		var colors [8]int
-		for c, n := range CountAllCards(copyCards, p.melds) {
-			if cardutils.IsColorValid(c / 10) {
+		for c, n := range CountAllCards(roomutils.GetServerName(room.SubId), copyCards, p.melds) {
+			if cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).IsColorValid(c / 10) {
 				colors[c/10] += n
 			}
 		}
 		var counter int
 		for color, n := range colors {
-			if n > 0 && cardutils.IsColorValid(color) {
+			if n > 0 && cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).IsColorValid(color) {
 				counter++
 			}
 		}
 		log.Debug(colors)
 		for color, n := range colors {
-			if cardutils.IsColorValid(color) {
+			if cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).IsColorValid(color) {
 				if n > 7 {
 					addition2["够张"] = 1
 				}

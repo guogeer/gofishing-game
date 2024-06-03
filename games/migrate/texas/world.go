@@ -11,7 +11,8 @@ import (
 type TexasWorld struct{}
 
 func init() {
-	service.AddWorld(&TexasWorld{})
+	w := &TexasWorld{}
+	service.AddWorld(w)
 
 	var cards []int
 	for color := 0; color < 4; color++ {
@@ -21,7 +22,7 @@ func init() {
 		}
 	}
 
-	cardutils.GetCardSystem().Init(cards)
+	cardutils.AddCardSystem(w.GetName(), cards)
 }
 
 func (w *TexasWorld) NewRoom(subId int) *roomutils.Room {

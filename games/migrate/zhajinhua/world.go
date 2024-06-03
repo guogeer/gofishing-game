@@ -11,7 +11,8 @@ import (
 type ZhajinhuaWorld struct{}
 
 func init() {
-	service.AddWorld(&ZhajinhuaWorld{})
+	w := &ZhajinhuaWorld{}
+	service.AddWorld(w)
 
 	var cards []int
 	for color := 0; color < 4; color++ {
@@ -21,13 +22,12 @@ func init() {
 		}
 	}
 
-	cardutils.GetCardSystem().Init(cards)
+	cardutils.AddCardSystem(w.GetName(), cards)
 }
 
 func (w *ZhajinhuaWorld) NewRoom(subId int) *roomutils.Room {
-	helper := cardrule.NewZhajinhuaHelper()
 	room := &ZhajinhuaRoom{
-		helper: helper,
+		helper: cardrule.NewZhajinhuaHelper(w.GetName()),
 
 		dealerSeatIndex: -1,
 	}

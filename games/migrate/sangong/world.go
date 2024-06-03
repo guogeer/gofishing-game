@@ -11,7 +11,8 @@ import (
 type SangongWorld struct{}
 
 func init() {
-	service.AddWorld(&SangongWorld{})
+	w := &SangongWorld{}
+	service.AddWorld(w)
 
 	var cards []int
 	for color := 0; color < 4; color++ {
@@ -21,7 +22,7 @@ func init() {
 		}
 	}
 
-	cardutils.GetCardSystem().Init(cards)
+	cardutils.AddCardSystem(w.GetName(), cards)
 }
 
 func (w *SangongWorld) NewRoom(subId int) *roomutils.Room {

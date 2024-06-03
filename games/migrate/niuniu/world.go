@@ -14,7 +14,8 @@ import (
 type NiuNiuWorld struct{}
 
 func init() {
-	service.AddWorld(&NiuNiuWorld{})
+	w := &NiuNiuWorld{}
+	service.AddWorld(w)
 
 	var cards []int
 	for color := 0; color < 4; color++ {
@@ -24,12 +25,12 @@ func init() {
 		}
 	}
 
-	cardutils.GetCardSystem().Init(cards)
+	cardutils.AddCardSystem(w.GetName(), cards)
 }
 
 func (w *NiuNiuWorld) NewRoom(subId int) *roomutils.Room {
 	r := &NiuNiuRoom{
-		helper: cardrule.NewNiuNiuHelper(),
+		helper: cardrule.NewNiuNiuHelper(w.GetName()),
 	}
 	r.Room = roomutils.NewRoom(subId, r)
 

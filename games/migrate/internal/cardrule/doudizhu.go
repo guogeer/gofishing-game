@@ -182,10 +182,12 @@ func init() {
 	}
 }
 
-type DoudizhuHelper struct{}
+type DoudizhuHelper struct {
+	name string
+}
 
-func NewDoudizhuHelper() *DoudizhuHelper {
-	return &DoudizhuHelper{}
+func NewDoudizhuHelper(name string) *DoudizhuHelper {
+	return &DoudizhuHelper{name: name}
 }
 
 // 类型
@@ -301,7 +303,7 @@ func (helper *DoudizhuHelper) GetType(cards []int) (int, int, int) {
 func (helper *DoudizhuHelper) GetSortedCards(table []int) []int {
 	cards := make([]int, 0, 16)
 	for v := 0; v <= helper.Value(0xf1); v++ {
-		for _, c := range cardutils.GetAllCards() {
+		for _, c := range cardutils.GetCardSystem(helper.name).GetAllCards() {
 			if helper.Value(c) == v {
 				for k := 0; k < table[c]; k++ {
 					cards = append(cards, c)
@@ -631,7 +633,7 @@ func (ai *DoudizhuAI) init() {
 
 	var unused, own [32]int
 	var help = ai.Helper
-	var sys = cardutils.GetCardSystem()
+	var sys = cardutils.GetCardSystem(ai.Helper.name)
 	// fmt.Println(ai.MySeat)
 	for _, c := range sys.GetAllCards() {
 		own[help.Value(c)] += ai.Users[ai.MySeat].Cards[c]

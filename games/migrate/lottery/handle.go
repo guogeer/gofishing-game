@@ -23,17 +23,15 @@ type lotteryArgs struct {
 type Config struct {
 }
 
-func init() {
-	for _, name := range []string{(*bairenniuniuWorld)(nil).GetName(), (*ErbagangWorld)(nil).GetName(), (*BairenzhajinhuaWorld)(nil).GetName()} {
-		cmd.BindFunc(Bet, (*lotteryArgs)(nil), cmd.WithServer(name))
-		cmd.BindFunc(GetLastHistory, (*lotteryArgs)(nil), cmd.WithServer(name))
-		cmd.BindFunc(ApplyDealer, (*lotteryArgs)(nil), cmd.WithServer(name))
-		cmd.BindFunc(CancelDealer, (*lotteryArgs)(nil), cmd.WithServer(name))
-		cmd.BindFunc(GetDealerQueue, (*lotteryArgs)(nil), cmd.WithServer(name))
-		cmd.BindFunc(ChangeDealerGold, (*lotteryArgs)(nil), cmd.WithServer(name))
+func AddHandlers(name string) {
+	cmd.BindFunc(Bet, (*lotteryArgs)(nil), cmd.WithServer(name))
+	cmd.BindFunc(GetLastHistory, (*lotteryArgs)(nil), cmd.WithServer(name))
+	cmd.BindFunc(ApplyDealer, (*lotteryArgs)(nil), cmd.WithServer(name))
+	cmd.BindFunc(CancelDealer, (*lotteryArgs)(nil), cmd.WithServer(name))
+	cmd.BindFunc(GetDealerQueue, (*lotteryArgs)(nil), cmd.WithServer(name))
+	cmd.BindFunc(ChangeDealerGold, (*lotteryArgs)(nil), cmd.WithServer(name))
 
-		cmd.BindFunc(Console_WhosYourDaddy, (*lotteryArgs)(nil), cmd.WithServer(name))
-	}
+	cmd.BindFunc(Console_WhosYourDaddy, (*lotteryArgs)(nil), cmd.WithServer(name))
 }
 
 func GetPlayerByContext(ctx *cmd.Context) *lotteryPlayer {

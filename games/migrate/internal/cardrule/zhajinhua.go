@@ -18,12 +18,14 @@ const (
 )
 
 type ZhajinhuaHelper struct {
+	name    string
 	size    int
 	options map[string]bool
 }
 
-func NewZhajinhuaHelper() *ZhajinhuaHelper {
+func NewZhajinhuaHelper(name string) *ZhajinhuaHelper {
 	return &ZhajinhuaHelper{
+		name:    name,
 		size:    3,
 		options: make(map[string]bool),
 	}
@@ -136,7 +138,7 @@ func (helper *ZhajinhuaHelper) Less(first, second []int) bool {
 func (helper *ZhajinhuaHelper) Cheat(typ int, table []int) []int {
 	validCards := make([]int, 0, 64)
 	resultSet := make([]int, 0, 1024)
-	for _, c := range cardutils.GetAllCards() {
+	for _, c := range cardutils.GetCardSystem(helper.name).GetAllCards() {
 		for i := 0; i < table[c]; i++ {
 			validCards = append(validCards, c)
 		}

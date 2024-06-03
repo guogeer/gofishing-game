@@ -21,7 +21,7 @@ func init() {
 		for _, c := range []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 21, 22, 23, 24, 25, 26, 27, 28, 29, 41, 42, 43, 44, 45, 46, 47, 48, 49} {
 			cards = append(cards, c, c, c, c)
 		}
-		cardutils.GetCardSystem().Init(cards)
+		cardutils.AddCardSystem(w.GetName(), cards)
 	}
 	{
 		w := NewSichuanWorld("szdd")
@@ -32,7 +32,7 @@ func init() {
 		for _, c := range []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 21, 22, 23, 24, 25, 26, 27, 28, 29, 41, 42, 43, 44, 45, 46, 47, 48, 49} {
 			cards = append(cards, c, c, c, c)
 		}
-		cardutils.GetCardSystem().Init(cards)
+		cardutils.AddCardSystem(w.GetName(), cards)
 	}
 }
 
@@ -443,7 +443,7 @@ func (h *SichuanMahjong) Award() {
 	var b = make([]bool, room.NumSeat())
 	for i := 0; i < room.NumSeat(); i++ {
 		p := room.GetPlayer(i)
-		if !p.leaveGame && HasColor(p.handCards, p.discardColor) {
+		if !p.leaveGame && HasColor(roomutils.GetServerName(room.SubId), p.handCards, p.discardColor) {
 			b[p.GetSeatIndex()] = true
 		}
 	}
@@ -523,7 +523,7 @@ func (h *SichuanMahjong) Award() {
 
 		bills = make([]Bill, room.NumSeat())
 		// 花猪、未听牌
-		if HasColor(p.handCards, p.discardColor) || p.CheckWin() == nil {
+		if HasColor(roomutils.GetServerName(room.SubId), p.handCards, p.discardColor) || p.CheckWin() == nil {
 			bill := &bills[p.GetSeatIndex()]
 			for k, g := range p.kongChip {
 				other := room.GetPlayer(k)
@@ -548,9 +548,9 @@ func (h *SichuanMahjong) GameOver() {
 }
 
 func (sc *SichuanMahjong) CountGen(score int, cards []int, melds []cardrule.Meld) int {
-	AllCards := cardutils.GetAllCards()
+	allCards := cardutils.GetCardSystem(roomutils.GetServerName(sc.room.SubId)).GetAllCards()
 	var all [MaxCard]int
-	for _, c := range AllCards {
+	for _, c := range allCards {
 		all[c] = cards[c]
 	}
 	for _, m := range melds {
@@ -562,7 +562,7 @@ func (sc *SichuanMahjong) CountGen(score int, cards []int, melds []cardrule.Meld
 		}
 	}
 	gen := 0
-	for _, c := range AllCards {
+	for _, c := range allCards {
 		if all[c] == 4 {
 			gen++
 		}
@@ -581,7 +581,7 @@ func (sc *SichuanMahjong) CountGen(score int, cards []int, melds []cardrule.Meld
 
 func (sc *SichuanMahjong) Score(cards []int, melds []cardrule.Meld) (int, int) {
 	var pairNum, pair2Num, kongNum, color int
-	for _, c := range cardutils.GetAllCards() {
+	for _, c := range cardutils.GetCardSystem(roomutils.GetServerName(sc.room.SubId)).GetAllCards() {
 		pairNum += cards[c] / 2
 		pair2Num += cards[c] / 4
 		if cards[c] > 0 {
@@ -598,7 +598,7 @@ func (sc *SichuanMahjong) Score(cards []int, melds []cardrule.Meld) (int, int) {
 		isSameColor = true
 	}
 
-	for _, c := range cardutils.GetAllCards() {
+	for _, c := range cardutils.GetCardSystem(roomutils.GetServerName(sc.room.SubId)).GetAllCards() {
 		kongNum += cards[c] / 4
 	}
 	for _, meld := range melds {
@@ -620,7 +620,7 @@ func (sc *SichuanMahjong) Score(cards []int, melds []cardrule.Meld) (int, int) {
 		if pair2Num > 0 && isSameColor {
 			scores[QingLongQiDui] = true
 		}
-		if CountCardsByValue(cards, melds, 2, 5, 8) == 14 {
+		if CountCardsByValue(roomutils.GetServerName(sc.room.SubId), cards, melds, 2, 5, 8) == 14 {
 			scores[JiangQiDui] = true
 		}
 	}
@@ -631,7 +631,7 @@ func (sc *SichuanMahjong) Score(cards []int, melds []cardrule.Meld) (int, int) {
 
 	if len(melds) == 4 && pairNum == 1 {
 		scores[JinGouDiao] = true
-		if CountCardsByValue(cards, nil, 2, 5, 8) == 2 && CountMeldsByValue(melds, 2, 5, 8) == 4 {
+		if CountCardsByValue(roomutils.GetServerName(sc.room.SubId), cards, nil, 2, 5, 8) == 2 && CountMeldsByValue(melds, 2, 5, 8) == 4 {
 			scores[JiangJinGouDiao] = true
 		}
 		if isSameColor {
@@ -646,7 +646,7 @@ func (sc *SichuanMahjong) Score(cards []int, melds []cardrule.Meld) (int, int) {
 	}
 
 	room := sc.room
-	for _, pair := range cardutils.GetAllCards() {
+	for _, pair := range cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).GetAllCards() {
 		if cards[pair] < 2 {
 			continue
 		}
@@ -680,7 +680,7 @@ func (sc *SichuanMahjong) Score(cards []int, melds []cardrule.Meld) (int, int) {
 		cards[pair] += 2
 	}
 	// 断幺九
-	if CountCardsByValue(cards, melds, 1, 9) == 0 {
+	if CountCardsByValue(roomutils.GetServerName(sc.room.SubId), cards, melds, 1, 9) == 0 {
 		scores[DuanYaoJiu] = true
 	}
 

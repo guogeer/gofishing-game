@@ -45,6 +45,18 @@ var (
 	}
 )
 
+func init() {
+	var cards []int
+	for _, c := range []int{21, 22, 23, 24, 25, 26, 27, 28, 29, 100, 110, 120} {
+		cards = append(cards, c, c, c, c)
+	}
+
+	w := &ErbagangWorld{}
+	cardutils.AddCardSystem(w.GetName(), cards)
+	service.AddWorld(w)
+	AddHandlers(w.GetName())
+}
+
 // 0~9、点数；22、豹子；28、天杠
 type erbagangHelper struct{}
 
@@ -134,7 +146,7 @@ func (ent *erbagang) StartDealCard() {
 		switch typ {
 		case 0: // 1-9点
 			var single []int
-			for _, c := range cardutils.GetAllCards() {
+			for _, c := range cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).GetAllCards() {
 				if table[c] > 0 {
 					single = append(single, c)
 				}
@@ -181,7 +193,7 @@ func (ent *erbagang) Cheat(multiples int) []int {
 	var cards []int
 	if multiples > 0 {
 		validCards = validCards[:0]
-		for _, c := range cardutils.GetAllCards() {
+		for _, c := range cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).GetAllCards() {
 			if remainingCards[c] > 0 {
 				validCards = append(validCards, c)
 			}

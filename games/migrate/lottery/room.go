@@ -107,13 +107,11 @@ type lotteryRoom struct {
 
 	dealer            *lotteryPlayer
 	dealerQueue       *list.List
-	deadline          time.Time
 	delayCancelDealer bool // 自动下庄
 
 	robSeat     int // 抢座
 	lotteryGame lotteryGame
 
-	autoTimer         *time.Timer
 	deals, cheatDeals []lotteryDeal
 	helper            lotteryHelper
 	dealerLoop        int // 当庄轮数
@@ -383,7 +381,7 @@ func (room *lotteryRoom) Award() {
 		}
 
 		// 测试用例
-		testSample := cardutils.GetSample()
+		testSample := cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).TestCase
 		if testSample != nil {
 			room.CardSet().Shuffle()
 			for i := 0; i < len(deals); i++ {

@@ -18,7 +18,7 @@ func init() {
 	for _, c := range []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 21, 22, 23, 24, 25, 26, 27, 28, 29, 41, 42, 43, 44, 45, 46, 47, 48, 49, 60, 70, 80, 90, 100, 110, 120} {
 		cards = append(cards, c, c, c, c)
 	}
-	cardutils.GetCardSystem().Init(cards)
+	cardutils.AddCardSystem(w.GetName(), cards)
 }
 
 var chaoshanScoreList = map[int]int{
@@ -95,8 +95,8 @@ func (mj *chaoshanMahjong) Score(cards []int, melds []cardrule.Meld) (int, int) 
 	winOpt := room.helper.Win(cards, melds)
 
 	var colors, total, zipai, yaojiu int
-	var all = CountAllCards(cards, melds)
-	for _, c := range cardutils.GetAllCards() {
+	var all = CountAllCards(roomutils.GetServerName(room.SubId), cards, melds)
+	for _, c := range cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).GetAllCards() {
 		total += all[c]
 		if c%10 == 0 {
 			zipai += all[c]
@@ -165,7 +165,7 @@ func (mj *chaoshanMahjong) Score(cards []int, melds []cardrule.Meld) (int, int) 
 		}
 	*/
 	// 带幺九、清幺九
-	for _, pair := range cardutils.GetAllCards() {
+	for _, pair := range cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).GetAllCards() {
 		tempZipai, tempYaojiu := zipai, yaojiu
 		if cards[pair] > 1 {
 			cards[pair] -= 2

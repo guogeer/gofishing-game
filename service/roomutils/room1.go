@@ -55,7 +55,7 @@ func NewRoom(subId int, CustomRoom CustomRoom) *Room {
 		customRoom:   CustomRoom,
 		freeDuration: freeDuration,
 		playDuration: playDuration,
-		cardSet:      cardutils.NewCardSet(),
+		cardSet:      cardutils.NewCardSet(GetServerName(subId)),
 		seatPlayers:  make([]*service.Player, seatNum),
 		chipItemId:   gameutils.ItemIdGold,
 	}

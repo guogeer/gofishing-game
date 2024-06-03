@@ -8,9 +8,8 @@ import (
 	"gofishing-game/service/roomutils"
 	"time"
 
-	"github.com/guogeer/quasar/utils"
-
 	"github.com/guogeer/quasar/log"
+	"github.com/guogeer/quasar/utils"
 )
 
 // 玩家信息
@@ -113,7 +112,7 @@ func (ply *DoudizhuPlayer) GetSortedCards() []int {
 	helper := room.helper
 	cards := make([]int, 0, 16)
 	for v := 0; v <= helper.Value(0xf1); v++ {
-		for _, c := range cardutils.GetAllCards() {
+		for _, c := range cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).GetAllCards() {
 			if helper.Value(c) == v {
 				for k := 0; k < ply.cards[c]; k++ {
 					cards = append(cards, c)

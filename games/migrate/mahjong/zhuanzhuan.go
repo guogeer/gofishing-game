@@ -20,7 +20,7 @@ func init() {
 	for _, c := range []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 21, 22, 23, 24, 25, 26, 27, 28, 29, 41, 42, 43, 44, 45, 46, 47, 48, 49, 60, 70, 80, 90, 100, 110, 120} {
 		cards = append(cards, c, c, c, c)
 	}
-	cardutils.GetCardSystem().Init(cards)
+	cardutils.AddCardSystem(w.GetName(), cards)
 }
 
 // 转转麻将
@@ -335,7 +335,7 @@ func (obj *ZhuanzhuanObj) winHorse() []int {
 func (ply *ZhuanzhuanObj) IsAbleWin() bool {
 	// 没出牌之前，手牌中有4张癞子牌
 	room := ply.Room()
-	if room.CanPlay(OptHongZhongZuoGui) && ply.discardNum == 0 && ply.drawCard != -1 && CountSomeCards(ply.handCards, nil, 100) == 4 {
+	if room.CanPlay(OptHongZhongZuoGui) && ply.discardNum == 0 && ply.drawCard != -1 && CountSomeCards(roomutils.GetServerName(room.SubId), ply.handCards, nil, 100) == 4 {
 		return true
 	}
 	return ply.MahjongPlayer.IsAbleWin()

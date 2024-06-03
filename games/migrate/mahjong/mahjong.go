@@ -207,9 +207,9 @@ func PrintCards(cards []int) {
 	}
 }
 
-func SortCards(handCards []int) []int {
+func SortCards(name string, handCards []int) []int {
 	cards := make([]int, 0, 16)
-	for _, c := range cardutils.GetAllCards() {
+	for _, c := range cardutils.GetCardSystem(name).GetAllCards() {
 		for i := 0; i < handCards[c]; i++ {
 			cards = append(cards, c)
 		}
@@ -217,14 +217,14 @@ func SortCards(handCards []int) []int {
 	return cards
 }
 
-func GetNextCards(c, n int) []int {
+func GetNextCards(name string, c, n int) []int {
 	var cards []int
 	for i := 0; i < n && c > 0; i++ {
 		if mod := c % 10; mod == 0 {
-			if cardutils.IsCardValid(c + 10) {
+			if cardutils.GetCardSystem(name).IsCardValid(c + 10) {
 				c = c + 10
 			} else {
-				for _, c1 := range cardutils.GetAllCards() {
+				for _, c1 := range cardutils.GetCardSystem(name).GetAllCards() {
 					if c1%10 == 0 {
 						c = c1
 						break
@@ -293,9 +293,9 @@ func CountMeldsByValue(melds []cardrule.Meld, some ...int) int {
 	return num
 }
 
-func CountAllCards(cards []int, melds []cardrule.Meld) []int {
+func CountAllCards(name string, cards []int, melds []cardrule.Meld) []int {
 	var counter [MaxCard]int
-	for _, c := range cardutils.GetAllCards() {
+	for _, c := range cardutils.GetCardSystem(name).GetAllCards() {
 		counter[c] += cards[c]
 	}
 	for _, m := range melds {
@@ -314,15 +314,15 @@ func CountAllCards(cards []int, melds []cardrule.Meld) []int {
 	return counter[:]
 }
 
-func CountCardsByValue(cards []int, melds []cardrule.Meld, some ...int) int {
+func CountCardsByValue(name string, cards []int, melds []cardrule.Meld, some ...int) int {
 	var whiteList [MaxCard]int
 	for _, v := range some {
 		whiteList[v]++
 	}
 
 	num := 0
-	counter := CountAllCards(cards, melds)
-	for _, c := range cardutils.GetAllCards() {
+	counter := CountAllCards(name, cards, melds)
+	for _, c := range cardutils.GetCardSystem(name).GetAllCards() {
 		if counter[c] > 0 && whiteList[c%10] > 0 {
 			num += counter[c]
 		}
@@ -330,15 +330,15 @@ func CountCardsByValue(cards []int, melds []cardrule.Meld, some ...int) int {
 	return num
 }
 
-func CountSomeCards(cards []int, melds []cardrule.Meld, some ...int) int {
+func CountSomeCards(name string, cards []int, melds []cardrule.Meld, some ...int) int {
 	var whiteList [MaxCard]int
 	for _, c := range some {
 		whiteList[c]++
 	}
 
 	num := 0
-	counter := CountAllCards(cards, melds)
-	for _, c := range cardutils.GetAllCards() {
+	counter := CountAllCards(name, cards, melds)
+	for _, c := range cardutils.GetCardSystem(name).GetAllCards() {
 		if counter[c] > 0 && whiteList[c] > 0 {
 			num += counter[c]
 		}
@@ -346,8 +346,8 @@ func CountSomeCards(cards []int, melds []cardrule.Meld, some ...int) int {
 	return num
 }
 
-func HasColor(cards []int, color int) bool {
-	for _, c := range cardutils.GetAllCards() {
+func HasColor(name string, cards []int, color int) bool {
+	for _, c := range cardutils.GetCardSystem(name).GetAllCards() {
 		if cards[c] > 0 && c/10 == color {
 			return true
 		}

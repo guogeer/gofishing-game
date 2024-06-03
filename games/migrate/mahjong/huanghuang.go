@@ -26,7 +26,7 @@ func init() {
 	for _, c := range []int{21, 22, 23, 24, 25, 26, 27, 28, 29, 41, 42, 43, 44, 45, 46, 47, 48, 49, 100, 110, 120} {
 		cards = append(cards, c, c, c, c)
 	}
-	cardutils.GetCardSystem().Init(cards)
+	cardutils.AddCardSystem(w.GetName(), cards)
 }
 
 // 晃晃麻将
@@ -141,7 +141,7 @@ func (mj *HuanghuangMahjong) Score(cards []int, melds []cardrule.Meld) (int, int
 	room := mj.room
 
 	var pairNum, pair2Num, color int
-	for _, c := range cardutils.GetAllCards() {
+	for _, c := range cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).GetAllCards() {
 		pairNum += cards[c] / 2
 		pair2Num += cards[c] / 4
 		if cards[c] > 0 {
@@ -297,7 +297,7 @@ func (mj *HuanghuangMahjong) GameOver() {
 // 癞子牌
 func (mj *HuanghuangMahjong) getAnyCards() []int {
 	m := make(map[int]bool)
-	for _, c := range GetNextCards(mj.ghostCard, 1) {
+	for _, c := range GetNextCards(roomutils.GetServerName(mj.room.SubId), mj.ghostCard, 1) {
 		m[c] = true
 	}
 	var a []int

@@ -25,11 +25,13 @@ const (
 )
 
 type NiuNiuHelper struct {
+	name    string
 	options map[int]bool
 }
 
-func NewNiuNiuHelper() *NiuNiuHelper {
+func NewNiuNiuHelper(name string) *NiuNiuHelper {
 	return &NiuNiuHelper{
+		name:    name,
 		options: make(map[int]bool),
 	}
 }
@@ -279,7 +281,7 @@ func (helper *NiuNiuHelper) Cheat(typ int, table []int) []int {
 
 		validCards = validCards[:0]
 		cards = append(cards, c, c|0x10, c|0x20, c|0x30)
-		for _, c := range cardutils.GetAllCards() {
+		for _, c := range cardutils.GetCardSystem(helper.name).GetAllCards() {
 			for i := 0; i < table[c] && c&0x0f != c; i++ {
 				validCards = append(validCards, c)
 			}
@@ -323,7 +325,7 @@ func (helper *NiuNiuHelper) Cheat(typ int, table []int) []int {
 		return cards
 	}
 
-	for _, c := range cardutils.GetAllCards() {
+	for _, c := range cardutils.GetCardSystem(helper.name).GetAllCards() {
 		for i := 0; i < table[c]; i++ {
 			validCards = append(validCards, c)
 		}
@@ -352,7 +354,7 @@ func (helper *NiuNiuHelper) Cheat(typ int, table []int) []int {
 	for _, c := range cards {
 		table[c]--
 	}
-	for _, c := range cardutils.GetAllCards() {
+	for _, c := range cardutils.GetCardSystem(helper.name).GetAllCards() {
 		for i := 0; i < table[c]; i++ {
 			validCards = append(validCards, c)
 		}

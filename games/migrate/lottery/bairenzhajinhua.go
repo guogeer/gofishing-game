@@ -15,7 +15,7 @@ import (
 	"github.com/guogeer/quasar/utils/randutils"
 )
 
-var gZhajinhuaHelper = cardrule.NewZhajinhuaHelper()
+var gZhajinhuaHelper = cardrule.NewZhajinhuaHelper((*bairenniuniuWorld)(nil).GetName())
 var gZhajinhuaMultiples = []int{
 	0,
 	1, // 散牌
@@ -24,6 +24,21 @@ var gZhajinhuaMultiples = []int{
 	3, // 金花
 	4, // 顺金
 	5, // 豹子
+}
+
+func init() {
+	var cards []int
+	for color := 0; color < 4; color++ {
+		for value := 2; value <= 14; value++ {
+			c := (color << 4) | value
+			cards = append(cards, c)
+		}
+	}
+
+	w := &BairenzhajinhuaWorld{}
+	cardutils.AddCardSystem(w.GetName(), cards)
+	service.AddWorld(w)
+	AddHandlers(w.GetName())
 }
 
 type bairenzhajinhuaHelper struct {
@@ -104,9 +119,7 @@ func (ent *bairenzhajinhua) Cheat(multiples int) []int {
 	return nil
 }
 
-type BairenzhajinhuaWorld struct {
-	helper *cardrule.ZhajinhuaHelper
-}
+type BairenzhajinhuaWorld struct{}
 
 func (w *BairenzhajinhuaWorld) NewRoom(subId int) *roomutils.Room {
 	room := &lotteryRoom{

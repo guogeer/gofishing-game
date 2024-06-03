@@ -1,12 +1,13 @@
 package cardrule
 
 import (
+	"fmt"
 	"gofishing-game/internal/cardutils"
 	"testing"
 )
 
 func checkSameCards(from, to []int) bool {
-	helper := NewDoudizhuHelper()
+	helper := NewDoudizhuHelper("ddz")
 	if len(from) != len(to) {
 		return false
 	}
@@ -33,7 +34,7 @@ func checkSameCards(from, to []int) bool {
 }
 
 func TestDoudizhuLess(t *testing.T) {
-	helper := NewDoudizhuHelper()
+	helper := NewDoudizhuHelper("ddz")
 	samples := [][][]int{
 		{
 			{0xf0, 0xf1},
@@ -56,7 +57,7 @@ func TestDoudizhuLess(t *testing.T) {
 }
 
 func TestDoudizhuMatch(t *testing.T) {
-	helper := NewDoudizhuHelper()
+	helper := NewDoudizhuHelper("ddz")
 	samples := [][][]int{
 		{
 			{0xf1}, // cards
@@ -133,7 +134,7 @@ func TestDoudizhuMatch(t *testing.T) {
 }
 
 func TestDoudizhuSplit(t *testing.T) {
-	helper := NewDoudizhuHelper()
+	helper := NewDoudizhuHelper("ddz")
 	samples := [][]int{
 		// {0x03, 0x04, 0xf0, 0xf1},
 		// {0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
@@ -157,7 +158,6 @@ func TestDoudizhuSplit(t *testing.T) {
 }
 
 func TestDoudizhuScore(t *testing.T) {
-	helper := NewDoudizhuHelper()
 	defaultCards := []int{0xf0, 0xf1}
 	for i := 0x02; i <= 0x0e; i++ {
 		defaultCards = append(defaultCards, i, i&0x10, i&0x20, i&0x30)
@@ -194,7 +194,9 @@ func TestDoudizhuScore(t *testing.T) {
 		},
 	}
 	for i, sample := range samples[:0] {
-		cardutils.GetCardSystem().Init(sample[0])
+		name := fmt.Sprintf("ddz%d", i)
+		cardutils.AddCardSystem(name, sample[0])
+
 		var cards [255]int
 		for _, c := range sample[1] {
 			cards[c]++
@@ -206,9 +208,9 @@ func TestDoudizhuScore(t *testing.T) {
 					CardNum: len(cards),
 				},
 			},
-			Helper: helper,
+			Helper: NewDoudizhuHelper(name),
 		}
-		rs := helper.Split(sample[1])
+		rs := ai.Helper.Split(sample[1])
 		for _, res := range rs {
 			t.Logf("result %d: %d", i, ai.Score(res))
 		}
@@ -217,7 +219,6 @@ func TestDoudizhuScore(t *testing.T) {
 
 // 两个人先手出牌
 func TestDoudizhuSimpleTurn2(t *testing.T) {
-	helper := NewDoudizhuHelper()
 	samples := [][][]int{
 		{
 			{0x03, 0x05},
@@ -337,10 +338,12 @@ func TestDoudizhuSimpleTurn2(t *testing.T) {
 			user := &DoudizhuUser{Cards: cards, CardNum: len(a)}
 			users = append(users, user)
 		}
-		cardutils.GetCardSystem().Init(sortedCards)
+
+		name := fmt.Sprintf("ddz%d", i)
+		cardutils.AddCardSystem(name, sortedCards)
 		ai := &DoudizhuAI{
 			Users:  users,
-			Helper: helper,
+			Helper: NewDoudizhuHelper(name),
 		}
 		turn := ai.Turn()
 		if !checkSameCards(sample[2], turn) {
@@ -352,7 +355,6 @@ func TestDoudizhuSimpleTurn2(t *testing.T) {
 
 // 两个人后手出牌
 func TestDoudizhuTurn2(t *testing.T) {
-	helper := NewDoudizhuHelper()
 	samples := [][][]int{
 		{
 			{0x04, 0x08},
@@ -404,10 +406,12 @@ func TestDoudizhuTurn2(t *testing.T) {
 			users = append(users, user)
 		}
 		users[1].Step = sample[2]
-		cardutils.GetCardSystem().Init(sortedCards)
+
+		name := fmt.Sprintf("ddz%d", i)
+		cardutils.AddCardSystem(name, sortedCards)
 		ai := &DoudizhuAI{
 			Users:  users,
-			Helper: helper,
+			Helper: NewDoudizhuHelper(name),
 		}
 		turn := ai.Turn()
 		if !checkSameCards(sample[3], turn) {
@@ -423,7 +427,7 @@ type doudizhuAIResult struct {
 
 // 三个人出牌
 func TestDoudizhuTurn3(t *testing.T) {
-	helper := NewDoudizhuHelper()
+	helper := NewDoudizhuHelper("ddz")
 	samples := []doudizhuAIResult{
 		{ai: &DoudizhuAI{
 			MySeat: 0, Dizhu: 0, UsedCards: []int{0x14, 0x35, 0x16, 0x17, 0x08, 0x38, 0x09, 0x2a, 0x3b, 0x1c}, Users: []*DoudizhuUser{{Cards: []int{0x02, 0x03, 0x0b, 0x12, 0x1a, 0x1b, 0x22, 0x26, 0x27, 0x28, 0x2b, 0x2c, 0x33, 0x39, 0x3d}, Step: []int{}, CardNum: 15}, {Cards: []int{}, Step: []int{0x38, 0x09, 0x2a, 0x3b, 0x1c}, CardNum: 12}, {Cards: []int{}, Step: []int{}, CardNum: 17}}},
@@ -453,7 +457,7 @@ func TestDoudizhuTurn3(t *testing.T) {
 			cards = append(cards, c)
 		}
 	}
-	cardutils.GetCardSystem().Init(cards)
+	cardutils.AddCardSystem("ddz", cards)
 
 	enableDebugDoudizhu = false
 	for i, sample := range samples[:] {

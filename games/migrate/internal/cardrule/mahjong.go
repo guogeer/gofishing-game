@@ -81,6 +81,7 @@ type SplitOption struct {
 }
 
 type MahjongHelper struct {
+	name           string
 	AnyCards       []int // 赖子
 	ReserveCardNum int   // 最后保留N张牌
 
@@ -93,12 +94,16 @@ type MahjongHelper struct {
 	Duiduihu bool // 碰碰胡
 }
 
+func NewMahjongHelper(name string) *MahjongHelper {
+	return &MahjongHelper{name: name}
+}
+
 // 拆牌
 func (helper *MahjongHelper) SplitN(cards []int, most int) []SplitOption {
 	var extra = make([]int, 0, 8)
 	var melds = make([]Meld, 0, 4)
 	var opts = make([]SplitOption, 0, 8)
-	var allCards = cardutils.GetAllCards()
+	var allCards = cardutils.GetCardSystem(helper.name).GetAllCards()
 	var total = len(allCards)
 
 	var dfs func(int)
@@ -209,7 +214,7 @@ func (helper *MahjongHelper) Win(cards []int, melds []Meld) *WinOption {
 		}
 	}
 
-	for _, pair := range cardutils.GetAllCards() {
+	for _, pair := range cardutils.GetCardSystem(helper.name).GetAllCards() {
 		if cards[pair] > 0 && cards[pair]+cards[MahjongGhostCard] > 1 {
 			miss := 0
 			if cards[pair] < 2 {
@@ -268,7 +273,7 @@ func (helper *MahjongHelper) Win(cards []int, melds []Meld) *WinOption {
 		}
 
 		pairNum := 0
-		for _, c := range cardutils.GetAllCards() {
+		for _, c := range cardutils.GetCardSystem(helper.name).GetAllCards() {
 			pairNum += cards[c] / 2
 		}
 		if pairNum+cards[MahjongGhostCard] > 6 {
@@ -292,7 +297,7 @@ func (helper *MahjongHelper) Win(cards []int, melds []Meld) *WinOption {
 			}
 		}
 		if jiangyise {
-			for _, c := range cardutils.GetAllCards() {
+			for _, c := range cardutils.GetCardSystem(helper.name).GetAllCards() {
 				if cards[c] > 0 && !IsValueSame(c, 2, 5, 8) && utils.InArray(helper.AnyCards, c) == 0 {
 					jiangyise = false
 					break
@@ -319,7 +324,7 @@ func (helper *MahjongHelper) Win(cards []int, melds []Meld) *WinOption {
 	}
 
 	var pair2, kongNum, color int
-	for _, c := range cardutils.GetAllCards() {
+	for _, c := range cardutils.GetCardSystem(helper.name).GetAllCards() {
 		if cards[c] > 0 {
 			color = color | int(1<<uint(c/10))
 		}
@@ -391,7 +396,7 @@ func (helper *MahjongHelper) Weight(ctx *Context) (int, int) {
 	if expectColors == 0 {
 		for _, color := range []int{0, 2, 4} {
 			counter := 0
-			for _, c := range cardutils.GetAllCards() {
+			for _, c := range cardutils.GetCardSystem(helper.name).GetAllCards() {
 				if color == c/10 {
 					counter += cards[c]
 				}
@@ -403,14 +408,14 @@ func (helper *MahjongHelper) Weight(ctx *Context) (int, int) {
 		}
 	}
 
-	for _, dc := range cardutils.GetAllCards() {
+	for _, dc := range cardutils.GetCardSystem(helper.name).GetAllCards() {
 		if cards[dc] >= 3 || cards[dc] <= 0 || dc == MahjongGhostCard {
 			continue
 		}
 		diff := 0
 		colors := expectColors
 		prices := gQingyisechayizhi
-		for _, c := range cardutils.GetAllCards() {
+		for _, c := range cardutils.GetCardSystem(helper.name).GetAllCards() {
 			if cards[c] > 0 && colors != 1<<uint(c/10) {
 				diff += prices[cards[c]]
 			}
@@ -455,12 +460,12 @@ func (helper *MahjongHelper) Weight(ctx *Context) (int, int) {
 			// (1) 3 3
 			// (2) 3 4/1 2/8 9/3 5
 			// (3) 3 4 4/3 3 4/3 5 5
-			for _, c := range cardutils.GetAllCards() {
+			for _, c := range cardutils.GetCardSystem(helper.name).GetAllCards() {
 				if extraCards[c-1]*extraCards[c+1] == 0 && extraCards[c] == 2 {
 					firstPair = 90
 				}
 			}
-			for _, c := range cardutils.GetAllCards() {
+			for _, c := range cardutils.GetCardSystem(helper.name).GetAllCards() {
 				if extraCards[c] <= 0 || extraCards[c] > 2 {
 					continue
 				}

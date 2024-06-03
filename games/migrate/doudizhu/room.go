@@ -462,7 +462,7 @@ func (room *DoudizhuRoom) StartDealCard() {
 	room.sample = nil
 	room.cheatSeats = 0
 	// 无测试牌型
-	test := cardutils.GetSample()
+	test := cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).TestCase
 	if len(test) == 0 && randutils.IsPercentNice(percent) {
 		dealerSeatId := room.dealer.GetSeatIndex()
 		for i := 0; i < room.NumSeat(); i++ {

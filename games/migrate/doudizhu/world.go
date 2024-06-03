@@ -10,7 +10,8 @@ import (
 type DoudizhuWorld struct{}
 
 func init() {
-	service.AddWorld(&DoudizhuWorld{})
+	w := &DoudizhuWorld{}
+	service.AddWorld(w)
 
 	var cards = []int{0xf0, 0xf1}
 	for color := 0; color < 4; color++ {
@@ -20,12 +21,12 @@ func init() {
 		}
 	}
 
-	cardutils.GetCardSystem().Init(cards)
+	cardutils.AddCardSystem(w.GetName(), cards)
 }
 
 func (w *DoudizhuWorld) NewRoom(subId int) *roomutils.Room {
 	r := &DoudizhuRoom{
-		helper:       cardrule.NewDoudizhuHelper(),
+		helper:       cardrule.NewDoudizhuHelper(w.GetName()),
 		currentTimes: 1,
 	}
 	r.Room = roomutils.NewRoom(subId, r)

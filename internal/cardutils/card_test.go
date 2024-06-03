@@ -1,15 +1,12 @@
 package cardutils
 
 import (
-	"math/rand"
 	"testing"
-	"time"
 )
 
 func TestCheat(t *testing.T) {
-	rand.Seed(time.Now().Unix())
-	GetCardSystem().Init([]int{1, 1, 2, 2, 3, 3, 1, 2, 3})
-	cs := NewCardSet()
+	AddCardSystem("test", []int{1, 1, 2, 2, 3, 3, 1, 2, 3})
+	cs := NewCardSet("test")
 
 	samples := [][]int{
 		{3, 2, 1},

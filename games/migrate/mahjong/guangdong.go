@@ -22,7 +22,7 @@ func init() {
 	for _, c := range []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 21, 22, 23, 24, 25, 26, 27, 28, 29, 41, 42, 43, 44, 45, 46, 47, 48, 49, 60, 70, 80, 90, 100, 110, 120} {
 		cards = append(cards, c, c, c, c)
 	}
-	cardutils.GetCardSystem().Init(cards)
+	cardutils.AddCardSystem(w.GetName(), cards)
 }
 
 // 广东麻将
@@ -303,7 +303,7 @@ func (gd *GuangdongMahjong) Award() {
 
 		points := 2
 		// 无鬼加倍
-		if cards := gd.getAnyCards(); len(cards) > 0 && room.CanPlay(OptWuGuiJiaBei) && CountSomeCards(p.handCards, nil, cards...) == 0 {
+		if cards := gd.getAnyCards(); len(cards) > 0 && room.CanPlay(OptWuGuiJiaBei) && CountSomeCards(roomutils.GetServerName(room.SubId), p.handCards, nil, cards...) == 0 {
 			addition2["无鬼加倍"] = 0
 			points *= 2
 		}
@@ -427,7 +427,7 @@ func (gd *GuangdongMahjong) getAnyCards() []int {
 		// 翻双鬼
 		ghostNum = 2
 	}
-	for _, c := range GetNextCards(gd.ghostCard, ghostNum) {
+	for _, c := range GetNextCards(roomutils.GetServerName(room.SubId), gd.ghostCard, ghostNum) {
 		m[c] = true
 	}
 	var a []int
@@ -589,7 +589,7 @@ func (obj *GuangdongObj) checkAllInclude() *MahjongPlayer {
 func (ply *GuangdongObj) IsAbleWin() bool {
 	// 没出牌之前，手牌中有4张癞子牌
 	room := ply.Room()
-	if room.CanPlay(OptBaiBanZuoGui) && ply.discardNum == 0 && ply.drawCard != -1 && CountSomeCards(ply.handCards, nil, 120) == 4 {
+	if room.CanPlay(OptBaiBanZuoGui) && ply.discardNum == 0 && ply.drawCard != -1 && CountSomeCards(roomutils.GetServerName(room.SubId), ply.handCards, nil, 120) == 4 {
 		return true
 	}
 	return ply.MahjongPlayer.IsAbleWin()

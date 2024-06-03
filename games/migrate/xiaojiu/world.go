@@ -8,7 +8,8 @@ import (
 )
 
 func init() {
-	service.AddWorld(&XiaojiuWorld{})
+	w := &XiaojiuWorld{}
+	service.AddWorld(w)
 
 	var cards []int
 	for color := 0; color < 4; color++ {
@@ -18,7 +19,7 @@ func init() {
 		}
 	}
 	cards = append(cards, 0x0e, 0x1e, 0x2e, 0x3e)
-	cardutils.GetCardSystem().Init(cards)
+	cardutils.AddCardSystem(w.GetName(), cards)
 }
 
 type XiaojiuWorld struct{}

@@ -276,7 +276,7 @@ func (ply *MahjongPlayer) GetUserInfo(otherId int) *MahjongPlayerInfo {
 	data.DrawCard = ply.drawCard
 	data.IP = ply.IP
 	// data.Disband = roomutils.GetRoomObj(ply.Player)().DisbandAnswer
-	data.Cards = SortCards(ply.handCards)
+	data.Cards = SortCards(roomutils.GetServerName(room.SubId), ply.handCards)
 	if ply.Id != otherId && !other.isAbleLookOthers {
 		if data.DrawCard != -1 {
 			data.DrawCard = 1
@@ -453,7 +453,7 @@ func (ply *MahjongPlayer) Draw() {
 		percent, _ := config.Float("room", room.SubId, "winPercent")
 		if randutils.IsPercentNice(percent) && room.cheatSeats == 0 {
 			color := ply.discardColor
-			for _, c := range cardutils.GetAllCards() {
+			for _, c := range cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).GetAllCards() {
 				if cards[c] == 2 && c/10 != color && room.CardSet().Cheat(c) > 0 {
 					drawCard = c
 					break
@@ -525,7 +525,7 @@ func (ply *MahjongPlayer) OnDraw() {
 
 	var tips []OperateTip
 
-	for _, c1 := range cardutils.GetAllCards() {
+	for _, c1 := range cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).GetAllCards() {
 		if ply.localObj.GetKongType(c1) != -1 {
 			tips = append(tips, OperateTip{Type: cardrule.OperateKong, Card: c1})
 			room.expectKongPlayer = ply
@@ -641,11 +641,11 @@ func (ply *MahjongPlayer) GetSeatIndex() int {
 // 杠
 func (ply *MahjongPlayer) Kong(c int) {
 	log.Infof("player %d kong %d", ply.Id, c)
-	if !cardutils.IsCardValid(c) {
+	room := ply.Room()
+	if !cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).IsCardValid(c) {
 		return
 	}
 
-	room := ply.Room()
 	type_ := ply.localObj.GetKongType(c)
 	// 无效的杠
 	if type_ == -1 {
@@ -826,7 +826,7 @@ func (ply *MahjongPlayer) Chow(c int) {
 	if room.expectChowPlayer != ply {
 		return
 	}
-	if !cardutils.IsCardValid(c) {
+	if !cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).IsCardValid(c) {
 		return
 	}
 	dc := room.lastCard
@@ -894,11 +894,11 @@ func (ply *MahjongPlayer) Chow(c int) {
 		"uid":  ply.Id,
 	}
 	var blackList = []int{dc}
-	if dc == c && cardutils.IsCardValid(c+3) &&
+	if dc == c && cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).IsCardValid(c+3) &&
 		!room.IsAnyCard(c+3) {
 		blackList = append(blackList, c+3)
 	}
-	if dc == c+2 && cardutils.IsCardValid(c-1) &&
+	if dc == c+2 && cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).IsCardValid(c-1) &&
 		!room.IsAnyCard(c-1) {
 		blackList = append(blackList, c-1)
 	}
@@ -924,7 +924,7 @@ func (ply *MahjongPlayer) Chow(c int) {
 	ply.Timeout(func() { ply.autoDiscard() })
 	// 湖北钟祥地区吃碰以后还可以继续杠
 	var tips []OperateTip
-	for _, c1 := range cardutils.GetAllCards() {
+	for _, c1 := range cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).GetAllCards() {
 		if ply.localObj.GetKongType(c1) != -1 {
 			tips = append(tips, OperateTip{Type: cardrule.OperateKong, Card: c1})
 			room.expectKongPlayer = ply
@@ -1012,7 +1012,7 @@ func (ply *MahjongPlayer) Pong() {
 	ply.Timeout(func() { ply.autoDiscard() })
 	// 湖北钟祥地区吃碰以后还可以继续杠
 	var tips []OperateTip
-	for _, c1 := range cardutils.GetAllCards() {
+	for _, c1 := range cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).GetAllCards() {
 		if ply.localObj.GetKongType(c1) != -1 {
 			tips = append(tips, OperateTip{Type: cardrule.OperateKong, Card: c1})
 			room.expectKongPlayer = ply
@@ -1119,11 +1119,11 @@ func (ply *MahjongPlayer) Win() {
 func (ply *MahjongPlayer) Discard(c int) {
 	log.Infof("player %d discard card %d", ply.Id, c)
 	PrintCards(ply.handCards)
-	if !cardutils.IsCardValid(c) {
+	room := ply.Room()
+	if !cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).IsCardValid(c) {
 		return
 	}
 
-	room := ply.Room()
 	cards := ply.handCards
 	if cards[c] < 1 || room.expectDiscardPlayer != ply {
 		return
@@ -1496,8 +1496,9 @@ func (ply *MahjongPlayer) ExchangeTriCards(tri [3]int) {
 	cards := ply.handCards
 	counter := make([]int, MaxCard)
 	// 必须三张相同花色的牌
+	room := ply.Room()
 	for _, c := range tri {
-		if !cardutils.IsCardValid(c) || tri[0]/10 != c/10 {
+		if !cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).IsCardValid(c) || tri[0]/10 != c/10 {
 			return
 		}
 		counter[c]++
@@ -1509,7 +1510,6 @@ func (ply *MahjongPlayer) ExchangeTriCards(tri [3]int) {
 		}
 	}
 
-	room := ply.Room()
 	if room.Status != roomStatusExchangeTriCards {
 		return
 	}
@@ -1524,10 +1524,11 @@ func (ply *MahjongPlayer) ChooseColor(color int) {
 	if ply.discardColor != -1 {
 		return
 	}
-	if !cardutils.IsColorValid(color) {
+	room := ply.Room()
+	if !cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).IsColorValid(color) {
 		return
 	}
-	room := ply.Room()
+
 	if room.Status != roomStatusChooseColor {
 		return
 	}
@@ -1546,16 +1547,16 @@ func (ply *MahjongPlayer) CheckReadyHand() []ReadyHandOption {
 	}
 
 	opts := make([]ReadyHandOption, 0, 16)
-	for _, discard := range cardutils.GetAllCards() {
+	for _, discard := range cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).GetAllCards() {
 		if cards[discard] > 0 {
 			cards[discard]--
 
 			opt := ReadyHandOption{DiscardCard: discard}
-			for _, add := range cardutils.GetAllCards() {
+			for _, add := range cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).GetAllCards() {
 				cards[add]++
 
 				// 定缺花色不存在
-				if !HasColor(cards, ply.discardColor) {
+				if !HasColor(roomutils.GetServerName(room.SubId), cards, ply.discardColor) {
 					if winOpt := room.helper.Win(cards, ply.melds); winOpt != nil {
 						tempOpt := *winOpt
 						tempOpt.WinCard = add
@@ -1579,6 +1580,7 @@ func (ply *MahjongPlayer) CheckReadyHand() []ReadyHandOption {
 
 // 听牌
 func (ply *MahjongPlayer) ReadyHand() []ReadyHandOption {
+	room := ply.Room()
 	opts := ply.localObj.CheckReadyHand()
 	// 优化胡任意牌
 	for i, opt := range opts {
@@ -1589,7 +1591,7 @@ func (ply *MahjongPlayer) ReadyHand() []ReadyHandOption {
 		}
 
 		isWinNoneCard := true
-		for _, c := range cardutils.GetAllCards() {
+		for _, c := range cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).GetAllCards() {
 			if b, ok := table[c]; !ok || !b {
 				isWinNoneCard = false
 			}
@@ -1607,14 +1609,15 @@ func (ply *MahjongPlayer) ReadyHand() []ReadyHandOption {
 
 func (ply *MahjongPlayer) IsAbleWin() bool {
 	cards := ply.handCards
+	room := ply.Room()
 	if ply.leaveGame {
 		return false
 	}
 
-	if HasColor(cards, ply.discardColor) {
+	if HasColor(roomutils.GetServerName(room.SubId), cards, ply.discardColor) {
 		return false
 	}
-	room := ply.Room()
+
 	winCard := room.lastCard
 	if _, ok := ply.unableWinCards[winCard]; ok {
 		return false
@@ -1654,7 +1657,7 @@ func (ply *MahjongPlayer) IsAbleChow(start int) bool {
 	room := ply.Room()
 
 	// 无效的牌
-	if !cardutils.IsCardValid(start) {
+	if !cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).IsCardValid(start) {
 		return false
 	}
 	// 玩法不可吃
@@ -1677,10 +1680,10 @@ func (ply *MahjongPlayer) IsAbleChow(start int) bool {
 	}
 	// 吃完牌以后没牌打了
 	var blackList = []int{dc}
-	if dc == start && cardutils.IsCardValid(start+3) {
+	if dc == start && cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).IsCardValid(start+3) {
 		blackList = append(blackList, start+3)
 	}
-	if dc == start+2 && cardutils.IsCardValid(start-1) {
+	if dc == start+2 && cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).IsCardValid(start-1) {
 		blackList = append(blackList, start-1)
 	}
 
@@ -1689,7 +1692,7 @@ func (ply *MahjongPlayer) IsAbleChow(start int) bool {
 	cards[start]--
 	cards[start+1]--
 	cards[start+2]--
-	for _, c := range cardutils.GetAllCards() {
+	for _, c := range cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).GetAllCards() {
 		if cards[c] > 0 && utils.InArray(blackList, c) == 0 {
 			counter++
 		}
@@ -1756,7 +1759,7 @@ func (ply *MahjongPlayer) copyCardsWithoutNoneCard() []int {
 func (ply *MahjongPlayer) copyCardsWithNoneCard(hasNoneCard bool) []int {
 	room := ply.Room()
 	cards := make([]int, MaxCard)
-	for _, c := range cardutils.GetAllCards() {
+	for _, c := range cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).GetAllCards() {
 		cards[c] = ply.handCards[c]
 	}
 	// 玩家不可出牌
@@ -1896,7 +1899,7 @@ func (ply *MahjongPlayer) Double() {
 		ply.Timeout(func() { ply.autoDiscard() })
 
 		var tips []OperateTip
-		for _, c1 := range cardutils.GetAllCards() {
+		for _, c1 := range cardutils.GetCardSystem(roomutils.GetServerName(room.SubId)).GetAllCards() {
 			if ply.localObj.GetKongType(c1) != -1 {
 				tips = append(tips, OperateTip{Type: cardrule.OperateKong, Card: c1})
 				room.expectKongPlayer = ply
@@ -1933,7 +1936,7 @@ func (ply *MahjongPlayer) GetOthers() []*OtherInfo {
 	users := make([]*OtherInfo, 0, 4)
 	for i := 0; i < room.NumSeat(); i++ {
 		if other := room.GetPlayer(i); ply != other && ply != nil {
-			cards := SortCards(other.handCards)
+			cards := SortCards(roomutils.GetServerName(room.SubId), other.handCards)
 			users = append(users, &OtherInfo{SeatIndex: i, Cards: cards})
 		}
 	}

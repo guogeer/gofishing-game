@@ -39,10 +39,10 @@ type PaohuziMeld struct {
 	Score int
 }
 
-type PaohuziHelper struct{}
+type PaohuziHelper struct{ name string }
 
-func NewPaohuziHelper() *PaohuziHelper {
-	return &PaohuziHelper{}
+func NewPaohuziHelper(name string) *PaohuziHelper {
+	return &PaohuziHelper{name: name}
 }
 
 func (helper *PaohuziHelper) IsAbleChow(cards []int, sample [][3]int, chow int) bool {
@@ -53,7 +53,7 @@ func (helper *PaohuziHelper) IsAbleChow(cards []int, sample [][3]int, chow int) 
 	for _, tri := range sample {
 		found := false
 		for _, c := range tri {
-			if !cardutils.IsCardValid(c) {
+			if !cardutils.GetCardSystem(helper.name).IsCardValid(c) {
 				return false
 			}
 			if c == chow {
@@ -76,7 +76,7 @@ func (helper *PaohuziHelper) IsAbleChow(cards []int, sample [][3]int, chow int) 
 			cardSet[c]--
 		}
 	}
-	for _, c := range cardutils.GetAllCards() {
+	for _, c := range cardutils.GetCardSystem(helper.name).GetAllCards() {
 		if cardSet[c] < 0 {
 			return false
 		}
@@ -107,7 +107,7 @@ func (helper *PaohuziHelper) TryChow(cards []int, chowCard int) [][]PaohuziMeld 
 			return
 		}
 		for _, c := range chowMelds[n].Cards {
-			if !cardutils.IsCardValid(c) || cardSet[c] < 0 || cardSet[c] > 2 {
+			if !cardutils.GetCardSystem(helper.name).IsCardValid(c) || cardSet[c] < 0 || cardSet[c] > 2 {
 				return
 			}
 		}
@@ -151,7 +151,7 @@ func (helper *PaohuziHelper) GetChowMelds(chowCard int) []PaohuziMeld {
 			if c == chowCard {
 				found = true
 			}
-			if !cardutils.IsCardValid(c) {
+			if !cardutils.GetCardSystem(helper.name).IsCardValid(c) {
 				invalid = true
 			}
 		}
@@ -259,7 +259,7 @@ func (helper *PaohuziHelper) TryWin(cards []int) (opt *PaohuziSplitOption) {
 
 	var pair = -1
 	var melds = make([]PaohuziMeld, 0, 4)
-	var allCards = cardutils.GetAllCards()
+	var allCards = cardutils.GetCardSystem(helper.name).GetAllCards()
 	var total = len(allCards)
 
 	var dfs func(int)
@@ -290,7 +290,7 @@ func (helper *PaohuziHelper) TryWin(cards []int) (opt *PaohuziSplitOption) {
 		for _, meld := range helper.GetChowMelds(c) {
 			enough := true
 			for _, seq := range meld.Cards {
-				if !cardutils.IsCardValid(seq) || cardSet[seq] < 1 || cardSet[seq] == 3 {
+				if !cardutils.GetCardSystem(helper.name).IsCardValid(seq) || cardSet[seq] < 1 || cardSet[seq] == 3 {
 					enough = false
 				}
 			}
