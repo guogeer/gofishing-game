@@ -10,10 +10,10 @@ import (
 	"gofishing-game/internal/errcode"
 	"gofishing-game/service"
 
-	"github.com/guogeer/quasar/cmd"
-	"github.com/guogeer/quasar/config"
-	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/utils"
+	"github.com/guogeer/quasar/v2/cmd"
+	"github.com/guogeer/quasar/v2/config"
+	"github.com/guogeer/quasar/v2/log"
+	"github.com/guogeer/quasar/v2/utils"
 )
 
 var gSubGames map[int]*subGame // 所有的场次

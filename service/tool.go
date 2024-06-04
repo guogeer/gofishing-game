@@ -7,15 +7,15 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/guogeer/quasar/utils"
+	"github.com/guogeer/quasar/v2/utils"
 
 	"gofishing-game/internal"
 	"gofishing-game/internal/env"
 	"gofishing-game/internal/gameutils"
 
-	"github.com/guogeer/quasar/cmd"
-	"github.com/guogeer/quasar/config"
-	"github.com/guogeer/quasar/log"
+	"github.com/guogeer/quasar/v2/cmd"
+	"github.com/guogeer/quasar/v2/config"
+	"github.com/guogeer/quasar/v2/log"
 )
 
 const toolFuncPrefix = "Test_"

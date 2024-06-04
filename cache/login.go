@@ -7,14 +7,14 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/guogeer/quasar/utils"
+	"github.com/guogeer/quasar/v2/utils"
 
 	"gofishing-game/internal"
 	"gofishing-game/internal/dbo"
 	"gofishing-game/internal/gameutils"
 	"gofishing-game/internal/pb"
 
-	"github.com/guogeer/quasar/log"
+	"github.com/guogeer/quasar/v2/log"
 	"google.golang.org/protobuf/proto"
 )
 

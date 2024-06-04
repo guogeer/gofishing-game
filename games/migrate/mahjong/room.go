@@ -12,11 +12,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/guogeer/quasar/utils"
-	"github.com/guogeer/quasar/utils/randutils"
+	"github.com/guogeer/quasar/v2/utils"
+	"github.com/guogeer/quasar/v2/utils/randutils"
 
-	"github.com/guogeer/quasar/config"
-	"github.com/guogeer/quasar/log"
+	"github.com/guogeer/quasar/v2/config"
+	"github.com/guogeer/quasar/v2/log"
 )
 
 const (

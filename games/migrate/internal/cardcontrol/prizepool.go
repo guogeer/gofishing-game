@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"gofishing-game/service"
 
-	"github.com/guogeer/quasar/config"
-	"github.com/guogeer/quasar/utils/randutils"
+	"github.com/guogeer/quasar/v2/config"
+	"github.com/guogeer/quasar/v2/utils/randutils"
 )
 
 // 暗池

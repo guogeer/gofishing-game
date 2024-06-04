@@ -3,7 +3,7 @@ package paodekuai
 import (
 	"gofishing-game/service"
 
-	"github.com/guogeer/quasar/cmd"
+	"github.com/guogeer/quasar/v2/cmd"
 )
 
 type paodekuaiArgs struct {

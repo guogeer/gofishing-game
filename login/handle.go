@@ -9,16 +9,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/guogeer/quasar/utils"
+	"github.com/guogeer/quasar/v2/utils"
 
 	"gofishing-game/internal/errcode"
 	"gofishing-game/internal/pb"
 	"gofishing-game/internal/rpc"
 
-	"github.com/guogeer/quasar/api"
-	"github.com/guogeer/quasar/cmd"
-	"github.com/guogeer/quasar/config"
-	"github.com/guogeer/quasar/log"
+	"github.com/guogeer/quasar/v2/api"
+	"github.com/guogeer/quasar/v2/cmd"
+	"github.com/guogeer/quasar/v2/config"
+	"github.com/guogeer/quasar/v2/log"
 )
 
 var (

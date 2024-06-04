@@ -12,8 +12,8 @@ import (
 	"gofishing-game/internal/pb"
 	"gofishing-game/internal/rpc"
 
-	"github.com/guogeer/quasar/cmd"
-	"github.com/guogeer/quasar/log"
+	"github.com/guogeer/quasar/v2/cmd"
+	"github.com/guogeer/quasar/v2/log"
 )
 
 const maxLoginQueue = 99 // 同时处理的登陆请求

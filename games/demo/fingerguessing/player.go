@@ -8,7 +8,7 @@ import (
 	"gofishing-game/service/roomutils"
 	"slices"
 
-	"github.com/guogeer/quasar/config"
+	"github.com/guogeer/quasar/v2/config"
 )
 
 var errInvalidGesture = errcode.New("invalid_gesture", "错误的手势")

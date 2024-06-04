@@ -14,7 +14,7 @@ require (
 
 require (
 	github.com/golang-jwt/jwt/v4 v4.5.0
-	github.com/guogeer/quasar v1.8.20220611-0.20220711111112-4278b5d80e63
+	github.com/guogeer/quasar/v2 v2.0.1
 	golang.org/x/net v0.25.0
 )
 

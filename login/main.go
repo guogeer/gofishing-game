@@ -4,9 +4,9 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/guogeer/quasar/api"
-	"github.com/guogeer/quasar/cmd"
-	"github.com/guogeer/quasar/log"
+	"github.com/guogeer/quasar/v2/api"
+	"github.com/guogeer/quasar/v2/cmd"
+	"github.com/guogeer/quasar/v2/log"
 )
 
 var port = flag.Int("port", 9501, "the server port")

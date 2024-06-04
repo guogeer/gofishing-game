@@ -9,9 +9,9 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/guogeer/quasar/config"
-	"github.com/guogeer/quasar/utils"
-	"github.com/guogeer/quasar/utils/randutils"
+	"github.com/guogeer/quasar/v2/config"
+	"github.com/guogeer/quasar/v2/utils"
+	"github.com/guogeer/quasar/v2/utils/randutils"
 )
 
 var (

@@ -8,7 +8,7 @@ import (
 	"gofishing-game/internal/dbo"
 	"gofishing-game/internal/pb"
 
-	"github.com/guogeer/quasar/log"
+	"github.com/guogeer/quasar/v2/log"
 )
 
 // 每日定时拆分item_log

@@ -4,7 +4,7 @@ import (
 	"math/rand"
 	"sort"
 
-	"github.com/guogeer/quasar/utils/randutils"
+	"github.com/guogeer/quasar/v2/utils/randutils"
 )
 
 // /////////////////////////////////////////////////////////

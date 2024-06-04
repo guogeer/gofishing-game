@@ -6,13 +6,13 @@ package roomutils
 import (
 	"time"
 
-	"github.com/guogeer/quasar/utils"
+	"github.com/guogeer/quasar/v2/utils"
 
 	"gofishing-game/internal/cardutils"
 	"gofishing-game/internal/gameutils"
 	"gofishing-game/service"
 
-	"github.com/guogeer/quasar/config"
+	"github.com/guogeer/quasar/v2/config"
 )
 
 // 定制的房间

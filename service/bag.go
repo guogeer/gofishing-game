@@ -7,7 +7,7 @@ import (
 	"gofishing-game/internal/pb"
 	"strings"
 
-	"github.com/guogeer/quasar/config"
+	"github.com/guogeer/quasar/v2/config"
 )
 
 // 在item物品表出现

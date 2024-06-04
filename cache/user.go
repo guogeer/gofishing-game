@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 
-	"github.com/guogeer/quasar/utils"
+	"github.com/guogeer/quasar/v2/utils"
 
 	"gofishing-game/internal/dbo"
 	"gofishing-game/internal/pb"

@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/guogeer/quasar/utils"
+	"github.com/guogeer/quasar/v2/utils"
 )
 
 var (

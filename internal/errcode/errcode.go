@@ -3,7 +3,7 @@ package errcode
 import (
 	"strings"
 
-	"github.com/guogeer/quasar/config"
+	"github.com/guogeer/quasar/v2/config"
 )
 
 type Error interface {
