@@ -48,17 +48,21 @@ func NewRoom(subId int, CustomRoom CustomRoom) *Room {
 	var seatNum int
 	var freeDuration, playDuration time.Duration
 	config.Scan("room", subId, "seatNum,freeDuration,playDuration", &seatNum, &freeDuration, &playDuration)
-	return &Room{
+	room := &Room{
 		SubId:        subId,
 		allPlayers:   make(map[int]*service.Player),
 		Status:       0,
 		customRoom:   CustomRoom,
 		freeDuration: freeDuration,
 		playDuration: playDuration,
-		cardSet:      cardutils.NewCardSet(GetServerName(subId)),
 		seatPlayers:  make([]*service.Player, seatNum),
 		chipItemId:   gameutils.ItemIdGold,
 	}
+	sys := cardutils.GetCardSystem(GetServerName(subId))
+	if sys != nil {
+		room.cardSet = cardutils.NewCardSet(GetServerName(subId))
+	}
+	return room
 }
 
 func (room *Room) SetChipItem(itemId int) {
@@ -130,7 +134,9 @@ func (room *Room) Broadcast(name string, data any, blacklist ...int) {
 }
 
 func (room *Room) StartGame() {
-	room.cardSet.Shuffle()
+	if room.cardSet != nil {
+		room.cardSet.Shuffle()
+	}
 	room.Status = RoomStatusPlaying
 
 	utils.StopTimer(room.countdownTimer)
@@ -155,7 +161,9 @@ func (room *Room) SetPlayDuration(d time.Duration) {
 
 func (room *Room) GameOver() {
 	room.Status = 0
-	room.CardSet().Shuffle()
+	if room.cardSet != nil {
+		room.CardSet().Shuffle()
+	}
 	utils.StopTimer(room.countdownTimer)
 	room.countdownTimer = utils.NewTimer(room.customRoom.StartGame, room.FreeDuration())
 }

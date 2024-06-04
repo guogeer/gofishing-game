@@ -20,5 +20,5 @@ db:
   serverList:
     - mame: router
       address: "localhost:9010"
-tableFiles: testdata/tables
-scriptFiles: testdata/scripts
+tablePath: testdata/tables
+scriptPath: testdata/scripts

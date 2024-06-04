@@ -37,7 +37,7 @@ func marshalJSONObjects(objs ...any) ([]byte, error) {
 		m := map[string]json.RawMessage{}
 		if bytes.HasPrefix(buf, []byte("{")) {
 			json.Unmarshal(buf, &m)
-			maps.Copy(m, result)
+			maps.Copy(result, m)
 		}
 	}
 	return json.Marshal(result)
@@ -45,7 +45,7 @@ func marshalJSONObjects(objs ...any) ([]byte, error) {
 
 func MergeError(e errcode.Error, objs ...any) []byte {
 	if e == nil {
-		e = errcode.New(errcode.CodeOk, "")
+		e = errcode.New(errcode.CodeOk, "success")
 	}
 	mergeData := append([]any{e}, objs...)
 	buf, _ := marshalJSONObjects(mergeData...)

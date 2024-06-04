@@ -331,8 +331,6 @@ func (player *Player) OnClose() {
 	player.TimerGroup.ResetTimer(&player.closeTimer, func() { player.Leave2(nil, errKickOut) }, 10*time.Minute)
 }
 
-var ok = errcode.New("ok", "success")
-
 func (player *Player) WriteJSON(name string, data any) {
 	if !player.IsSessionClose {
 		WriteMessage(player.serverName, player.session, name, data)
@@ -340,9 +338,6 @@ func (player *Player) WriteJSON(name string, data any) {
 }
 
 func (player *Player) WriteErr(name string, e errcode.Error, data ...any) {
-	if e == nil {
-		e = ok
-	}
 	errData := gameutils.MergeError(e, data...)
 	if !player.IsSessionClose {
 		WriteMessage(player.serverName, player.session, name, errData)

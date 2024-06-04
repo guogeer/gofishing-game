@@ -2,6 +2,7 @@ package main
 
 import (
 	"gofishing-game/service"
+	"gofishing-game/service/roomutils"
 
 	_ "gofishing-game/games/demo/fingerguessing"
 	_ "gofishing-game/games/migrate/dice"
@@ -17,5 +18,6 @@ import (
 )
 
 func main() {
+	roomutils.LoadGames()
 	service.Start()
 }

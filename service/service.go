@@ -22,7 +22,7 @@ import (
 )
 
 var port = flag.Int("port", 9510, "server port")
-var serverId = flag.String("server_id", "game_1", "server id")
+var serverId = flag.String("server_id", "", "server id")
 
 // 异常退出时保存玩家的数据
 func saveAllPlayers() {
@@ -67,14 +67,17 @@ func Start() {
 	srv := &cmd.Server{Addr: addr}
 	go func() { srv.Serve(l) }()
 
-	allServers := strings.Join(getAllServers(), ",")
+	allServers := GetAllServers()
+	if *serverId == "" {
+		*serverId = allServers[0]
+	}
 	cmd.RegisterService(&cmd.ServiceConfig{
 		Id:   GetServerId(),
-		Name: allServers,
+		Name: strings.Join(allServers, ","),
 		Addr: addr,
 	})
 	globalData.load()
-	log.Infof("server id %s name %s start ok.", GetServerId(), allServers)
+	log.Infof("server id %s name %v start ok.", GetServerId(), allServers)
 
 	for {
 		select {

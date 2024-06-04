@@ -120,7 +120,7 @@ func GetServerId() string {
 	return *serverId
 }
 
-func getAllServers() []string {
+func GetAllServers() []string {
 	var servers []string
 	for name := range gAllWorlds {
 		servers = append(servers, name)

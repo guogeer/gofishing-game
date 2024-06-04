@@ -81,28 +81,32 @@ type RoomWorld interface {
 	NewRoom(subId int) *Room
 }
 
-func LoadGames(w RoomWorld) {
-	name := w.GetName()
+func LoadGames() {
+	servers := service.GetAllServers()
+
 	games := map[int]*subGame{}
 	for _, rowId := range config.Rows("room") {
 		tagStr, _ := config.String("room", rowId, "tags")
 		tags := strings.Split(tagStr, ",")
 
-		if slices.Index(tags, name) >= 0 {
-			var subId, seatNum int
-			config.Scan("room", rowId, "id,seatNum", &subId, &seatNum)
-
-			log.Infof("load game:%d name:%s", subId, name)
-			games[subId] = &subGame{
-				Id:         subId,
-				MaxSeatNum: seatNum,
-				serverName: name,
+		var name string
+		for _, tag := range tags {
+			if slices.Index(servers, tag) >= 0 {
+				name = tag
 			}
 		}
+
+		var subId, seatNum int
+		config.Scan("room", rowId, "id,seatNum", &subId, &seatNum)
+
+		log.Infof("load game:%d name:%s", subId, name)
+		games[subId] = &subGame{
+			Id:         subId,
+			MaxSeatNum: seatNum,
+			serverName: name,
+		}
 	}
-	for subId, game := range games {
-		gSubGames[subId] = game
-	}
+	gSubGames = games
 }
 
 func init() {

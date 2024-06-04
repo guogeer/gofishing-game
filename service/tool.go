@@ -99,8 +99,8 @@ type testTool struct{}
 func (tool *testTool) Test_Q强制断线(ctx *cmd.Context, params string) {
 	ply := GetPlayerByContext(ctx)
 	WriteMessage(ply.serverName, ply.session, "serverClose", cmd.M{
-		"serverId": GetServerId(),
-		"cause":    "test tool",
+		"serverName": GetServerId(),
+		"cause":      "test tool",
 	})
 }
 

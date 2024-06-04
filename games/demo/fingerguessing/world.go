@@ -15,7 +15,6 @@ func GetWorld() *fingerGuessingWorld {
 func init() {
 	w := &fingerGuessingWorld{}
 	service.AddWorld(w)
-	roomutils.LoadGames(w)
 }
 
 func (w *fingerGuessingWorld) GetName() string {
