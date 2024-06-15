@@ -77,7 +77,7 @@ func Start() {
 		Addr: addr,
 	})
 	globalData.load()
-	log.Infof("server id %s name %v start ok.", GetServerId(), allServers)
+	log.Infof("server id %s name %v start ok.", GetServerId(), strings.Join(allServers, ","))
 
 	for {
 		select {
