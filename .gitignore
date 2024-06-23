@@ -15,3 +15,7 @@ config.yaml
 
 *.swp
 error.log
+
+# web
+tests/web/node_modules
+tests/web/.next
