@@ -9,8 +9,8 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/guogeer/quasar/config"
-	"github.com/guogeer/quasar/log"
+	"github.com/guogeer/quasar/v2/config"
+	"github.com/guogeer/quasar/v2/log"
 )
 
 const (

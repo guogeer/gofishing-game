@@ -4,7 +4,7 @@ import (
 	"gofishing-game/internal/cardutils"
 	"math/rand"
 
-	"github.com/guogeer/quasar/utils/randutils"
+	"github.com/guogeer/quasar/v2/utils/randutils"
 )
 
 var (

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/guogeer/quasar/config"
+	"github.com/guogeer/quasar/v2/config"
 )
 
 type NiuNiuWorld struct{}

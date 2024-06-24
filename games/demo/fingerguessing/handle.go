@@ -5,7 +5,7 @@ import (
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 
-	"github.com/guogeer/quasar/cmd"
+	"github.com/guogeer/quasar/v2/cmd"
 )
 
 func init() {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/guogeer/quasar/utils"
+	"github.com/guogeer/quasar/v2/utils"
 
 	"gofishing-game/internal"
 	"gofishing-game/internal/errcode"
@@ -14,9 +14,9 @@ import (
 	"gofishing-game/service"
 	"gofishing-game/service/system"
 
-	"github.com/guogeer/quasar/cmd"
-	"github.com/guogeer/quasar/config"
-	"github.com/guogeer/quasar/log"
+	"github.com/guogeer/quasar/v2/cmd"
+	"github.com/guogeer/quasar/v2/config"
+	"github.com/guogeer/quasar/v2/log"
 )
 
 const (

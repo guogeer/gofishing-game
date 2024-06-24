@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/guogeer/quasar/utils"
+	"github.com/guogeer/quasar/v2/utils"
 )
 
 func TestCD(t *testing.T) {

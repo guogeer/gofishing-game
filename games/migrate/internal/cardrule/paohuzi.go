@@ -9,7 +9,7 @@ import (
 	"gofishing-game/internal/cardutils"
 	"sort"
 
-	"github.com/guogeer/quasar/log"
+	"github.com/guogeer/quasar/v2/log"
 )
 
 // 操作

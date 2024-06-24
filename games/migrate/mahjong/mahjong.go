@@ -4,7 +4,7 @@ import (
 	"gofishing-game/games/migrate/internal/cardrule"
 	"gofishing-game/internal/cardutils"
 
-	"github.com/guogeer/quasar/log"
+	"github.com/guogeer/quasar/v2/log"
 )
 
 type Meld = cardrule.Meld

@@ -41,7 +41,7 @@ protoc --proto_path=./ --go-grpc_out=./ --go-grpc_opt=paths=source_relative --go
 ```
 2、安装依赖的服务
 ```sh
-go install github.com/guogeer/quasar/...
+go install github.com/guogeer/quasar/v2/...
 # 若未设置$GOPATH
 cp ~/go/bin/gateway gateway_server
 cp ~/go/bin/router router_server
@@ -50,8 +50,9 @@ cp ~/go/bin/router router_server
 # cp $GOPATH/bin/router router_server
 # 初始化配置
 cp config_bak.yaml config.yaml #根据实际部署修改配置
-nohup ./router_server 1>/dev/null 2>>error.log &
-nohup ./gateway_server 1>/dev/null 2>>error.log &
+nohup ./router_server --port 9010  1>/dev/null 2>>error.log &
+# 配置对外的地址，如example.com
+nohup ./gateway_server --port 8201 --proxy example.com 1>/dev/null 2>>error.log &
 ```
 3、启动业务（调试模式）
 
@@ -61,29 +62,18 @@ go 1.21.1
 
 use (
 	./gofishing-game
-	./gofishing-game/cache
-	./gofishing-game/hall
-	./gofishing-game/login
-	./gofishing-game/migrate/fingerguessing
-	./gofishing-game/migrate/doudizhu
-	./gofishing-game/migrate/mahjong
-	./gofishing-plate
 	./quasar
-	./quasar/gateway
-	./quasar/router
 )
 
 ```
 3.2 启动服务
 ```sh
-# go run ./quasar/gateway
-# go run ./quasar/router
-go run ./gofishing-game/cache
-go run ./gofishing-game/hall
-go run ./gofishing-game/login
-go run ./gofishing-game/migrate/fingerGuessing
-go run ./gofishing-game/migrate/mahjong
-go run ./gofishing-game/migrate/doudizhu
+# go run ./quasar/gateway --port 9010 
+# go run ./quasar/router --port 8201
+go run ./gofishing-game/cache --port 9000
+go run ./gofishing-game/hall --port 9022
+go run ./gofishing-game/login --port 9501
+go run ./gofishing-game/games --server_id game_1 --port 9021
 ```
 4、调试工具
 新增了client.html调试工具
@@ -91,4 +81,4 @@ go run ./gofishing-game/migrate/doudizhu
 - 打开控制台可以看到消息历史
 - 可以模拟消息请求
 - 支持url自定义参数open_id（默认test001）、addr（默认localhost:9501）
-新增了fingerguessing/demo/fingerguessing.html体验页面，可体验石头剪刀布
+新增了games/demo/fingerguessing.html体验页面，可体验石头剪刀布

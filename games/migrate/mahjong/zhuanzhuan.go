@@ -8,7 +8,7 @@ import (
 	"gofishing-game/service"
 	"gofishing-game/service/roomutils"
 
-	"github.com/guogeer/quasar/config"
+	"github.com/guogeer/quasar/v2/config"
 )
 
 func init() {

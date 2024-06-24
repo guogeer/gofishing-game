@@ -8,8 +8,8 @@ import (
 	"gofishing-game/service/roomutils"
 	"time"
 
-	"github.com/guogeer/quasar/log"
-	"github.com/guogeer/quasar/utils"
+	"github.com/guogeer/quasar/v2/log"
+	"github.com/guogeer/quasar/v2/utils"
 )
 
 // 玩家信息

@@ -2,7 +2,7 @@ package gameutils
 
 import (
 	"encoding/json"
-	// "github.com/guogeer/quasar/log"
+	// "github.com/guogeer/quasar/v2/log"
 	"time"
 )
 

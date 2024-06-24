@@ -6,8 +6,8 @@ import (
 	"gofishing-game/service"
 	"time"
 
-	"github.com/guogeer/quasar/cmd"
-	"github.com/guogeer/quasar/config"
+	"github.com/guogeer/quasar/v2/cmd"
+	"github.com/guogeer/quasar/v2/config"
 )
 
 const maxSignInDay = 7

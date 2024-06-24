@@ -5,15 +5,15 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/guogeer/quasar/utils"
+	"github.com/guogeer/quasar/v2/utils"
 
 	"gofishing-game/internal/pb"
 	"gofishing-game/internal/rpc"
 	"gofishing-game/service"
 
-	"github.com/guogeer/quasar/cmd"
-	"github.com/guogeer/quasar/config"
-	"github.com/guogeer/quasar/log"
+	"github.com/guogeer/quasar/v2/cmd"
+	"github.com/guogeer/quasar/v2/config"
+	"github.com/guogeer/quasar/v2/log"
 )
 
 // 版本更新奖励
