@@ -7,6 +7,12 @@ import { Account } from './utils/game';
 const App = () => {
   const [form] = Form.useForm();
   const [accounts, setAccounts] = useState<Account[]>()
+
+  const accTable: Account[][] = []
+  for (let i = 0; accounts && i * 4 < accounts.length; i++) {
+    accTable.push(accounts.slice(4 * i, Math.min(4 * i + 4, accounts.length)))
+  }
+
   return (
     <div className="App" style={{ margin: 20 }}>
       <Form
@@ -17,14 +23,12 @@ const App = () => {
         <Form.Item
           label="登录地址"
           name="loginAddr"
-
         >
           <Input />
         </Form.Item>
         <Form.Item
           label="openId"
           name="openId"
-
         >
           <Input />
         </Form.Item>
@@ -42,16 +46,21 @@ const App = () => {
               nextOpenId = `${openId.slice(0, index)}${parseInt(openId.slice(index)) + 1}`
             }
             form.setFieldValue("openId", nextOpenId)
-            console.log("xxxxxxxxxxxxxxx", index, openId.slice(index), nextOpenId, [{ loginAddr: addr, openId: openId }].concat(accounts || []))
-            setAccounts([{ loginAddr: addr, openId: openId }].concat(accounts || []))
+            setAccounts([{ loginAddr: addr, openId: openId }].concat(accounts || []).reverse())
           }}>新建链接</Button>
         </Form.Item>
       </Form>
-      <Flex gap="middle">
-        {
-          accounts?.map((account: Account) => <FingerGuessing key={account.openId} account={account} />)
-        }
-      </Flex>
+      {
+        accTable?.map((row, rowindex) =>
+          <Flex key={`accountRow${rowindex}`} gap="middle">
+            {
+              row?.map((account: Account) => <FingerGuessing key={`user_${account.openId}`} account={account} />)
+            }
+          </Flex>
+
+        )
+      }
+
 
     </div >
   )
