@@ -3,13 +3,13 @@ services:
   router_server:
     restart: always
     # image: registry.cn-hangzhou.aliyuncs.com/guogeer/gofishing-game:v2
-    image: gofishing-game:v2
+    image: registry.cn-hangzhou.aliyuncs.com/guogeer/gofishing-game:v2
     container_name: "router_server"
     command: ./router_server
     networks:
       - gamenet
   gateway_server:
-    image: gofishing-game:v2
+    image: registry.cn-hangzhou.aliyuncs.com/guogeer/gofishing-game:v2
     restart: always
     container_name: "gateway_server"
     command: ./gateway_server
@@ -20,7 +20,7 @@ services:
     depends_on:
       - router_server
   cache_server:
-    image: gofishing-game:v2
+    image: registry.cn-hangzhou.aliyuncs.com/guogeer/gofishing-game:v2
     restart: always
     container_name: "cache_server"
     command: ./cache_server
@@ -30,7 +30,7 @@ services:
       - router_server
       - gateway_server
   hall_server:
-    image: gofishing-game:v2
+    image: registry.cn-hangzhou.aliyuncs.com/guogeer/gofishing-game:v2
     restart: always
     container_name: "hall_server"
     command: ./hall_server --port 19001
@@ -41,7 +41,7 @@ services:
       - gateway_server
       - cache_server
   games_server:
-    image: gofishing-game:v2
+    image: registry.cn-hangzhou.aliyuncs.com/guogeer/gofishing-game:v2
     restart: always
     container_name: "games_server"
     command: ./games_server --port 19002
@@ -52,7 +52,7 @@ services:
       - gateway_server
       - cache_server
   login_server:
-    image: gofishing-game:v2
+    image: registry.cn-hangzhou.aliyuncs.com/guogeer/gofishing-game:v2
     restart: always
     container_name: "login_server"
     command: ./login_server --rootpath www
