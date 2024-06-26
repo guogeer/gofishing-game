@@ -10,8 +10,7 @@ tables.zip
 *_server
 *_robot
 *.exe
-config.xml
-config.yaml
+./config.yaml
 
 *.swp
 error.log
@@ -19,3 +18,6 @@ error.log
 # web
 tests/web/node_modules
 tests/web/.next
+
+# docker compose
+dockerdata

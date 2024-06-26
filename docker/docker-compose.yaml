@@ -1,0 +1,82 @@
+version: '3'
+services:
+  router_server:
+    restart: always
+    # image: registry.cn-hangzhou.aliyuncs.com/guogeer/gofishing-game:v2
+    image: gofishing-game:v2
+    container_name: "router_server"
+    command: ./router_server
+    networks:
+      - gamenet
+  gateway_server:
+    image: gofishing-game:v2
+    restart: always
+    container_name: "gateway_server"
+    command: ./gateway_server
+    ports:
+      - "8020:8020"
+    networks:
+      - gamenet
+    depends_on:
+      - router_server
+  cache_server:
+    image: gofishing-game:v2
+    restart: always
+    container_name: "cache_server"
+    command: ./cache_server
+    networks:
+      - gamenet
+    depends_on:
+      - router_server
+      - gateway_server
+  hall_server:
+    image: gofishing-game:v2
+    restart: always
+    container_name: "hall_server"
+    command: ./hall_server --port 19001
+    networks:
+      - gamenet
+    depends_on:
+      - router_server
+      - gateway_server
+      - cache_server
+  games_server:
+    image: gofishing-game:v2
+    restart: always
+    container_name: "games_server"
+    command: ./games_server --port 19002
+    networks:
+      - gamenet
+    depends_on:
+      - router_server
+      - gateway_server
+      - cache_server
+  login_server:
+    image: gofishing-game:v2
+    restart: always
+    container_name: "login_server"
+    command: ./login_server --rootpath www
+    ports:
+      - "9501:9501"
+    networks:
+      - gamenet
+    depends_on:
+      - router_server
+      - gateway_server
+      - cache_server
+  # NOTE 2024-06-26当前版本数据库脚本需手动初始化，下个版本将使用ORM
+  mariadb:
+    image: mariadb:10.6
+    container_name: "mariadb"
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+    volumes:
+      - /etc/localtime:/etc/localtime
+      - ./dockerdata/mariadb:/var/lib/mysql    
+    ports:
+      - "3306:3306"
+    networks:
+      - gamenet
+networks:
+  gamenet:
+    driver: bridge
