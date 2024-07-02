@@ -6,7 +6,7 @@ import { Account } from './utils/game';
 
 const App = () => {
   const [form] = Form.useForm();
-  const [accounts, setAccounts] = useState<Account[]>()
+  const [accounts, setAccounts] = useState<Account[]>([])
 
   const accTable: Account[][] = []
   for (let i = 0; accounts && i * 4 < accounts.length; i++) {
@@ -35,7 +35,7 @@ const App = () => {
         <Form.Item>
           <Button type="primary" onClick={(e) => {
             e.preventDefault()
-            const addr = form.getFieldValue("loginAddr")
+            const addr: string = form.getFieldValue("loginAddr")
             const openId: string = form.getFieldValue("openId")
 
             const pattern = new RegExp('[0-9]+$')
@@ -46,12 +46,12 @@ const App = () => {
               nextOpenId = `${openId.slice(0, index)}${parseInt(openId.slice(index)) + 1}`
             }
             form.setFieldValue("openId", nextOpenId)
-            setAccounts([{ loginAddr: addr, openId: openId }].concat(accounts || []).reverse())
+            setAccounts(accounts.concat({ loginAddr: addr, openId: openId }))
           }}>新建链接</Button>
         </Form.Item>
       </Form>
       {
-        accTable?.map((row, rowindex) =>
+        accounts.length > 0 && accTable?.map((row, rowindex) =>
           <Flex key={`accountRow${rowindex}`} gap="middle">
             {
               row?.map((account: Account) => <FingerGuessing key={`user_${account.openId}`} account={account} />)

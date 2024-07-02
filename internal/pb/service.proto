@@ -139,7 +139,7 @@ message Notify {
 message EnterGameResp {
   UserInfo userInfo = 1;
   UserBin bin = 2;
-  int32 newMailNum = 3;
+  int64 newMailNum = 3;
 	int64 subscriptionExpireTs = 4; // 订阅过期时间
 }
 

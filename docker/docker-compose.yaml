@@ -72,7 +72,7 @@ services:
       MYSQL_ROOT_PASSWORD: 123456
     volumes:
       - /etc/localtime:/etc/localtime
-      - ./dockerdata/mariadb:/var/lib/mysql    
+      - /tmp/dockerdata/mariadb:/var/lib/mysql    
     ports:
       - "3306:3306"
     networks:
