@@ -13,7 +13,7 @@ require (
 
 require (
 	github.com/golang-jwt/jwt/v4 v4.5.0
-	github.com/guogeer/quasar/v2 v2.0.5
+	github.com/guogeer/quasar/v2 v2.0.6
 )
 
 require (

@@ -25,7 +25,7 @@ func main() {
 
 	r := gin.Default()
 	if *rootpath != "" {
-		r.StaticFile("/", *rootpath)
+		r.Static("/", *rootpath)
 	}
 	api.RunWithEngine(r, addr)
 }

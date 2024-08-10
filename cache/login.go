@@ -91,7 +91,9 @@ func (cc *Cache) Auth(ctx context.Context, req *pb.AuthReq) (*pb.AuthResp, error
 			return nil, err
 		}
 		// 最近的登陆版本
-		db.Last(models.OnlineLog{}, uid).Scan(resp)
+		onlineLog := models.OnlineLog{}
+		db.Last(&onlineLog, uid)
+		resp.LoginTime = onlineLog.LoginTime.Format(internal.LongDateFmt)
 		// 绑定的平台
 		var plates []models.UserPlate
 		db.Find(&plates, uid)
