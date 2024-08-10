@@ -3,7 +3,7 @@ module gofishing-game
 go 1.21
 
 require (
-	github.com/go-sql-driver/mysql v1.8.1
+	github.com/go-sql-driver/mysql v1.8.1 // indirect
 	github.com/yuin/gopher-lua v1.1.1
 	google.golang.org/grpc v1.64.0
 	google.golang.org/protobuf v1.34.2
