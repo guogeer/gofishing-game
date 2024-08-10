@@ -13,8 +13,8 @@
 - 当前每个玩法都编译为一个程序，优化为玩法统一编译为一个game_server（√）
 - 优化石头剪刀布demo。前端支持九宫格方式展示（√）
 - 增加Dockerfile文件。方便本地体验（√）
-- cache重构，引入gorm 
-- 增加http gateway。大厅的请求支持短链接，适应网络不稳定的情况（×）
+- cache重构，引入gorm （√）
+- 增加http/quic gateway。大厅的请求支持短链接，适应网络不稳定的情况（×）
 - 开放管理后台。增加付费到账demo（×）
 - 开放压大小（×）
 
@@ -32,8 +32,8 @@
 
 ### 快速体验
 ```sh
-# 当前版本需手动初始化数据库脚本文件init.sql，下个版本将引入orm，简化部署
-docker compose up -f docker/docker-compose.yaml up -d
+docker compose up -d
+# 访问demo http://localhost:9501
 ```
 
 ### 本地部署
