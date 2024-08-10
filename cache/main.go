@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 
+	"gofishing-game/cache/models"
 	"gofishing-game/internal/dbo"
 	"gofishing-game/internal/env"
 	"gofishing-game/internal/pb"
@@ -22,13 +23,25 @@ func main() {
 	// init database
 	t := env.Config().DB.Game
 	dbo.SetSource(t.User, t.Password, t.Addr, t.Name)
-	db := dbo.Get()
+	db, _ := dbo.Get().DB()
 	if n := t.MaxIdleConns; n > 0 {
 		db.SetMaxIdleConns(n)
 	}
 	if n := t.MaxOpenConns; n > 0 {
 		db.SetMaxOpenConns(n)
 	}
+	dbo.Get().AutoMigrate(
+		models.ClientVersion{},
+		models.Dict{},
+		models.ItemLog{},
+		models.Mail{},
+		models.OnlineLog{},
+		models.Script{},
+		models.Table{},
+		models.UserBin{},
+		models.UserInfo{},
+		models.UserPlate{},
+	)
 
 	go func() { Tick() }()
 

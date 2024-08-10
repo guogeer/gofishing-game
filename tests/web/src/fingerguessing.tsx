@@ -94,9 +94,6 @@ const FingerGuessing: React.FC<FingerGuessingProps> = (
 			})
 	}
 	useEffect(() => {
-		if (userContext.gatewayConn !== undefined) {
-			return
-		}
 		login()
 	}, [account])
 
@@ -140,7 +137,6 @@ const FingerGuessing: React.FC<FingerGuessingProps> = (
 	}, [userContext, currentUser])
 
 	useEffect(() => {
-		console.log("xxxxxxxxxxxxxxxxxxxx countdownTimer", countdownTimer)
 		const h = setInterval(userEvents.updateRoomCountdown, 1000)
 		return () => {
 			return clearInterval(h)

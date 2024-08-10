@@ -8,7 +8,10 @@ import (
 	"time"
 
 	"github.com/guogeer/quasar/v2/utils"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
+	"gofishing-game/cache/models"
 	"gofishing-game/internal"
 	"gofishing-game/internal/dbo"
 	"gofishing-game/internal/gameutils"
@@ -40,39 +43,43 @@ func (cc *Cache) EnterGame(ctx context.Context, req *pb.EnterGameReq) (*pb.Enter
 	}
 	resp.Bin = binResp.Bin
 	resp.UserInfo = infoResp.Info
-
-	db.QueryRow("select count(*) from `mail` where recv_uid=? and `status`=0", uid).Scan(&resp.NewMailNum)         // 邮件
-	db.QueryRow("select expire_millis from charge_subscription where uid=?", uid).Scan(&resp.SubscriptionExpireTs) // 订阅
+	db.Model(models.Mail{}).Where("recv_uid=? and `status`=0", uid).Count(&resp.NewMailNum) // 新邮件数
 	return resp, nil
 }
 func (cc *Cache) QueryLoginParams(ctx context.Context, req *pb.QueryLoginParamsReq) (*pb.QueryLoginParamsResp, error) {
 	db := dbo.Get()
-	params := &pb.LoginParams{}
-	err := db.QueryRow("select time_zone from user_info where id=?", req.Uid).Scan(&params.TimeZone) // 登陆参数
-	return &pb.QueryLoginParamsResp{Params: params}, err
+
+	var userInfo models.UserInfo
+	db.Where("id=?", req.Uid).Take(&userInfo) // 登陆参数
+	return &pb.QueryLoginParamsResp{Params: &pb.LoginParams{TimeZone: float64(userInfo.TimeZone)}}, nil
 }
 
+// 近每天保存最近的一条登录日志
 func (cc *Cache) AddLoginLog(ctx context.Context, req *pb.AddLoginLogReq) (*pb.EmptyResp, error) {
-	uid := req.Uid
-	ip := req.Ip
-	mac := req.Mac
-	imei := req.Imei
-	imsi := req.Imsi
-	chanId := req.ChanId
-	ver := req.ClientVersion
-
 	db := dbo.Get()
-	now := time.Now()
-	today := now.Format(internal.ShortDateFmt)
-	tomorrow := now.Add(24 * time.Hour).Format(internal.ShortDateFmt)
-	db.Exec("update online_log set ip=?,mac=?,imei=?,imsi=?,enter_chan_id=?,client_version=?,login_time=now() where uid=? and login_time between ? and ?", ip, mac, imei, imsi, chanId, ver, uid, today, tomorrow)
-	db.Exec("insert into online_log(uid,ip,mac,imei,imsi,enter_chan_id,client_version,login_time) select ?,?,?,?,?,?,?,now() from dual where not exists (select 1 from online_log where uid=? and login_time between ? and ?)", uid, ip, mac, imei, imsi, chanId, ver, uid, today, tomorrow)
+	db.Clauses(clause.OnConflict{
+		UpdateAll: true,
+	}).Model(models.OnlineLog{}).Create(&models.OnlineLog{
+		Uid:           int(req.Uid),
+		CurDate:       time.Now().Format(internal.ShortDateFmt),
+		Ip:            req.Ip,
+		Mac:           req.Mac,
+		Imei:          req.Imei,
+		Imsi:          req.Imsi,
+		ChanId:        req.ChanId,
+		ClientVersion: req.ClientVersion,
+		LoginTime:     time.Now(),
+	})
 	return &pb.EmptyResp{}, nil
+}
+
+// TODO 匹配版本
+func MatchClientVersion(channels []models.ClientVersion, version string) models.ClientVersion {
+	return models.ClientVersion{}
 }
 
 func (cc *Cache) Auth(ctx context.Context, req *pb.AuthReq) (*pb.AuthResp, error) {
 	db := dbo.Get()
-	mdb := mpool.Get()
 	uid := req.Uid
 
 	token := gameutils.CreateToken(int(uid))
@@ -84,48 +91,33 @@ func (cc *Cache) Auth(ctx context.Context, req *pb.AuthReq) (*pb.AuthResp, error
 			return nil, err
 		}
 		// 最近的登陆版本
-		db.QueryRow("select client_version,enter_time from online_log where uid=? order by id desc limit 1", uid).Scan(&resp.ClientVersion, &resp.LoginTime)
+		db.Last(models.OnlineLog{}, uid).Scan(resp)
 		// 绑定的平台
-		plates := make([]string, 0, 4)
-		rs, _ := db.Query("select plate from user_plate where uid=?", uid)
-		for rs != nil && rs.Next() {
-			var plate string
-			rs.Scan(&plate)
-			plates = append(plates, plate)
+		var plates []models.UserPlate
+		db.Find(&plates, uid)
+		for _, row := range plates {
+			resp.LoginPlates = append(resp.LoginPlates, row.Plate)
 		}
-		var plate string
-		db.QueryRow("select plate from user_plate where uid=?", uid).Scan(&plate)
-		plates = append(plates, plate)
-		resp.LoginPlates = plates
 		resp.ServerLocation = infoResp.Info.ServerLocation
 
-		// IP白名单
-		type clientVersion struct {
-			AllowIPs string
+		var clientVersions []models.ClientVersion
+		db.Find(&clientVersions, "chan_id=?", infoResp.Info.ChanId)
+		cv := MatchClientVersion(clientVersions, resp.ClientVersion)
+		// IP设置了白名单时仅允许名单内的IP访问
+		allowIPs := matchIPs.FindAllString(cv.AllowIP, -1)
+		if len(allowIPs) > 0 && utils.InArray(allowIPs, req.Ip) == 0 {
+			resp.Reason = -3
 		}
-		chanrs, _ := mdb.Query("select json_value from gm_client_version where chan_id=?", infoResp.Info.ChanId)
-		for chanrs != nil && chanrs.Next() {
-			var cv clientVersion
-			chanrs.Scan(dbo.JSON(&cv))
-			// IP设置了白名单时仅允许名单内的IP访问
-			allowIPs := matchIPs.FindAllString(cv.AllowIPs, -1)
-			if len(allowIPs) > 0 && utils.InArray(allowIPs, req.Ip) == 0 {
-				resp.Reason = -3
-			}
-		}
+
 	}
 	return resp, nil
 }
 
 func (cc *Cache) LoadBin(ctx context.Context, req *pb.LoadBinReq) (*pb.LoadBinResp, error) {
-	uid := req.Uid
-	// load bin
 	db := dbo.Get()
-	rs, err := db.Query("select class,bin from user_bin where uid=?", uid)
 
-	if err != nil {
-		return nil, err
-	}
+	var userBins []models.UserBin
+	db.Where("uid=?", req.Uid).Find(&userBins)
 
 	bin := &pb.UserBin{}
 	val := reflect.ValueOf(bin)
@@ -146,66 +138,60 @@ func (cc *Cache) LoadBin(ctx context.Context, req *pb.LoadBinReq) (*pb.LoadBinRe
 		"offline": bin.Offline,
 	}
 
-	for rs.Next() {
-		var class string
-		var buf []byte
-		rs.Scan(&class, &buf)
-		if field, ok := fields[class]; ok && len(buf) > 0 {
-			proto.Unmarshal(buf, field)
+	for _, item := range userBins {
+		if field, ok := fields[item.Class]; ok && len(item.Bin) > 0 {
+			proto.Unmarshal(item.Bin, field)
+			dbo.PB(field).Scan(item.Bin)
 		}
 	}
 	return &pb.LoadBinResp{Bin: bin}, nil
 }
 
 func (cc *Cache) SaveBin(ctx context.Context, req *pb.SaveBinReq) (*pb.EmptyResp, error) {
-	uid := req.Uid
-	bin := req.Bin
 	db := dbo.Get()
 
 	fields := map[string]proto.Message{
-		"hall":   bin.Hall,
-		"global": bin.Global,
-		"room":   bin.Room,
+		"hall":   req.Bin.Hall,
+		"global": req.Bin.Global,
+		"room":   req.Bin.Room,
 	}
 
-	tx, _ := db.Begin()
-	curTime := time.Now().Format(internal.LongDateFmt)
-	// NOTE any == nil需必须同时满足无类型&空值
-	for key, field := range fields {
-		if !reflect.ValueOf(field).IsNil() {
-			buf, _ := proto.Marshal(field)
-			tx.Exec("insert ignore into user_bin(uid,`class`,bin,update_time) values(?,?,?,?)", uid, key, buf, curTime)
-			tx.Exec("update user_bin set bin=?, update_time=? where uid=? and `class`=?", buf, curTime, uid, key)
-		}
-	}
-
-	mergeItems := make(map[int32]int64)
-	if bin.Offline != nil {
-		buf := make([]byte, 0, 4096)
-		db.QueryRow("select bin from user_bin where uid=? and class=? for update", uid, "offline").Scan(&buf)
-		offline := &pb.OfflineBin{}
-		if len(buf) > 0 {
-			proto.Unmarshal(buf, offline)
-		}
-		bin.Offline.Items = append(bin.Offline.Items, offline.Items...)
-		for _, item := range bin.Offline.Items {
-			mergeItems[item.Id] += item.Num
-		}
-		if len(bin.Offline.Items) > 0 {
-			bin.Offline.Items = bin.Offline.Items[:0]
-		}
-		for id, num := range mergeItems {
-			if num != 0 {
-				bin.Offline.Items = append(bin.Offline.Items, &pb.NumericItem{Id: id, Num: num})
+	db.Transaction(func(tx *gorm.DB) error {
+		// NOTE any == nil需必须同时满足无类型&空值
+		for key, field := range fields {
+			if !reflect.ValueOf(field).IsNil() {
+				buf, _ := proto.Marshal(field)
+				tx.Clauses(clause.OnConflict{UpdateAll: true}).Create(&models.UserBin{Uid: int(req.Uid), Class: key, Bin: buf})
 			}
 		}
 
-		curTime := time.Now().Format(internal.LongDateFmt)
-		buf, _ = proto.Marshal(bin.Offline)
-		tx.Exec("insert ignore into user_bin(uid,`class`,bin,update_time) values(?,?,?,?)", uid, "offline", buf, curTime)
-		tx.Exec("update user_bin set bin=? where uid=? and `class`=?", buf, uid, "offline")
-	}
-	tx.Commit()
+		mergeItems := map[int32]int64{}
+		if req.Bin.Offline != nil {
+			var userBin models.UserBin
+			tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("uid=? and class=?", req.Uid, "offline").Take(&userBin)
+
+			newOffline := &pb.OfflineBin{}
+			if len(userBin.Bin) > 0 {
+				proto.Unmarshal(userBin.Bin, newOffline)
+			}
+			newOffline.Items = append(newOffline.Items, req.Bin.Offline.Items...)
+			for _, item := range newOffline.Items {
+				mergeItems[item.Id] += item.Num
+			}
+			if len(newOffline.Items) > 0 {
+				newOffline.Items = newOffline.Items[:0]
+			}
+			for id, num := range mergeItems {
+				if num != 0 {
+					newOffline.Items = append(newOffline.Items, &pb.NumericItem{Id: id, Num: num})
+				}
+			}
+
+			buf, _ := proto.Marshal(newOffline)
+			tx.Clauses(clause.OnConflict{UpdateAll: true}).Create(&models.UserBin{Uid: int(req.Uid), Class: "offline", Bin: buf})
+		}
+		return nil
+	})
 	return &pb.EmptyResp{}, nil
 }
 
@@ -213,8 +199,7 @@ func (cc *Cache) SaveBin(ctx context.Context, req *pb.SaveBinReq) (*pb.EmptyResp
 func (cc *Cache) Visit(ctx context.Context, req *pb.VisitReq) (*pb.EmptyResp, error) {
 	db := dbo.Get()
 
-	location := req.ServerLocation
-	_, err := db.Exec("update user_info set server_location=? where (server_location = '' or ? = '') and id=?", location, location, req.Uid)
+	err := db.Model(models.UserInfo{}).Where("(server_location = '' or ? = '') and id=?", req.ServerLocation, req.Uid).UpdateColumn("server_location", req.ServerLocation).Error
 	return &pb.EmptyResp{}, err
 }
 
@@ -235,7 +220,10 @@ func (cc *Cache) CreateAccount(ctx context.Context, req *pb.CreateAccountReq) (*
 	// 快速登陆或第三方登陆
 	if newInfo.OpenId != "" {
 		newInfo.Phone = "" // 忽略手机号
-		db.QueryRow("select uid from user_plate where open_id=? limit 1", newInfo.OpenId).Scan(&newInfo.Uid)
+
+		var userPlate models.UserPlate
+		db.Where("open_id=?", newInfo.OpenId).Take(&userPlate)
+		newInfo.Uid = int32(userPlate.Uid)
 		userInfo, _ := cc.QueryUserInfo(ctx, &pb.QueryUserInfoReq{Uid: newInfo.Uid})
 		utils.DeepCopy(oldInfo, userInfo.Info)
 	}
@@ -260,32 +248,31 @@ func (cc *Cache) CreateAccount(ctx context.Context, req *pb.CreateAccountReq) (*
 
 	var newid int64
 	if oldInfo.Uid == 0 {
-		tx, _ := db.Begin()
-		rs, err := tx.Exec("insert ignore into user_plate(uid,plate,open_id) values(0,?,?)", newInfo.Plate, newInfo.OpenId)
-		if err != nil {
-			tx.Rollback()
-			return nil, err
-		}
-		rowNum, err := rs.RowsAffected()
-		if err != nil {
-			tx.Rollback()
-			return nil, err
-		}
-		if rowNum > 0 {
-			createTime := time.Now().Format(internal.LongDateFmt)
-			rs, err = tx.Exec("insert into user_info(nickname,sex,icon,plate_icon,email,ip,chan_id,client_version,mac,imei,imsi,create_time) values(?,?,?,?,?,?,?,?,?,?,?,?)",
-				newInfo.Nickname, newInfo.Sex, newInfo.Icon, newInfo.Icon, newInfo.Email, newInfo.Ip,
-				newInfo.ChanId, newInfo.ClientVersion, newInfo.Mac, newInfo.Imei, newInfo.Imsi, createTime,
-			)
-			if err != nil {
-				tx.Rollback()
-				return nil, err
+		db.Transaction(func(tx *gorm.DB) error {
+			userInfo := models.UserInfo{
+				Nickname:      newInfo.Nickname,
+				Sex:           int(newInfo.Sex),
+				Icon:          newInfo.Icon,
+				PlateIcon:     newInfo.Icon,
+				Email:         newInfo.Email,
+				Ip:            newInfo.Ip,
+				ChanId:        newInfo.ChanId,
+				ClientVersion: newInfo.ClientVersion,
+				Mac:           newInfo.Mac,
+				Imei:          newInfo.Imei,
+				Imsi:          newInfo.Imsi,
 			}
-			newid, _ = rs.LastInsertId()
-			oldInfo.Uid = int32(newid)
-			tx.Exec("update user_plate set uid=? where open_id=?", newid, newInfo.OpenId)
-		}
-		tx.Commit()
+			if err := tx.Create(&userInfo).Error; err != nil {
+				return err
+			}
+
+			oldInfo.Uid = int32(userInfo.Id)
+			if err := tx.Create(&models.UserPlate{Uid: userInfo.Id, Plate: newInfo.Plate, OpenId: newInfo.OpenId}).Error; err != nil {
+				return err
+			}
+			newid = int64(userInfo.Id)
+			return nil
+		})
 	}
 
 	return &pb.CreateAccountResp{
@@ -297,13 +284,13 @@ func (cc *Cache) CreateAccount(ctx context.Context, req *pb.CreateAccountReq) (*
 
 func (cc *Cache) UpdateLoginParams(ctx context.Context, req *pb.UpdateLoginParamsReq) (*pb.EmptyResp, error) {
 	db := dbo.Get()
-	db.Exec("update user_info set time_zone=? where id=?", req.Params.TimeZone, req.Uid)
+	db.Where("uid=?", req.Uid).Updates(models.UserInfo{TimeZone: float32(req.Params.TimeZone)})
 	return &pb.EmptyResp{}, nil
 }
 
 func (cc *Cache) ClearAccount(ctx context.Context, req *pb.ClearAccountReq) (*pb.EmptyResp, error) {
 	db := dbo.Get()
-	db.Exec("delete from user_plate where uid=?", req.Uid)
+	db.Where("uid=?", req.Uid).Delete(models.UserPlate{})
 	return &pb.EmptyResp{}, nil
 }
 
@@ -317,20 +304,15 @@ func (cc *Cache) BindAccount(ctx context.Context, req *pb.BindAccountReq) (*pb.B
 	if infoResp.Info.Uid == 0 {
 		return nil, fmt.Errorf("user with ReserveOpenId:%s is not existed", req.ReserveOpenId)
 	}
-	// 绑定的平台
-	plates := make([]string, 0, 4)
-	rs, _ := db.Query("select plate from user_plate where uid=?", infoResp.Info.Uid)
-	for rs != nil && rs.Next() {
-		var plate string
-		rs.Scan(&plate)
-		plates = append(plates, plate)
+
+	var userPlates []models.UserPlate
+	db.Where("uid=?", infoResp.Info.Uid).Find(&userPlates)
+
+	var plates []string
+	for _, userPlate := range userPlates {
+		plates = append(plates, userPlate.Plate)
 	}
 
-	db.Exec("insert ignore user_plate(uid,plate,open_id) values(?,?,?)", 0, req.AddPlate, req.AddOpenId)
-	db.Exec("update user_plate set uid=? where open_id=?", infoResp.Info.Uid, req.AddOpenId)
-
-	response := &pb.BindAccountResp{}
-	response.Uid = infoResp.Info.Uid
-	response.Plates = plates
-	return response, err
+	db.Clauses(clause.OnConflict{UpdateAll: true}).Create(&models.UserPlate{Uid: int(infoResp.Info.Uid), Plate: req.AddPlate, OpenId: req.AddOpenId})
+	return &pb.BindAccountResp{Uid: infoResp.Info.Uid, Plates: plates}, err
 }

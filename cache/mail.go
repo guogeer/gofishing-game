@@ -5,28 +5,15 @@ import (
 
 	"github.com/guogeer/quasar/v2/utils"
 
+	"gofishing-game/cache/models"
 	"gofishing-game/internal/dbo"
 	"gofishing-game/internal/pb"
-
-	"github.com/guogeer/quasar/v2/log"
 )
-
-type Mail struct {
-	Title         string
-	Body          string
-	Reward        string
-	SendId        int32
-	ClientVersion string
-	EffectTime    []string
-	RegTime       []string
-	LoginTime     []string
-}
 
 // 邮件
 func (cc *Cache) QuerySomeMail(ctx context.Context, req *pb.QuerySomeMailReq) (*pb.QuerySomeMailResp, error) {
 	db := dbo.Get()
 
-	var mails []*pb.Mail
 	var params []any
 	where := " where 1=1"
 	if req.Id > 0 {
@@ -51,46 +38,36 @@ func (cc *Cache) QuerySomeMail(ctx context.Context, req *pb.QuerySomeMailReq) (*
 		params = append(params, req.Num)
 	}
 
-	rs, _ := db.Query("select id,`type`,recv_uid,`data`,`status`,send_time from mail"+where, params)
-	for rs != nil && rs.Next() {
-		mail := &pb.Mail{}
-		simpleMail := &Mail{}
-		rs.Scan(&mail.Id, &mail.Type, &mail.RecvId, dbo.JSON(simpleMail), &mail.Status, &mail.SendTime)
-		utils.DeepCopy(mail, simpleMail)
-		mails = append(mails, mail)
+	var mails []models.Mail
+	db.Find(&mails).Where(where, params...)
+
+	var pbMails []*pb.Mail
+	for _, mail := range mails {
+		pbMail := &pb.Mail{}
+		utils.DeepCopy(pbMail, mail)
+		pbMails = append(pbMails, pbMail)
 	}
-	return &pb.QuerySomeMailResp{Mails: mails}, nil
+	return &pb.QuerySomeMailResp{Mails: pbMails}, nil
 }
 
 func (cc *Cache) SendMail(ctx context.Context, req *pb.SendMailReq) (*pb.SendMailResp, error) {
 	db := dbo.Get()
 
-	mail := req.Mail
-	simpleMail := &Mail{}
-	utils.DeepCopy(simpleMail, req.Mail)
-	rs, err := db.Exec("insert into mail(`type`,recv_uid,`data`) values(?,?,?)", mail.Type, mail.RecvId, dbo.JSON(simpleMail))
-	if err != nil {
-		log.Error("send mail", err)
+	mail := models.Mail{
+		Type:    int(req.Mail.Type),
+		RecvUid: int(req.Mail.RecvId),
+		SendUid: int(req.Mail.SendId),
+		Title:   req.Mail.Title,
+		Body:    req.Mail.Body,
 	}
-
-	insertId := int64(-1)
-	if rs != nil {
-		insertId, _ = rs.LastInsertId()
-	}
-	return &pb.SendMailResp{Id: insertId}, nil
+	result := db.Create(&mail)
+	return &pb.SendMailResp{Id: int64(mail.Id)}, result.Error
 }
 
 func (cc *Cache) OperateMail(ctx context.Context, req *pb.OperateMailReq) (*pb.OperateMailResp, error) {
 	db := dbo.Get()
 
 	// 邮件状态只能递增
-	result, err := db.Exec("update mail set `status`=? where id=? and `status`=?", req.NewStatus, req.Id, req.CurStatus)
-	if err != nil {
-		return nil, err
-	}
-	num, err := result.RowsAffected()
-	if err != nil {
-		return nil, err
-	}
-	return &pb.OperateMailResp{EffectRows: int32(num)}, nil
+	result := db.Model(models.Mail{}).UpdateColumn("`status`=?", req.NewStatus).Where("id=? and `status`=?", req.Id, req.CurStatus)
+	return &pb.OperateMailResp{EffectRows: int32(result.RowsAffected)}, result.Error
 }
