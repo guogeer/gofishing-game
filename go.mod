@@ -16,10 +16,7 @@ require (
 	github.com/guogeer/quasar/v2 v2.0.5
 )
 
-require (
-	filippo.io/edwards25519 v1.1.0 // indirect
-	github.com/gorilla/websocket v1.5.1 // indirect
-)
+require filippo.io/edwards25519 v1.1.0 // indirect
 
 require (
 	github.com/buger/jsonparser v1.1.1 // indirect
