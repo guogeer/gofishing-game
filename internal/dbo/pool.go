@@ -5,6 +5,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+	"sync"
 	"time"
 
 	"google.golang.org/protobuf/proto"
@@ -16,7 +17,7 @@ import (
 const (
 	defaultIdleConns    = 100
 	defaultOpenConns    = 200
-	defaultConnLifeTime = 1800 // MySQL默认8小时
+	defaultConnLifeTime = 1800 * time.Second // MySQL默认8小时
 )
 
 type Pool struct {
@@ -25,6 +26,8 @@ type Pool struct {
 	Password   string
 	Addr       string
 	SchemaName string
+
+	mu sync.RWMutex
 }
 
 func (dbPool *Pool) SetSource(user, password, addr, dbname string) {
@@ -32,12 +35,37 @@ func (dbPool *Pool) SetSource(user, password, addr, dbname string) {
 	dbPool.Password = password
 	dbPool.Addr = addr
 	dbPool.SchemaName = dbname
+
+}
+func (p *Pool) createDatabase() {
+	dsn := fmt.Sprintf("%s:%s@tcp(%s)/?charset=utf8mb4&parseTime=True&loc=Local", p.User, p.Password, p.Addr)
+	ormDB, err := gorm.Open(mysql.Open(dsn))
+	if err != nil {
+		panic(err)
+	}
+	if err := ormDB.Exec("create database if not exists " + p.SchemaName).Error; err != nil {
+		panic(err)
+	}
+	if err := ormDB.Exec("use " + p.SchemaName).Error; err != nil {
+		panic(err)
+	}
+	db, _ := ormDB.DB()
+	db.Close()
 }
 
 func (p *Pool) Get() *gorm.DB {
-	if p.db != nil {
-		return p.db
+	p.mu.RLock()
+	ormDB := p.db
+	p.mu.RUnlock()
+
+	if ormDB != nil {
+		return ormDB
 	}
+
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.createDatabase()
+
 	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", p.User, p.Password, p.Addr, p.SchemaName)
 	ormDB, err := gorm.Open(mysql.Open(dsn), &gorm.Config{NamingStrategy: schema.NamingStrategy{SingularTable: true}})
 	if err != nil {
@@ -45,16 +73,9 @@ func (p *Pool) Get() *gorm.DB {
 	}
 
 	db, _ := ormDB.DB()
-	db.SetMaxIdleConns(1)
-	if err := ormDB.Exec("create database if not exists " + p.SchemaName).Error; err != nil {
-		panic(err)
-	}
-	if err := ormDB.Exec("use " + p.SchemaName).Error; err != nil {
-		panic(err)
-	}
 	db.SetMaxIdleConns(defaultIdleConns)
 	db.SetMaxOpenConns(defaultOpenConns)
-	db.SetConnMaxLifetime(defaultConnLifeTime * time.Second)
+	db.SetConnMaxLifetime(defaultConnLifeTime)
 	p.db = ormDB
 	return p.db
 }

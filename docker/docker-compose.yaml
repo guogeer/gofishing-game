@@ -6,6 +6,8 @@ services:
     image: registry.cn-hangzhou.aliyuncs.com/guogeer/gofishing-game:v2
     container_name: "router_server"
     command: ./router_server
+    ports:
+      - "9010:9010"
     networks:
       - gamenet
   gateway_server:
@@ -24,6 +26,9 @@ services:
     restart: always
     container_name: "cache_server"
     command: ./cache_server
+    command: ./router_server
+    ports:
+      - "9000:9000"
     networks:
       - gamenet
     depends_on:
