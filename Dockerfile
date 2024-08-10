@@ -24,7 +24,7 @@ RUN npm run build
 FROM hub.atomgit.com/amd64/debian:12.1-slim
 
 WORKDIR /app
-COPY docker/config.yaml config.yaml
+COPY tests/config.yaml config.yaml
 COPY tests tests
 COPY --from=gobuilder /build/bin .
 COPY --from=gobuilder /go/bin/gateway gateway_server
