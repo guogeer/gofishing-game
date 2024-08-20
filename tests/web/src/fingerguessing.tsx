@@ -106,7 +106,8 @@ const FingerGuessing: React.FC<FingerGuessingProps> = (
 			if (!inArray(ignoreMsgs, obj.id.toLowerCase())) {
 				console.log("recv msg", obj)
 			}
-			const h = userEvents.handlers[obj.id]
+			const matchId = "*." + (obj.id + ".").split(".")[1]
+			const h = userEvents.handlers[obj.id] || userEvents.handlers[matchId]
 			if (h) h(obj.data)
 		} catch (error) {
 			console.error('recv invalid data', error, event.data)
@@ -157,6 +158,13 @@ const FingerGuessing: React.FC<FingerGuessingProps> = (
 			leave: () => {
 				userEvents.sendMsg(`${userContext.serverId}.leave`, {})
 			},
+			signIn: () => {
+				if (!userContext.serverId) {
+					window.alert("please enter game.")
+					return
+				}
+				userEvents.sendMsg(`${userContext.serverId}.drawSignIn`, {})
+			},
 		},
 		updateRoomCountdown: () => {
 			if (userContext.serverId !== "fingerGuessing") {
@@ -175,6 +183,13 @@ const FingerGuessing: React.FC<FingerGuessingProps> = (
 					return
 				}
 				setUserContext({ ...userContext, serverId: "hall" })
+			},
+			"*.drawSignIn": (args: any) => {
+				if (args.code != "ok") {
+					window.alert("draw sign in reward fail: " + args.msg)
+					return
+				}
+				window.alert("draw sign in reward successful")
 			},
 			"hall.leave": (_: any) => {
 				setUserContext({ ...userContext, serverId: "" })
@@ -293,7 +308,7 @@ const FingerGuessing: React.FC<FingerGuessingProps> = (
 				}
 				setCurrentUser({ ...currentUser })
 			},
-			"fingerGuessing.addItems": (args: any) => {
+			"*.addItems": (args: any) => {
 				let match_user: SeatPlayer | null = null
 				if (undefined === currentUser.roomInfo) {
 					return
@@ -422,7 +437,7 @@ const FingerGuessing: React.FC<FingerGuessingProps> = (
 			</Space >
 			{
 				userContext.serverId === "fingerGuessing" && <>
-					<h4>操作</h4>
+					<h4>石头剪刀布选项</h4>
 					<Radio.Group buttonStyle="solid" disabled={currentUser.roomInfo?.status == 0 || currentUser.gesture !== ''}>
 						<Radio.Button value="rock" onClick={() => { userEvents.requests.chooseGesture("rock") }}>石头</Radio.Button>
 						<Radio.Button value="scissor" onClick={() => { userEvents.requests.chooseGesture("scissor") }}>剪刀</Radio.Button>
@@ -430,6 +445,8 @@ const FingerGuessing: React.FC<FingerGuessingProps> = (
 					</Radio.Group >
 				</>
 			}
+			<h4>周边功能</h4>
+			<Button type="primary" onClick={() => { userEvents.requests.signIn() }}>签到</Button>
 			<Descriptions title="个人信息" items={userInfoItems} />
 			{
 				currentUser.roomInfo && <Descriptions title="房间信息" items={roomInfoItems} />
