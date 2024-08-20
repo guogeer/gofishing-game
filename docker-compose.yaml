@@ -3,7 +3,7 @@ services:
   router_server:
     restart: always
     # image: registry.cn-hangzhou.aliyuncs.com/guogeer/gofishing-game:v2.0.1
-    image: registry.cn-hangzhou.aliyuncs.com/guogeer/gofishing-game:v2.0.1
+    image: registry.cn-hangzhou.aliyuncs.com/guogeer/gofishing-game:v2.0.3
     container_name: "router_server"
     command: ./router_server
     ports:
@@ -11,7 +11,7 @@ services:
     networks:
       - gamenet
   gateway_server:
-    image: registry.cn-hangzhou.aliyuncs.com/guogeer/gofishing-game:v2.0.1
+    image: registry.cn-hangzhou.aliyuncs.com/guogeer/gofishing-game:v2.0.3
     restart: always
     container_name: "gateway_server"
     # 配置gateway对外地址
@@ -21,7 +21,7 @@ services:
     networks:
       - gamenet
   cache_server:
-    image: registry.cn-hangzhou.aliyuncs.com/guogeer/gofishing-game:v2.0.1
+    image: registry.cn-hangzhou.aliyuncs.com/guogeer/gofishing-game:v2.0.3
     restart: always
     container_name: "cache_server"
     command: ./cache_server --port 9000
@@ -30,21 +30,21 @@ services:
     networks:
       - gamenet
   hall_server:
-    image: registry.cn-hangzhou.aliyuncs.com/guogeer/gofishing-game:v2.0.1
+    image: registry.cn-hangzhou.aliyuncs.com/guogeer/gofishing-game:v2.0.3
     restart: always
     container_name: "hall_server"
     command: ./hall_server --port 19001
     networks:
       - gamenet
   games_server:
-    image: registry.cn-hangzhou.aliyuncs.com/guogeer/gofishing-game:v2.0.1
+    image: registry.cn-hangzhou.aliyuncs.com/guogeer/gofishing-game:v2.0.3
     restart: always
     container_name: "games_server"
     command: ./games_server --port 19002
     networks:
       - gamenet
   login_server:
-    image: registry.cn-hangzhou.aliyuncs.com/guogeer/gofishing-game:v2.0.1
+    image: registry.cn-hangzhou.aliyuncs.com/guogeer/gofishing-game:v2.0.3
     restart: always
     container_name: "login_server"
     command: ./login_server --rootpath demo
@@ -52,7 +52,6 @@ services:
       - "9501:9501"
     networks:
       - gamenet
-  # NOTE 2024-06-26当前版本数据库脚本需手动初始化，下个版本将使用ORM
   mariadb:
     image: hub.atomgit.com/amd64/mariadb:10.6
     container_name: "mariadb"
