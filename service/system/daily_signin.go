@@ -3,6 +3,7 @@ package system
 import (
 	"gofishing-game/internal/errcode"
 	"gofishing-game/internal/gameutils"
+	"gofishing-game/internal/pb"
 	"gofishing-game/service"
 	"time"
 
@@ -27,9 +28,11 @@ type dailySignInObj struct {
 var _ service.EnterAction = (*dailySignInObj)(nil)
 
 func newDailySignInObj(player *service.Player) service.EnterAction {
-	return &dailySignInObj{
+	obj := &dailySignInObj{
 		player: player,
 	}
+	player.DataObj().Push(obj)
+	return obj
 }
 
 func (obj *dailySignInObj) BeforeEnter() {
@@ -77,6 +80,25 @@ func (obj *dailySignInObj) Draw() errcode.Error {
 	obj.player.BagObj().AddSomeItems(gameutils.ParseNumbericItems(reward), "sign_in")
 	return nil
 }
+
+func (obj *dailySignInObj) Load(data any) {
+	bin := data.(*pb.UserBin)
+
+	obj.drawTime = time.Unix(bin.Global.SignIn.DrawTs, 0)
+	obj.startTime = time.Unix(bin.Global.SignIn.StartTs, 0)
+	obj.drawState = int(bin.Global.SignIn.DrawState)
+}
+
+func (obj *dailySignInObj) Save(data any) {
+	bin := data.(*pb.UserBin)
+
+	bin.Global.SignIn = &pb.DailySignIn{
+		StartTs:   obj.startTime.Unix(),
+		DrawTs:    obj.drawTime.Unix(),
+		DrawState: int32(obj.drawState),
+	}
+}
+
 func (obj *dailySignInObj) Look() {
 	obj.player.WriteJSON("lookSignIn", obj.currentState(time.Now()))
 }

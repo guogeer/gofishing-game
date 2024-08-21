@@ -53,8 +53,8 @@ message GlobalBin {
 	int64 lastDayUpdateTs = 1; // 每日数据上次更新时间
 	Bag bag = 2; // 背包
 	int32 level = 3; // 等级
-	SignIn signIn = 4; // 签到数据
 	repeated Task tasks = 5;
+	DailySignIn signIn = 6; // 签到数据
 }
 
 // 离线数据
@@ -79,14 +79,15 @@ message HallBin {
   int64 lastMassMail = 10; // 上次群发邮件的ID
 }
 
-// 签到
-message SignIn {
-  int32 drawState = 7;
-  int64 drawTs = 8;
-}
-
 message FingerGuessingRoom {
 	int32 winPlay = 1;
 	int32 losePlay = 2;
 	int32 totalPlay = 3;
+}
+
+// 签到
+message DailySignIn {
+	int64 drawTs = 1;
+	int64 startTs = 2;
+	int32 drawState = 3;
 }
