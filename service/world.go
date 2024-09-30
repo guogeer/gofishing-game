@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"fmt"
+	"iter"
+	"maps"
 	"time"
 
 	"github.com/guogeer/quasar/v2/utils"
@@ -91,12 +93,8 @@ func BroadcastNotification(notification string) {
 	Broadcast2Gateway("broadcast", map[string]any{"notification": notification})
 }
 
-func GetAllPlayers() []*Player {
-	players := make([]*Player, 0, len(gAllPlayers))
-	for _, player := range gAllPlayers {
-		players = append(players, player)
-	}
-	return players
+func GetAllPlayers() iter.Seq2[int, *Player] {
+	return maps.All(gAllPlayers)
 }
 
 func GetPlayer(id int) *Player {
@@ -120,12 +118,8 @@ func GetServerId() string {
 	return *serverId
 }
 
-func GetAllServers() []string {
-	var servers []string
-	for name := range gAllWorlds {
-		servers = append(servers, name)
-	}
-	return servers
+func GetAllServers() iter.Seq[string] {
+	return maps.Keys(gAllWorlds)
 }
 
 func WriteMessage(serverName string, ss *cmd.Session, id string, i any) {

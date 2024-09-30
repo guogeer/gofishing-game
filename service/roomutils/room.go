@@ -2,7 +2,6 @@ package roomutils
 
 import (
 	"encoding/json"
-	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -91,8 +90,10 @@ func LoadGames() {
 
 		var name string
 		for _, tag := range tags {
-			if slices.Index(servers, tag) >= 0 {
-				name = tag
+			for server := range servers {
+				if tag == server {
+					name = tag
+				}
 			}
 		}
 

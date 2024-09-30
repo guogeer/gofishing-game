@@ -8,17 +8,16 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"slices"
 	"strings"
 	"time"
 
-	"github.com/guogeer/quasar/v2/utils"
-
-	// "gofishing-game/internal/errcode"
 	"gofishing-game/internal/pb"
 	"gofishing-game/internal/rpc"
 
 	"github.com/guogeer/quasar/v2/cmd"
 	"github.com/guogeer/quasar/v2/log"
+	"github.com/guogeer/quasar/v2/utils"
 )
 
 var port = flag.Int("port", 9510, "server port")
@@ -67,7 +66,7 @@ func Start() {
 	srv := &cmd.Server{Addr: addr}
 	go func() { srv.Serve(l) }()
 
-	allServers := GetAllServers()
+	allServers := slices.Collect(GetAllServers())
 	if *serverId == "" {
 		*serverId = allServers[0]
 	}
