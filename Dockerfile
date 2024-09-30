@@ -5,7 +5,7 @@ ENV GOPROXY https://goproxy.cn,direct
 
 WORKDIR /build
 
-COPY go.mod go.sum .
+COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 RUN go build -ldflags="-s -w" -o ./bin/hall_server ./hall/*.go
