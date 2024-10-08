@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
-	"github.com/guogeer/quasar/v2/api"
 	"github.com/guogeer/quasar/v2/cmd"
 	"github.com/guogeer/quasar/v2/log"
 )
@@ -27,5 +26,8 @@ func main() {
 	if *rootpath != "" {
 		r.Static("/", *rootpath)
 	}
-	api.RunWithEngine(r, addr)
+	RegisterHandlers(r)
+	if err := r.Run(addr); err != nil {
+		log.Fatal(err)
+	}
 }

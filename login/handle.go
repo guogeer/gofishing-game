@@ -9,12 +9,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/guogeer/quasar/v2/utils"
 
 	"gofishing-game/internal/errcode"
+	"gofishing-game/internal/gameutils"
 	"gofishing-game/internal/pb"
 	"gofishing-game/internal/rpc"
 
+	"github.com/gin-contrib/cors"
 	"github.com/guogeer/quasar/v2/api"
 	"github.com/guogeer/quasar/v2/cmd"
 	"github.com/guogeer/quasar/v2/config"
@@ -29,12 +32,36 @@ var (
 	errAccountExisted = errcode.New("account_existed", "account existed")
 )
 
-func init() {
-	codec := &api.CmdMessageCodec{}
-	api.Add("POST", "/api/v1/login", login, (*loginReq)(nil)).SetCodec(codec)
-	api.Add("POST", "/api/v1/clearAccount", clearAccount, (*clearAccountReq)(nil)).SetCodec(codec)
-	api.Add("POST", "/api/v1/bindAccount", bindAccount, (*bindAccountReq)(nil)).SetCodec(codec)
-	api.Add("POST", "/api/v1/queryQccount", queryAccount, (*queryAccountReq)(nil)).SetCodec(codec)
+type cmdCodec struct{}
+
+func (codec *cmdCodec) ParseRequest(buf []byte) ([]byte, error) {
+	pkg, err := cmd.Decode(buf)
+	if err != nil {
+		return nil, err
+	}
+	return pkg.Data, nil
+}
+
+func (codec *cmdCodec) ResponseError(data any, err error) ([]byte, error) {
+	var e errcode.Error
+	if err != nil {
+		if v, ok := err.(errcode.Error); ok {
+			e = v
+		} else {
+			e = errcode.New("system_error", err.Error())
+		}
+	}
+	return cmd.Encode("", gameutils.MergeError(e, data))
+}
+
+func RegisterHandlers(r gin.IRouter) {
+	router := r.Group("/api/v1")
+	router.Use(cors.Default())
+	apiGroup := api.NewGroup(router.BasePath(), r, &cmdCodec{})
+	apiGroup.POST("/login", login, (*loginReq)(nil))
+	apiGroup.POST("/clearAccount", clearAccount, (*clearAccountReq)(nil))
+	apiGroup.POST("/bindAccount", bindAccount, (*bindAccountReq)(nil))
+	apiGroup.POST("/queryQccount", queryAccount, (*queryAccountReq)(nil))
 }
 
 func Auth(req *pb.AccountInfo) (string, errcode.Error) {
